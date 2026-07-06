@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+vue/node_modules/
+
+# Frontend build output
+dist/
+vue/dist/
+
+# Java / Maven build output
+target/
+springboot/target/
+
+# IDE and editor files
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+vue/.env.local
+vue/.env.*.local
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary/cache files
+*.tmp
+*.temp
+.cache/
+.eslintcache
+
+# Java runtime dumps
+hs_err_pid*
+replay_pid*

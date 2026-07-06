@@ -1,0 +1,577 @@
+# 教务管理系统
+
+这是一个前后端分离的教务管理系统，前端基于 Vue 3 + Vite + TypeScript + Element Plus，后端基于 Spring Boot + MyBatis + MySQL。系统包含管理员、教师、学生等角色，主要覆盖学院、专业、班级、课程、选课、课表、成绩、考试安排、教室安排、请假、作业、考勤、通知、评教等教务管理功能。
+
+## 技术栈
+
+### 前端
+
+- Vue 3
+- Vite 5
+- TypeScript
+- Vue Router
+- Pinia
+- Element Plus
+- Axios
+- ECharts
+
+### 后端
+
+- Java 8
+- Spring Boot 2.5.9
+- MyBatis
+- PageHelper
+- MySQL
+- JWT
+- Hutool
+- Easy Captcha
+
+## 项目特色
+
+本项目在基础教务管理功能之外，补充了安全性、文件存储和可维护性方面的优化，适合作为毕业设计中的系统亮点说明。
+
+### 1. 多角色教务业务闭环
+
+系统围绕管理员、教师、学生三类角色组织功能，覆盖教务系统常见业务场景：
+
+- 管理员负责学院、专业、班级、教师、学生、课程、通知等基础数据维护。
+- 教师可参与课程、成绩、作业、考勤、评教等教学相关业务。
+- 学生可完成选课、查看课表和成绩、提交作业、请假申请、网上评教等操作。
+
+整体功能从基础信息维护到教学过程管理再到结果反馈，形成较完整的教务管理流程。
+
+### 2. JWT 登录鉴权与统一请求封装
+
+前端通过 Axios 请求拦截器自动携带 `token`，后端通过 JWT 拦截器统一校验登录状态。未登录用户访问业务页面时会被路由守卫拦截并跳转到登录页，减少各业务页面重复写鉴权逻辑。
+
+### 3. BCrypt 密码哈希存储
+
+系统已将用户密码由明文存储优化为 BCrypt 哈希存储：
+
+- 新增用户、注册用户、修改密码时都会先进行 BCrypt 哈希处理。
+- 登录时通过 BCrypt 校验密码，不需要反解原密码。
+- 兼容历史明文密码，旧账号首次登录成功后会自动升级为 BCrypt 哈希。
+- 登录成功返回给前端前会清空 `password` 字段，避免密码哈希进入浏览器本地存储。
+
+### 4. 管理员重置密码
+
+管理员可以在管理员、教师、学生管理页面中为用户重置密码。重置后的默认密码为 `123456`，但数据库中保存的仍然是 BCrypt 哈希值，不会回退成明文密码。
+
+为避免当前登录管理员的 token 因密码变更立即失效，系统限制管理员不能在列表中重置自己的密码；管理员本人应通过“修改密码”页面修改密码。
+
+### 5. 头像文件 MD5 去重与安全清理
+
+文件上传逻辑已从“时间戳 + 原文件名”优化为“文件内容 MD5 + 扩展名”：
+
+- 同一张图片重复上传时会复用同一个文件，不会在 `files/` 中生成多份重复图片。
+- 用户更新头像后，系统会检查旧头像是否仍被管理员、教师或学生引用。
+- 只有当旧头像没有任何用户继续使用时，系统才会删除旧文件，避免误删多人共用头像。
+- 文件读取和删除增加了基础路径校验，降低路径穿越风险。
+
+### 6. UTF-8 编码约束
+
+项目增加了 `.editorconfig`，并在 Spring Boot 中配置了 UTF-8 响应编码，降低中文注释、页面文案和接口提示出现乱码的概率。
+
+## 项目结构
+
+```text
+manager-vue3
++-- vue/                         # 前端项目
+|   +-- public/                  # 静态资源
+|   +-- src/
+|   |   +-- assets/              # 图片、全局样式
+|   |   +-- components/          # 公共组件/组合逻辑
+|   |   +-- router/              # 路由配置
+|   |   +-- utils/               # Axios 请求封装
+|   |   +-- views/               # 页面
+|   |       +-- manager/         # 后台管理页面
+|   |       +-- front/           # 前台页面
+|   +-- .env.development         # 开发环境接口地址
+|   +-- .env.production          # 生产环境接口地址
+|   +-- vite.config.ts           # Vite 配置
+|   +-- package.json             # 前端依赖和脚本
++-- springboot/                  # 后端项目
+|   +-- src/main/java/com/example
+|   |   +-- common/              # 通用返回、常量、枚举、拦截器配置
+|   |   +-- controller/          # 接口控制层
+|   |   +-- entity/              # 实体类
+|   |   +-- exception/           # 全局异常处理
+|   |   +-- mapper/              # MyBatis Mapper 接口
+|   |   +-- service/             # 业务逻辑层
+|   |   +-- utils/               # 工具类
+|   +-- src/main/resources
+|   |   +-- mapper/              # MyBatis XML
+|   |   +-- application.yml      # 后端配置
+|   +-- pom.xml                  # Maven 依赖
++-- files/                       # 文件上传目录
++-- .editorconfig                # 编辑器编码与格式约束
++-- package.json                 # 根目录少量依赖
++-- README.md
+```
+
+## 环境要求
+
+请先确认本机已经安装：
+
+- Node.js 18 或更高版本
+- npm
+- JDK 8
+- Maven 3.6 或更高版本
+- MySQL 5.7 或 8.x
+
+可用下面命令检查：
+
+```bash
+node -v
+npm -v
+java -version
+mvn -v
+mysql --version
+```
+
+## 数据库准备
+
+后端默认连接本机 MySQL：
+
+```yaml
+server:
+  port: 9091
+
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://localhost:3306/xm_educational_manager
+```
+
+启动前需要先创建数据库：
+
+```sql
+CREATE DATABASE xm_educational_manager
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;
+```
+
+如果你的 MySQL 用户名、密码、地址或端口不同，请修改：
+
+```text
+springboot/src/main/resources/application.yml
+```
+
+注意：当前项目目录中未发现独立的 `.sql` 初始化脚本。首次接手项目时，需要向项目维护者确认数据库表结构和初始数据来源，或者从已有环境导出数据库后再导入本地。
+
+## 后端启动
+
+进入后端目录：
+
+```bash
+cd springboot
+```
+
+安装依赖并启动：
+
+```bash
+mvn spring-boot:run
+```
+
+启动成功后，后端默认运行在：
+
+```text
+http://localhost:9091
+```
+
+可访问下面地址测试后端是否启动成功：
+
+```text
+http://localhost:9091/
+```
+
+正常情况下会返回统一响应格式的数据。
+
+## 前端启动
+
+进入前端目录：
+
+```bash
+cd vue
+```
+
+安装依赖：
+
+```bash
+npm install
+```
+
+启动开发服务器：
+
+```bash
+npm run dev
+```
+
+前端默认运行在：
+
+```text
+http://localhost:8080
+```
+
+开发环境接口地址配置在：
+
+```text
+vue/.env.development
+```
+
+当前配置为：
+
+```env
+VITE_BASE_URL='http://localhost:9091'
+```
+
+也就是说，本地开发时需要先启动后端 `9091` 端口，再启动前端 `8080` 端口。
+
+## 常用命令
+
+### 前端
+
+```bash
+cd vue
+npm install
+npm run dev
+npm run build
+npm run preview
+```
+
+说明：
+
+- `npm run dev`：启动本地开发服务
+- `npm run build`：类型检查并打包生产文件
+- `npm run preview`：本地预览打包结果
+
+### 后端
+
+```bash
+cd springboot
+mvn spring-boot:run
+mvn clean package
+```
+
+说明：
+
+- `mvn spring-boot:run`：启动后端服务
+- `mvn clean package`：打包后端项目
+
+## 主要功能模块
+
+项目当前包含的主要页面和接口模块包括：
+
+- 登录、注册、验证码、修改密码
+- 管理员管理
+- 教师管理
+- 学生管理
+- 学院管理
+- 专业管理
+- 班级管理
+- 课程管理
+- 选课管理
+- 课表管理
+- 成绩管理
+- 教务通知
+- 考试安排
+- 教室安排
+- 请假申请
+- 作业提交
+- 考勤信息
+- 网上评教
+- 文件上传与下载
+
+## 接口和登录说明
+
+前端请求统一封装在：
+
+```text
+vue/src/utils/request.ts
+```
+
+登录成功后，用户信息会保存在浏览器 `localStorage` 的 `xm-user` 中。请求拦截器会自动从 `xm-user` 中取出 `token`，并放入请求头：
+
+```text
+token: 用户 token
+```
+
+路由守卫配置在：
+
+```text
+vue/src/router/router-index.ts
+```
+
+未登录访问业务页面时，会自动跳转到：
+
+```text
+/login
+```
+
+后端基础接口在：
+
+```text
+springboot/src/main/java/com/example/controller/WebController.java
+```
+
+包含：
+
+- `GET /`：健康访问测试
+- `GET /captcha`：验证码
+- `POST /login`：登录
+- `POST /register`：注册
+- `PUT /updatePassword`：修改密码
+
+用户管理相关接口还包含管理员重置密码能力：
+
+```text
+PUT /admin/resetPassword/{id}
+PUT /teacher/resetPassword/{id}
+PUT /student/resetPassword/{id}
+```
+
+重置后的默认密码为：
+
+```text
+123456
+```
+
+注意：数据库中不会保存明文 `123456`，后端会通过 BCrypt 生成哈希后再写入数据库。
+
+## 文件上传说明
+
+文件上传接口在：
+
+```text
+springboot/src/main/java/com/example/controller/FileController.java
+```
+
+接口路径：
+
+```text
+POST /files/upload
+GET /files/{filename}
+DELETE /files/{filename}
+```
+
+上传文件默认保存到后端运行目录下的：
+
+```text
+files/
+```
+
+如果在 IDE 中从 `springboot` 目录启动，文件通常会保存到：
+
+```text
+springboot/files/
+```
+
+如果从项目根目录或其他目录启动，保存位置会随 `user.dir` 变化。部署时建议统一固定启动目录，避免上传文件分散到不同位置。
+
+当前文件上传已做去重优化：
+
+- 后端会根据文件内容计算 MD5。
+- 文件实际保存名格式为 `md5值.扩展名`。
+- 如果同一文件已经存在，后端直接返回已有文件地址，不重复写入。
+- 用户头像更新后，系统会检查旧头像是否仍被其他管理员、教师或学生引用；没人使用时才删除旧头像文件。
+
+这可以避免用户多次上传同一张头像导致 `files/` 目录不断堆积，也能避免多人共用头像时误删文件。
+
+## 配置说明
+
+### 后端端口
+
+文件：
+
+```text
+springboot/src/main/resources/application.yml
+```
+
+配置项：
+
+```yaml
+server:
+  port: 9091
+```
+
+### 数据库地址
+
+文件：
+
+```text
+springboot/src/main/resources/application.yml
+```
+
+配置项：
+
+```yaml
+ip: localhost
+
+spring:
+  datasource:
+    url: jdbc:mysql://${ip}:3306/xm_educational_manager
+```
+
+如果数据库不在本机，可以把 `ip` 改为对应服务器地址。
+
+### 前端接口地址
+
+文件：
+
+```text
+vue/.env.development
+```
+
+配置项：
+
+```env
+VITE_BASE_URL='http://localhost:9091'
+```
+
+### Vite 开发端口
+
+文件：
+
+```text
+vue/vite.config.ts
+```
+
+配置项：
+
+```ts
+server: {
+  port: 8080
+}
+```
+
+## 新人接手建议
+
+建议按下面顺序熟悉项目：
+
+1. 先启动 MySQL，并确认 `application.yml` 中的数据库账号密码正确。
+2. 启动后端，访问 `http://localhost:9091/` 确认接口服务正常。
+3. 启动前端，访问 `http://localhost:8080`。
+4. 阅读 `vue/src/router/router-index.ts`，了解页面入口和业务模块。
+5. 阅读 `vue/src/utils/request.ts`，了解前端接口请求和 token 处理。
+6. 从某个简单模块入手，例如 `Notice` 或 `College`，对照阅读前端页面、后端 Controller、Service、Mapper、XML。
+7. 再阅读登录、角色和权限相关逻辑。
+
+一个典型业务模块的阅读路径如下：
+
+```text
+vue/src/views/manager/College.vue
+    -->
+springboot/src/main/java/com/example/controller/CollegeController.java
+    -->
+springboot/src/main/java/com/example/service/CollegeService.java
+    -->
+springboot/src/main/java/com/example/mapper/CollegeMapper.java
+    -->
+springboot/src/main/resources/mapper/CollegeMapper.xml
+    -->
+springboot/src/main/java/com/example/entity/College.java
+```
+
+## 常见问题
+
+### 1. 前端页面能打开，但接口请求失败
+
+请检查：
+
+- 后端是否已经启动
+- 后端端口是否为 `9091`
+- `vue/.env.development` 中的 `VITE_BASE_URL` 是否正确
+- 浏览器控制台是否有跨域或网络错误
+
+### 2. 后端启动失败，提示数据库连接失败
+
+请检查：
+
+- MySQL 是否启动
+- 数据库 `xm_educational_manager` 是否存在
+- `application.yml` 中的用户名和密码是否正确
+- MySQL 端口是否为 `3306`
+
+### 3. 登录失败或验证码错误
+
+登录接口会校验验证码，验证码由后端 Session 保存。请确认：
+
+- 前端请求保留了 cookie/session
+- 后端服务没有频繁重启
+- 浏览器没有阻止本地 cookie
+
+### 4. 忘记密码怎么办
+
+系统中的密码采用 BCrypt 哈希存储，无法从数据库反推出原密码。如果用户忘记密码，可以由管理员在用户管理页面点击“重置密码”，将该账号密码重置为默认密码 `123456`。
+
+用户使用默认密码登录后，建议立即进入“修改密码”页面设置新密码。
+
+### 5. 中文显示乱码
+
+项目已增加 `.editorconfig`，并在后端配置 UTF-8 响应编码。建议在 IDEA 或 VS Code 中将项目编码设置为 UTF-8。
+
+如果在 Windows PowerShell 中查看中文时出现乱码，可先执行：
+
+```powershell
+chcp 65001
+```
+
+### 6. 文件上传后找不到文件
+
+文件保存目录依赖后端启动时的 `user.dir`。请确认后端是从哪个目录启动的，并在该目录下查找 `files/` 文件夹。
+
+### 7. 重复上传头像会不会占用越来越多空间
+
+当前上传逻辑已按文件内容 MD5 去重。同一张图片重复上传时不会重复保存。用户更换头像后，系统会在确认旧头像无人引用时自动删除旧文件。
+
+## 打包部署
+
+### 前端打包
+
+```bash
+cd vue
+npm run build
+```
+
+打包产物默认生成在：
+
+```text
+vue/dist/
+```
+
+部署前请确认生产环境接口地址配置正确。当前 `vue/.env.production` 中存在：
+
+```env
+VUE_APP_BASEURL='http://124.71.208.63:9091'
+```
+
+注意：Vite 默认只会暴露以 `VITE_` 开头的环境变量。如果生产环境需要读取接口地址，建议统一改为：
+
+```env
+VITE_BASE_URL='http://你的后端地址:9091'
+```
+
+### 后端打包
+
+```bash
+cd springboot
+mvn clean package
+```
+
+打包完成后，jar 文件通常位于：
+
+```text
+springboot/target/
+```
+
+可使用下面命令启动：
+
+```bash
+java -jar target/springboot-0.0.1-SNAPSHOT.jar
+```
+
+## 注意事项
+
+- 项目根目录和 `vue/` 目录都存在 `node_modules`，一般只需要在 `vue/` 目录维护前端依赖。
+- 当前项目未发现数据库初始化脚本，交接时请务必同步数据库结构和初始账号。

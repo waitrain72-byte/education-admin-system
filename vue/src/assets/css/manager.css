@@ -1,0 +1,139 @@
+.manager-container {
+    background-color: #f3f6fe;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.manager-header {
+    display: flex;
+    background-color: #006eff;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.manager-header-left {
+    width: 200px;
+    height: 60px;
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.manager-header-left img {
+    width: 35px;
+    height: 35px;
+}
+
+.manager-header-left .title {
+    flex: 1;
+    margin-left: 5px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.manager-header-center {
+    flex: 1;
+    width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.manager-header-right {
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 20px;
+}
+
+.manager-header-right .avatar {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    cursor: default;
+}
+
+.manager-header-right .avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 5px;
+    object-fit: cover;
+}
+
+.manager-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.manager-main-left {
+    width: 200px;
+    height: calc(100vh - 60px);
+    background-color: #ffffff;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.manager-main-right {
+    flex: 1;
+    width: 0;
+    padding: 10px;
+    overflow-y: auto;
+    background-color:#f3f6fe;
+}
+
+.manager-main-right .search {
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+}
+
+.manager-main-right .operation {
+    margin-top: 5px;
+    padding: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+}
+
+.manager-main-right .table {
+    margin-top: 5px;
+    padding: 15px 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.manager-main-right .table .pagination {
+    margin-top: 10px;
+}
+
+.card {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 滚动条样式 */
+.manager-main-left::-webkit-scrollbar,
+.manager-main-right::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.manager-main-left::-webkit-scrollbar-thumb,
+.manager-main-right::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+}
+
+.manager-main-left::-webkit-scrollbar-track,
+.manager-main-right::-webkit-scrollbar-track {
+    background: transparent;
+}
