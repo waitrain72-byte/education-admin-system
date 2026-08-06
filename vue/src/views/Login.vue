@@ -15,38 +15,38 @@
       <div class="login-box">
         <div class="login-title">欢迎登录</div>
         <div class="login-subtitle">请输入您的账号信息</div>
-        <el-form :model="form" :rules="rules" ref="formRef" class="login-form">
+        <el-form ref="formRef" :model="form" :rules="rules" class="login-form">
           <el-form-item prop="username">
             <el-input
+                v-model="form.username"
                 :prefix-icon="User"
                 placeholder="请输入账号"
-                v-model="form.username"
                 size="large"
             />
           </el-form-item>
           <el-form-item prop="password">
             <el-input
+                v-model="form.password"
                 :prefix-icon="Lock"
                 placeholder="请输入密码"
                 show-password
-                v-model="form.password"
                 size="large"
             />
           </el-form-item>
           <el-form-item prop="captcha">
             <div class="captcha-wrapper">
               <el-input
+                  v-model="form.captcha"
                   :prefix-icon="Picture"
                   placeholder="请输入验证码"
-                  v-model="form.captcha"
                   size="large"
               />
               <img
                   :src="captchaUrl"
-                  @click="refreshCaptcha"
                   class="captcha-img"
                   title="点击刷新"
                   alt="验证码"
+                  @click="refreshCaptcha"
               />
             </div>
           </el-form-item>
@@ -58,7 +58,7 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button class="login-button" @click="login" size="large">登 录</el-button>
+            <el-button class="login-button" size="large" @click="login">登 录</el-button>
           </el-form-item>
           <div class="register-link">
             <div></div>
@@ -76,6 +76,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, Picture } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
 
 interface LoginForm {
   username: string
@@ -128,7 +129,8 @@ const login = (): void => {
       request.post<LoginResponse>('/login', form)
           .then((res) => {
             if (res.data.code === '200') {
-              localStorage.setItem('xm-user', JSON.stringify(res.data.data))
+              // 登录态写入 Pinia store（内部负责持久化到 localStorage）
+              useUserStore().updateUser(res.data.data as Record<string, any>)
               router.push('/')
               ElMessage.success('登录成功')
             } else {

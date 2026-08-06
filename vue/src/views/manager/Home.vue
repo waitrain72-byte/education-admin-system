@@ -3,67 +3,7 @@
     <div class="card" style="padding: 15px">
       您好，{{ user && user.name }}！欢迎使用本系统
     </div>
-
-    <!-- ========== 统计卡片区域（同一行） ========== -->
-    <div style="display: flex; margin: 10px 0; gap: 10px">
-      <!-- 考勤统计 -->
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><User /></el-icon>
-          迟到人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #E6A23C">{{ attendanceStats.late }}</div>
-      </div>
-
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><CircleClose /></el-icon>
-          缺勤人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #F56C6C">{{ attendanceStats.absent }}</div>
-      </div>
-
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><Clock /></el-icon>
-          早退人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #909399">{{ attendanceStats.earlyLeave }}</div>
-      </div>
-
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><Check /></el-icon>
-          正常人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #67C23A">{{ attendanceStats.normal }}</div>
-      </div>
-
-      <!-- 成绩统计 -->
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><Star /></el-icon>
-          优秀人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #67C23A">{{ scoreStats.excellent }}</div>
-      </div>
-
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><Medal /></el-icon>
-          良好人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #409EFF">{{ scoreStats.good }}</div>
-      </div>
-
-      <div class="card" style="flex: 1; padding: 10px; text-align: center">
-        <div style="font-size: 14px; color: #909399; margin-bottom: 5px">
-          <el-icon style="font-size: 20px; vertical-align: middle"><Warning /></el-icon>
-          不及格人数
-        </div>
-        <div style="font-size: 28px; font-weight: bold; color: #F56C6C">{{ scoreStats.fail }}</div>
-      </div>
-    </div>
+    
 
     <!-- ========== 通知和考试安排 ========== -->
     <div style="display: flex; margin: 10px 0">
@@ -92,21 +32,38 @@
 
     <!-- ========== 图表 ========== -->
     <div style="display: flex">
-      <div class="card" id="pie" style="height: 400px; width: 50%"></div>
-      <div class="card" id="line" style="height: 400px; width: 50%"></div>
+      <div id="pie" class="card" style="height: 400px; width: 50%"></div>
+      <div id="line" class="card" style="height: 400px; width: 50%"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { PieChart, LineChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
+import { useUser } from '@/components/useUser.ts'
 
-const user = reactive(JSON.parse(localStorage.getItem('xm-user') || '{}'))
+// 按需注册图表组件，避免打包整个 echarts（体积从约 1MB 降至数百 KB）
+echarts.use([
+  PieChart,
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  CanvasRenderer,
+])
+
+const { user } = useUser()
 const notices = ref<any[]>([])
 const examplans = ref<any[]>([])
+const pieChart = ref<ReturnType<typeof echarts.init>>()
+const lineChart = ref<ReturnType<typeof echarts.init>>()
 
 // 考勤统计数据
 const attendanceStats = reactive({
@@ -170,14 +127,15 @@ const lineOptions: any = {
 const getPie = () => {
   request.get('/attendance/getPie').then((res: any) => {
     if (res.data.code === '200') {
-      const chartDom = document.getElementById('pie')!
-      const myChart = echarts.init(chartDom)
+      const chartDom = document.getElementById('pie')
+      if (!chartDom) return
+      // 同一 DOM 只初始化一次，避免重复 init 告警
+      pieChart.value = pieChart.value || echarts.init(chartDom)
       pieOptions.title.text = res.data.data.text
       pieOptions.title.subtext = res.data.data.subtext
       pieOptions.series[0].name = res.data.data.name
       pieOptions.series[0].data = res.data.data.data
-      myChart.setOption(pieOptions)
-      window.addEventListener('resize', () => myChart.resize())
+      pieChart.value.setOption(pieOptions)
     } else {
       ElMessage.error(res.data.msg)
     }
@@ -187,18 +145,23 @@ const getPie = () => {
 const getLine = () => {
   request.get('/score/getLine').then((res: any) => {
     if (res.data.code === '200') {
-      const chartDom = document.getElementById('line')!
-      const myChart = echarts.init(chartDom)
+      const chartDom = document.getElementById('line')
+      if (!chartDom) return
+      lineChart.value = lineChart.value || echarts.init(chartDom)
       lineOptions.title.text = res.data.data.text
       lineOptions.title.subtext = res.data.data.subtext
       lineOptions.xAxis.data = res.data.data.xAxis
       lineOptions.series[0].data = res.data.data.yAxis
-      myChart.setOption(lineOptions)
-      window.addEventListener('resize', () => myChart.resize())
+      lineChart.value.setOption(lineOptions)
     } else {
       ElMessage.error(res.data.msg)
     }
   })
+}
+
+const handleResize = () => {
+  pieChart.value?.resize()
+  lineChart.value?.resize()
 }
 
 onMounted(() => {
@@ -213,6 +176,15 @@ onMounted(() => {
   getScoreStats()
   getPie()
   getLine()
+
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  // 组件卸载时移除监听并销毁图表实例，避免内存泄漏
+  window.removeEventListener('resize', handleResize)
+  pieChart.value?.dispose()
+  lineChart.value?.dispose()
 })
 </script>
 

@@ -44,15 +44,18 @@ import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { useUser } from '@/components/useUser.ts'
 const emit = defineEmits(['update:user'])
 
-const user = reactive(JSON.parse(localStorage.getItem('xm-user') || '{}'))
+// 使用本地副本编辑，保存成功后才写回全局状态
+const { user: storeUser, updateUser } = useUser()
+const user = reactive<Record<string, any>>({ ...storeUser.value })
 
 const update = () => {
   request.put('/teacher/update', user).then((res: any) => {
     if (res.data.code === '200') {
       ElMessage.success('保存成功')
-      localStorage.setItem('xm-user', JSON.stringify(user))
+      updateUser({ ...user })
       emit('update:user')
     } else {
       ElMessage.error(res.data.msg)

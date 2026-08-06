@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router/router-index.ts'
+import { useUserStore } from '@/stores/user'
 
 const request: AxiosInstance = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
@@ -11,12 +12,10 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器：自动带上 token
 request.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const userStr = localStorage.getItem('xm-user')
-        if (userStr) {
-            const user = JSON.parse(userStr) as { token?: string }
-            if (user.token) {
-                config.headers['token'] = user.token
-            }
+        // 从统一状态管理读取 token，避免重复 JSON.parse 且缺少异常保护
+        const userStore = useUserStore()
+        if (userStore.token) {
+            config.headers['token'] = userStore.token
         }
         return config
     },
@@ -29,7 +28,8 @@ request.interceptors.response.use(
         const res = response.data as { code?: string; msg?: string }
         if (res.code === '401') {
             ElMessage.error('请先登录')
-            localStorage.removeItem('xm-user')
+            // 同步清除内存与本地存储，避免 401 后页面仍显示已登录
+            useUserStore().clearUser()
             router.push('/login')
             return Promise.reject(new Error(res.msg || '未授权'))
         }

@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.ts --max-warnings 100",
+    "lint:fix": "eslint . --ext .vue,.js,.ts --fix",
+    "format": "prettier --write \"src/**/*.{vue,ts,js,css}\"",
+    "test": "vitest run"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -18,9 +22,19 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "happy-dom": "^14.12.3",
+    "prettier": "^3.3.3",
     "typescript": "^5.4.0",
+    "unplugin-vue-components": "^0.27.4",
     "vite": "^5.2.0",
+    "vitest": "^1.6.0",
     "vue-tsc": "^2.0.0"
   },
   "browserslist": [

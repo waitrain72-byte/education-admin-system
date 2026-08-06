@@ -3,13 +3,13 @@
     <el-card style="width: 50%">
       <el-form ref="formRef" :model="user" :rules="rules" label-width="100px" style="padding-right: 50px">
         <el-form-item label="原始密码" prop="password">
-          <el-input show-password v-model="user.password" placeholder="原始密码" />
+          <el-input v-model="user.password" show-password placeholder="原始密码" />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input show-password v-model="user.newPassword" placeholder="新密码" />
+          <el-input v-model="user.newPassword" show-password placeholder="新密码" />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input show-password v-model="user.confirmPassword" placeholder="确认密码" />
+          <el-input v-model="user.confirmPassword" show-password placeholder="确认密码" />
         </el-form-item>
         <div style="text-align: center; margin-bottom: 20px">
           <el-button type="primary" @click="update">确认修改</el-button>
@@ -24,13 +24,14 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import request from '@/utils/request'
+import { useUser } from '@/components/useUser.ts'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
-const currentUser = JSON.parse(localStorage.getItem('xm-user') || '{}')
+const { user: storeUser, clearUser } = useUser()
 const user = reactive<Record<string, any>>({
-  username: currentUser.username,
-  role: currentUser.role,
+  username: storeUser.value.username,
+  role: storeUser.value.role,
   password: '',
   newPassword: '',
   confirmPassword: ''
@@ -53,7 +54,7 @@ const update = () => {
     if (valid) {
       request.put('/updatePassword', user).then((res: any) => {
         if (res.data.code === '200') {
-          localStorage.removeItem('xm-user')
+          clearUser()
           ElMessage.success('修改密码成功')
           router.push('/login')
         } else { ElMessage.error(res.data.msg) }

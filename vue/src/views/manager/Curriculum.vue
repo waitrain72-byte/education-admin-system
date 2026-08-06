@@ -20,7 +20,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
-const tableData = ref([])
+const tableData = ref<any[]>([])
 
 const load = () => {
   request.get('/choice/getCurriculum').then((res: any) => {

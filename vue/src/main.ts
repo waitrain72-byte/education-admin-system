@@ -1,13 +1,15 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import {
+    ChatRound, Check, CircleClose, Clock, HomeFilled, Medal, Message,
+    Opportunity, Plus, Stamp, Star, User, Warning,
+} from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router/router-index.ts'
 import request from './utils/request'
+import { permission } from '@/directives/permission'
 
 const app = createApp(App)
 
@@ -16,8 +18,12 @@ declare global {
         $baseUrl: string
     }
 }
-// 注册所有 Element Plus 图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+// 仅注册项目中实际使用到的图标，避免全量注册 294 个图标带来的包体积浪费
+const usedIcons = {
+    ChatRound, Check, CircleClose, Clock, HomeFilled, Medal, Message,
+    Opportunity, Plus, Stamp, Star, User, Warning,
+}
+for (const [key, component] of Object.entries(usedIcons)) {
     app.component(key, component)
 }
 
@@ -30,7 +36,7 @@ window.$baseUrl = baseUrl
 
 app.use(createPinia())
 app.use(router)
-app.use(ElementPlus, { locale: zhCn })
+app.directive('permission', permission)
 
 // 挂载 request 到全局（可选，推荐直接在各组件中 import 使用）
 app.config.globalProperties.$request = request

@@ -15,35 +15,35 @@
       <div class="register-box">
         <div class="register-title">欢迎注册</div>
         <div class="register-subtitle">创建您的账号</div>
-        <el-form :model="form" :rules="rules" ref="formRef" class="register-form">
+        <el-form ref="formRef" :model="form" :rules="rules" class="register-form">
           <el-form-item prop="username">
             <el-input
+                v-model="form.username"
                 :prefix-icon="User"
                 placeholder="请输入账号"
-                v-model="form.username"
                 size="large"
             />
           </el-form-item>
           <el-form-item prop="password">
             <el-input
+                v-model="form.password"
                 :prefix-icon="Lock"
                 placeholder="请输入密码"
                 show-password
-                v-model="form.password"
                 size="large"
             />
           </el-form-item>
           <el-form-item prop="confirmPass">
             <el-input
+                v-model="form.confirmPass"
                 :prefix-icon="Lock"
                 placeholder="请确认密码"
                 show-password
-                v-model="form.confirmPass"
                 size="large"
             />
           </el-form-item>
           <el-form-item>
-            <el-button class="register-button" @click="register" size="large">注 册</el-button>
+            <el-button class="register-button" size="large" @click="register">注 册</el-button>
           </el-form-item>
           <div class="login-link">
             <div></div>
@@ -80,7 +80,7 @@ const form = reactive<RegisterForm>({
 })
 
 // 确认密码校验
-const validatePassword = (rule: any, value: string, callback: (error?: Error) => void) => {
+const validatePassword = (_rule: any, value: string, callback: (error?: Error) => void) => {
   if (value === '') {
     callback(new Error('请确认密码'))
   } else if (value !== form.password) {

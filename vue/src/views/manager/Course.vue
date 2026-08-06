@@ -1,43 +1,35 @@
 <template>
   <div>
     <div class="search">
-      <el-input placeholder="请输入课程名称" style="width: 200px" v-model="name" />
+      <el-input v-model="name" placeholder="请输入课程名称" style="width: 200px" />
       <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
       <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
     </div>
-    <div class="operation" v-if="user.role === 'ADMIN'">
+    <div v-if="user.role === 'ADMIN'" class="operation">
       <el-button type="primary" plain @click="handleAdd">新增</el-button>
       <el-button type="danger" plain @click="delBatch">批量删除</el-button>
     </div>
-    <div class="table">
-      <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="55" align="center" v-if="user.role === 'ADMIN'" />
-        <el-table-column prop="id" label="序号" width="80" align="center" sortable />
-        <el-table-column prop="name" label="课程名称" show-overflow-tooltip />
-        <el-table-column prop="type" label="课程类型" show-overflow-tooltip />
-        <el-table-column prop="teacherName" label="授课教师" show-overflow-tooltip />
-        <el-table-column prop="score" label="学分" show-overflow-tooltip />
-        <el-table-column prop="num" label="上课人数" show-overflow-tooltip />
-        <el-table-column prop="room" label="上课教室" show-overflow-tooltip />
-        <el-table-column prop="week" label="周几" show-overflow-tooltip />
-        <el-table-column prop="segment" label="第几大节" show-overflow-tooltip />
-        <el-table-column prop="status" label="上课状态" show-overflow-tooltip />
-        <el-table-column label="操作" width="180" align="center">
-          <template #default="scope">
-            <el-button plain type="primary" @click="handleEdit(scope.row)" size="small" v-if="user.role !== 'STUDENT'">编辑</el-button>
-            <el-button plain type="primary" @click="choiceCourse(scope.row)" size="small" v-if="user.role === 'STUDENT'" :disabled="scope.row.status !== '未开课'">选课</el-button>
-            <el-button plain type="danger" size="small" @click="del(scope.row.id)" v-if="user.role === 'ADMIN'">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="pagination">
-        <el-pagination background @current-change="handleCurrentChange" :current-page="pageNum"
-          :page-sizes="[5, 10, 20]" :page-size="pageSize" layout="total, prev, pager, next" :total="total" />
-      </div>
-    </div>
 
-    <el-dialog title="信息" v-model="fromVisible" width="40%" :close-on-click-modal="false" destroy-on-close>
-      <el-form label-width="100px" style="padding-right: 50px" :model="form" :rules="rules" ref="formRef">
+    <CrudTable
+        :data="tableData"
+        :columns="columns"
+        :page-num="pageNum"
+        :page-size="pageSize"
+        :total="total"
+        :loading="loading"
+        :selectable="user.role === 'ADMIN'"
+        @selection-change="handleSelectionChange"
+        @page-change="load"
+    >
+      <template #actions="{ row }">
+        <el-button v-if="user.role !== 'STUDENT'" plain type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+        <el-button v-if="user.role === 'STUDENT'" plain type="primary" size="small" :disabled="row.status !== '未开课'" @click="choiceCourse(row)">选课</el-button>
+        <el-button v-if="user.role === 'ADMIN'" plain type="danger" size="small" @click="del(row.id)">删除</el-button>
+      </template>
+    </CrudTable>
+
+    <el-dialog v-model="formVisible" title="信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+      <el-form ref="formRef" label-width="100px" style="padding-right: 50px" :model="form" :rules="rules">
         <el-form-item prop="name" label="课程名称">
           <el-input v-model="form.name" autocomplete="off" :disabled="user.role !== 'ADMIN'" />
         </el-form-item>
@@ -81,7 +73,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="fromVisible = false">取 消</el-button>
+        <el-button @click="formVisible = false">取 消</el-button>
         <el-button type="primary" @click="save">确 定</el-button>
       </template>
     </el-dialog>
@@ -89,72 +81,72 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { useUser } from '@/components/useUser.ts'
+import { useCrud } from '@/composables/useCrud'
+import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
-const user = reactive(JSON.parse(localStorage.getItem('xm-user') || '{}'))
-const tableData = ref([])
-const pageNum = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const name = ref(null)
-const fromVisible = ref(false)
-const form = ref<Record<string, any>>({})
-const formRef = ref<FormInstance>()
-const ids = ref<number[]>([])
-const teacherData = ref([])
+const { user } = useUser()
+const name = ref('')
+const teacherData = ref<any[]>([])
 
-const rules: FormRules = { name: [{ required: true, message: '请输入课程名称', trigger: 'blur' }] }
+const {
+  tableData, pageNum, pageSize, total, loading,
+  formVisible, form, formRef, rules,
+  load, handleAdd, handleEdit, save, del, delBatch,
+  handleSelectionChange,
+} = useCrud({
+  url: '/course',
+  rules: {
+    name: [{ required: true, message: '请输入课程名称', trigger: 'blur' }],
+  },
+  getParams: () => ({ name: name.value }),
+})
+
+const columns: CrudColumn[] = [
+  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
+  { prop: 'name', label: '课程名称', showOverflowTooltip: true },
+  { prop: 'type', label: '课程类型', showOverflowTooltip: true },
+  { prop: 'teacherName', label: '授课教师', showOverflowTooltip: true },
+  { prop: 'score', label: '学分', showOverflowTooltip: true },
+  { prop: 'num', label: '上课人数', showOverflowTooltip: true },
+  { prop: 'room', label: '上课教室', showOverflowTooltip: true },
+  { prop: 'week', label: '周几', showOverflowTooltip: true },
+  { prop: 'segment', label: '第几大节', showOverflowTooltip: true },
+  { prop: 'status', label: '上课状态', showOverflowTooltip: true },
+]
 
 const choiceCourse = (row: any) => {
-  request.post('/choice/add', { studentId: user.id, teacherId: row.teacherId, courseId: row.id }).then((res: any) => {
-    if (res.data.code === '200') { ElMessage.success('选课成功') } else { ElMessage.error(res.data.msg) }
-  })
-}
-const loadTeacher = () => {
-  request.get('/teacher/selectAll').then((res: any) => {
-    if (res.data.code === '200') { teacherData.value = res.data.data } else { ElMessage.error(res.data.msg) }
-  })
-}
-const handleAdd = () => { form.value = {}; fromVisible.value = true }
-const handleEdit = (row: any) => { form.value = JSON.parse(JSON.stringify(row)); fromVisible.value = true }
-const save = () => {
-  formRef.value?.validate((valid) => {
-    if (valid) {
-      request({ url: form.value.id ? '/course/update' : '/course/add', method: form.value.id ? 'PUT' : 'POST', data: form.value })
-        .then((res: any) => {
-          if (res.data.code === '200') { ElMessage.success('保存成功'); load(1); fromVisible.value = false }
-          else { ElMessage.error(res.data.msg) }
-        })
+  request.post('/choice/add', { studentId: user.value.id, teacherId: row.teacherId, courseId: row.id }).then((res: any) => {
+    if (res.data.code === '200') {
+      ElMessage.success('选课成功')
+    } else {
+      ElMessage.error(res.data.msg)
     }
   })
 }
-const del = (id: number) => {
-  ElMessageBox.confirm('您确定删除吗？', '确认删除', { type: 'warning' }).then(() => {
-    request.delete('/course/delete/' + id).then((res: any) => {
-      if (res.data.code === '200') { ElMessage.success('操作成功'); load(1) } else { ElMessage.error(res.data.msg) }
-    })
-  }).catch(() => {})
-}
-const handleSelectionChange = (rows: any[]) => { ids.value = rows.map(v => v.id) }
-const delBatch = () => {
-  if (!ids.value.length) { ElMessage.warning('请选择数据'); return }
-  ElMessageBox.confirm('您确定批量删除这些数据吗？', '确认删除', { type: 'warning' }).then(() => {
-    request.delete('/course/delete/batch', { data: ids.value }).then((res: any) => {
-      if (res.data.code === '200') { ElMessage.success('操作成功'); load(1) } else { ElMessage.error(res.data.msg) }
-    })
-  }).catch(() => {})
-}
-const load = (pNum?: number) => {
-  if (pNum) pageNum.value = pNum
-  request.get('/course/selectPage', { params: { pageNum: pageNum.value, pageSize: pageSize.value, name: name.value } })
-    .then((res: any) => { tableData.value = res.data?.data?.list; total.value = res.data?.data?.total })
-}
-const reset = () => { name.value = null; load(1) }
-const handleCurrentChange = (pNum: number) => load(pNum)
 
-onMounted(() => { load(1); loadTeacher() })
+const loadTeacher = () => {
+  request.get('/teacher/selectAll').then((res: any) => {
+    if (res.data.code === '200') {
+      teacherData.value = res.data.data
+    } else {
+      ElMessage.error(res.data.msg)
+    }
+  })
+}
+
+const reset = () => {
+  name.value = ''
+  load(1)
+}
+
+onMounted(() => {
+  load(1)
+  loadTeacher()
+})
 </script>
 
 <style scoped></style>
