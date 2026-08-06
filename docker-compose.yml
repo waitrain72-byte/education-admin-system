@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: edu-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: xm_educational_manager
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/xm_educational_manager.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  backend:
+    build: ./springboot
+    container_name: edu-backend
+    environment:
+      IP: mysql
+      JWT_SECRET: change-me-in-production
+      CORS_ALLOWED_ORIGINS: http://localhost:8080
+      SPRING_DATASOURCE_PASSWORD: "123456"
+    ports:
+      - "9091:9091"
+    depends_on:
+      - mysql
+    volumes:
+      - files_data:/app/files
+
+  frontend:
+    build: ./vue
+    container_name: edu-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  files_data:

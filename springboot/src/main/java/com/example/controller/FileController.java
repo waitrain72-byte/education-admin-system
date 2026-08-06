@@ -21,13 +21,14 @@ import java.net.URLEncoder;
 public class FileController {
 
     // 文件上传存储路径
-    private static final String filePath = System.getProperty("user.dir") + "/files/";          //获取当前根目录(manager)下的files
+    private static final String filePath = System.getProperty("user.dir") + "/files/";
 
-    @Value("${server.port:9090}")
-    private String port;
-
-    @Value("${ip:localhost}")
-    private String ip;
+    /**
+     * 文件访问 URL 前缀：默认 /api/files/，本地开发（Vite 代理）与容器部署（nginx 反代）均可直接访问；
+     * 也可通过配置文件 files.url-prefix 覆盖。
+     */
+    @Value("${files.url-prefix:/api/files/}")
+    private String fileUrlPrefix;
 
     /**
      * 文件上传
@@ -51,23 +52,17 @@ public class FileController {
                 FileUtil.writeBytes(bytes, filePath + storedName);
             }
             System.out.println(fileName + "--上传成功");
-
         } catch (Exception e) {
             System.err.println(fileName + "--文件上传失败");
             return Result.error("500", "文件上传失败");
         }
-        String http = "http://" + ip + ":" + port + "/files/";
-        return Result.success(http + storedName);
+        return Result.success(fileUrlPrefix + storedName);
     }
-
 
     /**
      * 获取文件
-     *
-     * @param flag
-     * @param response
      */
-    @GetMapping("/{flag}")   //  1697438073596-avatar.png
+    @GetMapping("/{flag}")
     public void avatarPath(@PathVariable String flag, HttpServletResponse response) {
         OutputStream os;
         try {
@@ -88,8 +83,6 @@ public class FileController {
 
     /**
      * 删除文件
-     *
-     * @param flag
      */
     @DeleteMapping("/{flag}")
     public void delFile(@PathVariable String flag) {
@@ -116,5 +109,4 @@ public class FileController {
         }
         return null;
     }
-
 }

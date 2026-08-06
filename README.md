@@ -14,6 +14,8 @@
 - Element Plus
 - Axios
 - ECharts
+- ESLint + Prettier（代码规范）
+- Vitest（单元测试）
 
 ### 后端
 
@@ -25,6 +27,12 @@
 - JWT
 - Hutool
 - Easy Captcha
+
+### 部署与工程化
+
+- Docker / docker-compose（MySQL + 后端 + 前端一键启动）
+- nginx（前端静态资源托管与接口反向代理）
+- GitHub Actions（CI：前端 lint + 单测 + 构建，后端编译）
 
 ## 项目特色
 
@@ -57,7 +65,7 @@
 
 管理员可以在管理员、教师、学生管理页面中为用户重置密码。重置后的默认密码为 `123456`，但数据库中保存的仍然是 BCrypt 哈希值，不会回退成明文密码。
 
-为避免当前登录管理员的 token 因密码变更立即失效，系统限制管理员不能在列表中重置自己的密码；管理员本人应通过“修改密码”页面修改密码。
+作为安全策略，系统限制管理员不能在列表中重置自己的密码（防止误操作锁死当前登录会话）；管理员本人应通过“修改密码”页面修改密码。
 
 ### 5. 头像文件 MD5 去重与安全清理
 
@@ -72,40 +80,102 @@
 
 项目增加了 `.editorconfig`，并在 Spring Boot 中配置了 UTF-8 响应编码，降低中文注释、页面文案和接口提示出现乱码的概率。
 
+## 工程化优化
+
+在前述业务功能之外，项目持续进行了工程化层面的优化，主要围绕状态管理、代码复用、构建性能与权限体系四个方面。
+
+### 7. Pinia 统一状态管理
+
+- 用户登录态由手写模块级 `ref` + 散落的 `localStorage` 读写，重构为 `Pinia store` 统一管理（`src/stores/user.ts`）。
+- 消除 17 处直接 `JSON.parse(localStorage.getItem('xm-user'))` 调用，统一增加异常保护，避免本地存储被污染时整页白屏。
+- 401 响应与退出登录时同步清空内存态与本地存储，修复了"页面显示已登录、存储已清空"的状态不一致问题。
+
+### 8. 配置化通用 CRUD 框架
+
+- 抽取 `useCrud` 组合式函数与 `CrudTable` 通用表格组件，统一分页查询、新增、编辑、删除、批量删除与表单校验逻辑。
+- 全部 16 个管理页面的分页、增删改查、批量删除逻辑已完成迁移：约 800 行重复样板代码收敛为约 210 行通用实现，业务页面只需提供「列配置 + 接口路径 + 搜索条件 + 表单」。
+- 支持自定义操作列（按角色/状态显隐按钮）、自定义单元格插槽（如头像、文件下载）、保存前后钩子（如同步全局用户状态），可覆盖带级联下拉、文件上传等复杂表单的页面。
+
+### 9. 构建体积与性能优化
+
+- Element Plus 改为按需自动引入（`unplugin-vue-components`），图标从全量注册 294 个精简为实际使用的 13 个。
+- ECharts 改为按需注册（饼图、折线图及所需组件），图表库体积从约 1,039 KB 降至 334 KB（gzip 114 KB），降幅约 68%。
+- 应用主包从约 1,225 KB 降至 9.5 KB，并通过 `manualChunks` 将 vue / element-plus / echarts / axios 拆分为独立缓存 chunk，首页首次加载 JS 总量约减少 30%。
+- 修复图表组件重复挂载导致的 resize 监听器累积与实例泄漏，组件卸载时统一移除监听并 `dispose()` 图表。
+
+### 10. RBAC 权限体系
+
+- 路由级权限：每个路由通过 `meta.roles` 声明可访问角色，路由守卫统一校验，无权限访问跳转 `/403` 页。
+- 菜单级权限：侧边栏菜单根据当前角色从路由配置动态生成，与路由权限保持单一数据源。
+- 按钮级权限：提供 `v-permission` 指令，按角色控制按钮显隐（如重置密码仅管理员可见）。
+- 个人中心路由按角色隔离（管理员/教师/学生各自只能访问自己的信息页）。
+
+### 11. JWT 签名密钥独立化
+
+- 签名密钥从"数据库密码"改为独立配置项 `jwt.secret`（支持环境变量 `JWT_SECRET` 覆盖），过期时间可配置（`jwt.expire-hours`）。
+- 用户修改密码后已签发的 token 不再全部失效；拦截器先统一验签（含过期校验）再校验账号有效性。
+
+### 12. 后端代码去重与安全加固
+
+- 抽取泛型 `BaseMapper` / `BaseService`，统一管理员、教师、学生三类账号的登录、新增、改密、增删改查、分页与重置密码逻辑，三个 Service 仅保留角色与 Mapper 配置。
+- CORS 由通配符 `*` 收紧为可配置的前端来源白名单（`app.cors.allowed-origins`）。
+- 数据库脚本为 10 张表的 20 个外键列补充索引，加速按学院/专业/班级/教师/学生/课程维度的关联查询。
+
+### 13. 代码规范与单元测试
+
+- 引入 ESLint（`eslint-plugin-vue` + `typescript-eslint`）与 Prettier，配置 `npm run lint` / `lint:fix` / `format` 脚本，当前 lint 0 问题。
+- 引入 Vitest + @vue/test-utils（happy-dom 环境），为 Pinia 用户状态与 `useCrud` 组合式函数编写 15 个单元测试（`npm run test`），覆盖本地存储异常降级、登录态持久化、分页加载、新增/编辑/删除/批量删除、表单校验拦截等场景。
+
+### 14. 容器化与 CI
+
+- 提供前端（Node 构建 + nginx 托管与反代）、后端（Maven 构建 + JRE）Dockerfile 与 `docker-compose.yml`，一键启动 MySQL（自动导入 SQL）+ 后端 + 前端。
+- 生产环境接口统一走 `/api` 前缀（nginx 反代到后端），文件上传返回相对 URL，本地开发与容器部署共用同一套逻辑。
+- GitHub Actions 工作流（`.github/workflows/ci.yml`）：前端执行 lint + 单测 + 构建，后端执行 Maven 编译。
+
 ## 项目结构
 
 ```text
 manager-vue3
++-- sql/                          # 数据库初始化脚本（建表 + 初始数据 + 索引）
 +-- vue/                         # 前端项目
 |   +-- public/                  # 静态资源
 |   +-- src/
 |   |   +-- assets/              # 图片、全局样式
-|   |   +-- components/          # 公共组件/组合逻辑
+|   |   +-- components/          # 公共组件（CrudTable 等）
+|   |   +-- composables/         # 组合式函数（useCrud 等）
+|   |   +-- directives/          # 自定义指令（v-permission）
+|   |   +-- stores/              # Pinia 状态管理（含单元测试）
 |   |   +-- router/              # 路由配置
 |   |   +-- utils/               # Axios 请求封装
 |   |   +-- views/               # 页面
 |   |       +-- manager/         # 后台管理页面
-|   |       +-- front/           # 前台页面
 |   +-- .env.development         # 开发环境接口地址
-|   +-- .env.production          # 生产环境接口地址
+|   +-- .env.production          # 生产环境接口地址（/api，走 nginx 反代）
 |   +-- vite.config.ts           # Vite 配置
+|   +-- vitest.config.ts         # 单元测试配置
+|   +-- .eslintrc.cjs            # ESLint 配置
+|   +-- .prettierrc.json         # Prettier 配置
+|   +-- Dockerfile               # 前端镜像（Node 构建 + nginx）
+|   +-- nginx.conf               # nginx 站点配置（history 回退 + /api 反代）
 |   +-- package.json             # 前端依赖和脚本
 +-- springboot/                  # 后端项目
 |   +-- src/main/java/com/example
-|   |   +-- common/              # 通用返回、常量、枚举、拦截器配置
+|   |   +-- common/              # 通用返回、常量、枚举、拦截器/CORS 配置
 |   |   +-- controller/          # 接口控制层
 |   |   +-- entity/              # 实体类
 |   |   +-- exception/           # 全局异常处理
-|   |   +-- mapper/              # MyBatis Mapper 接口
-|   |   +-- service/             # 业务逻辑层
+|   |   +-- mapper/              # MyBatis Mapper 接口（含泛型 BaseMapper）
+|   |   +-- service/             # 业务逻辑层（含泛型 BaseService）
 |   |   +-- utils/               # 工具类
 |   +-- src/main/resources
 |   |   +-- mapper/              # MyBatis XML
 |   |   +-- application.yml      # 后端配置
 |   +-- pom.xml                  # Maven 依赖
+|   +-- Dockerfile               # 后端镜像（Maven 构建 + JRE）
++-- .github/workflows/ci.yml     # GitHub Actions 持续集成
++-- docker-compose.yml           # 容器编排（MySQL + 后端 + 前端）
 +-- files/                       # 文件上传目录
 +-- .editorconfig                # 编辑器编码与格式约束
-+-- package.json                 # 根目录少量依赖
 +-- README.md
 ```
 
@@ -158,7 +228,26 @@ CREATE DATABASE xm_educational_manager
 springboot/src/main/resources/application.yml
 ```
 
-注意：当前项目目录中未发现独立的 `.sql` 初始化脚本。首次接手项目时，需要向项目维护者确认数据库表结构和初始数据来源，或者从已有环境导出数据库后再导入本地。
+数据库初始化脚本位于：
+
+```text
+sql/xm_educational_manager.sql
+```
+
+脚本包含全部建表语句、初始数据以及外键列索引。创建数据库后直接导入即可：
+
+```bash
+mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager.sql
+```
+
+系统内置管理员账号：
+
+```text
+账号：admin
+密码：123456
+```
+
+（数据库中保存的是 BCrypt 哈希，登录后可自行修改密码。）
 
 ## 后端启动
 
@@ -236,6 +325,8 @@ VITE_BASE_URL='http://localhost:9091'
 cd vue
 npm install
 npm run dev
+npm run lint
+npm run test
 npm run build
 npm run preview
 ```
@@ -243,6 +334,8 @@ npm run preview
 说明：
 
 - `npm run dev`：启动本地开发服务
+- `npm run lint`：ESLint 检查（当前 0 问题）
+- `npm run test`：Vitest 单元测试（15 个用例）
 - `npm run build`：类型检查并打包生产文件
 - `npm run preview`：本地预览打包结果
 
@@ -291,7 +384,7 @@ mvn clean package
 vue/src/utils/request.ts
 ```
 
-登录成功后，用户信息会保存在浏览器 `localStorage` 的 `xm-user` 中。请求拦截器会自动从 `xm-user` 中取出 `token`，并放入请求头：
+登录成功后，用户信息由 Pinia store（`src/stores/user.ts`）统一管理，并持久化到浏览器 `localStorage` 的 `xm-user`。请求拦截器会自动从 store 中取出 `token`，并放入请求头：
 
 ```text
 token: 用户 token
@@ -308,6 +401,12 @@ vue/src/router/router-index.ts
 ```text
 /login
 ```
+
+系统实现了三层权限控制（RBAC）：
+
+- 路由级：路由通过 `meta.roles` 声明可访问角色，无权限跳转 `/403`；
+- 菜单级：侧边栏按当前角色动态生成；
+- 按钮级：`v-permission` 指令控制按钮显隐。
 
 后端基础接口在：
 
@@ -429,6 +528,43 @@ vue/.env.development
 VITE_BASE_URL='http://localhost:9091'
 ```
 
+### JWT 密钥与过期时间
+
+文件：
+
+```text
+springboot/src/main/resources/application.yml
+```
+
+配置项：
+
+```yaml
+jwt:
+  secret: ${JWT_SECRET:xm-edu-manager-jwt-secret-2026}
+  expire-hours: 2
+```
+
+生产环境建议通过环境变量 `JWT_SECRET` 覆盖默认密钥。
+
+### CORS 白名单
+
+```yaml
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8080,http://localhost:5173}
+```
+
+如需允许其他前端域名访问，通过环境变量 `CORS_ALLOWED_ORIGINS` 配置逗号分隔的地址。
+
+### 文件访问 URL 前缀
+
+```yaml
+files:
+  url-prefix: /api/files/
+```
+
+默认返回相对路径 `/api/files/`，本地开发（Vite 代理）与容器部署（nginx 反代）均可直接访问；如需自定义可修改该配置。
+
 ### Vite 开发端口
 
 文件：
@@ -540,13 +676,43 @@ npm run build
 vue/dist/
 ```
 
-部署前请确认生产环境接口地址配置正确。当前 `vue/.env.production` 中存在：
+部署前请确认生产环境接口地址配置正确。当前 `vue/.env.production` 配置为：
 
 ```env
-VUE_APP_BASEURL='http://124.71.208.63:9091'
+VITE_BASE_URL='/api'
 ```
 
-注意：Vite 默认只会暴露以 `VITE_` 开头的环境变量。如果生产环境需要读取接口地址，建议统一改为：
+生产环境所有接口统一走 `/api` 前缀，由 nginx 反向代理到后端 `9091` 端口；前端静态资源由 nginx 托管。若后端部署在其他地址，调整 nginx 反代目标或改回直连地址即可。
+
+### Docker 部署
+
+项目提供一键容器化部署：
+
+```bash
+docker compose up -d --build
+```
+
+启动后：
+
+```text
+前端：http://localhost:8080
+后端：http://localhost:9091
+```
+
+MySQL 容器首次启动会自动导入 `sql/` 初始化脚本（建表 + 初始数据 + 索引）。可通过环境变量覆盖默认配置：
+
+```text
+JWT_SECRET、CORS_ALLOWED_ORIGINS、SPRING_DATASOURCE_PASSWORD
+```
+
+上传文件保存在命名卷 `files_data` 中，数据库数据保存在 `mysql_data` 卷中，重建容器不会丢失。
+
+### 持续集成
+
+推送到 GitHub 后，`.github/workflows/ci.yml` 会自动执行：
+
+- 前端：`npm ci` → `npm run lint` → `npm run test` → `npm run build`
+- 后端：JDK 8 环境执行 `mvn compile`
 
 ```env
 VITE_BASE_URL='http://你的后端地址:9091'
@@ -574,4 +740,5 @@ java -jar target/springboot-0.0.1-SNAPSHOT.jar
 ## 注意事项
 
 - 项目根目录和 `vue/` 目录都存在 `node_modules`，一般只需要在 `vue/` 目录维护前端依赖。
-- 当前项目未发现数据库初始化脚本，交接时请务必同步数据库结构和初始账号。
+- 数据库初始化脚本位于 `sql/xm_educational_manager.sql`，新建环境时直接导入即可。
+- 生产环境请通过环境变量覆盖默认的 `JWT_SECRET` 与 `CORS_ALLOWED_ORIGINS`。

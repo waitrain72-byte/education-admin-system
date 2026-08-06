@@ -374,3 +374,35 @@ CREATE TABLE `teacher`  (
 INSERT INTO `teacher` VALUES (2, 'luys', '$2a$10$TUjiUaJ1IKpbDHT5qhJH0ewfoUM5tnaNHzjJCQ3ebj8OljhwTDuIy', '路易斯', 'http://localhost:9091/files/1782741741320-棒球.png', 'TEACHER', '18896188780', '2744732031@qq.com', '副教授');
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------
+-- 外键列索引：加速按学院/专业/班级/教师/学生/课程维度的关联查询与筛选
+-- ----------------------------
+CREATE INDEX idx_apply_student_id ON `apply` (`student_id`);
+
+CREATE INDEX idx_attendance_student_id ON `attendance` (`student_id`);
+CREATE INDEX idx_attendance_teacher_id ON `attendance` (`teacher_id`);
+CREATE INDEX idx_attendance_course_id ON `attendance` (`course_id`);
+
+CREATE INDEX idx_choice_teacher_id ON `choice` (`teacher_id`);
+CREATE INDEX idx_choice_student_id ON `choice` (`student_id`);
+CREATE INDEX idx_choice_course_id ON `choice` (`course_id`);
+
+CREATE INDEX idx_classes_teacher_id ON `classes` (`teacher_id`);
+CREATE INDEX idx_classes_speciality_id ON `classes` (`speciality_id`);
+
+CREATE INDEX idx_course_teacher_id ON `course` (`teacher_id`);
+
+CREATE INDEX idx_homework_course_id ON `homework` (`course_id`);
+CREATE INDEX idx_homework_student_id ON `homework` (`student_id`);
+CREATE INDEX idx_homework_teacher_id ON `homework` (`teacher_id`);
+
+CREATE INDEX idx_score_student_id ON `score` (`student_id`);
+CREATE INDEX idx_score_course_id ON `score` (`course_id`);
+CREATE INDEX idx_score_teacher_id ON `score` (`teacher_id`);
+
+CREATE INDEX idx_speciality_college_id ON `speciality` (`college_id`);
+
+CREATE INDEX idx_student_college_id ON `student` (`college_id`);
+CREATE INDEX idx_student_speciality_id ON `student` (`speciality_id`);
+CREATE INDEX idx_student_class_id ON `student` (`class_id`);
