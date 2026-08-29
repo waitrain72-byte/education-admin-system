@@ -77,10 +77,10 @@ CREATE TABLE `attendance`  (
 -- ----------------------------
 -- Records of attendance
 -- ----------------------------
-INSERT INTO `attendance` VALUES (1, 1, 2, 6, '2024-12-10', '正常');
-INSERT INTO `attendance` VALUES (2, 2, 2, 5, '2024-12-10', '迟到');
-INSERT INTO `attendance` VALUES (3, 1, 1, 4, '2024-12-05', '正常');
-INSERT INTO `attendance` VALUES (4, 3, 1, 3, '2024-12-06', '早退');
+INSERT INTO `attendance` VALUES (1, 1, 2, 2, '2024-12-10', '正常');
+INSERT INTO `attendance` VALUES (2, 2, 2, 2, '2024-12-10', '迟到');
+INSERT INTO `attendance` VALUES (3, 1, 1, 2, '2024-12-05', '正常');
+INSERT INTO `attendance` VALUES (4, 3, 1, 2, '2024-12-06', '早退');
 INSERT INTO `attendance` VALUES (5, 3, 1, 2, '2024-12-05', '缺勤');
 
 -- ----------------------------
@@ -100,12 +100,12 @@ CREATE TABLE `choice`  (
 -- ----------------------------
 INSERT INTO `choice` VALUES (1, 2, 1, 6);
 INSERT INTO `choice` VALUES (2, 2, 2, 1);
-INSERT INTO `choice` VALUES (3, 1, 1, 4);
+INSERT INTO `choice` VALUES (3, 2, 1, 4);
 INSERT INTO `choice` VALUES (4, 2, 2, 5);
-INSERT INTO `choice` VALUES (5, 1, 3, 2);
-INSERT INTO `choice` VALUES (6, 1, 3, 3);
+INSERT INTO `choice` VALUES (5, 2, 3, 2);
+INSERT INTO `choice` VALUES (6, 2, 3, 3);
 INSERT INTO `choice` VALUES (7, 2, 3, 5);
-INSERT INTO `choice` VALUES (8, 1, 1, 3);
+INSERT INTO `choice` VALUES (8, 2, 1, 3);
 
 -- ----------------------------
 -- Table structure for classes
@@ -192,9 +192,9 @@ CREATE TABLE `course`  (
 -- Records of course
 -- ----------------------------
 INSERT INTO `course` VALUES (1, '高等数学', '必修', 2, 5, 50, '7701', '星期一', '第一大节（08:30 ~ 10:10）', '已结课');
-INSERT INTO `course` VALUES (2, '英语', '必修', 1, 5, 50, '7702', '星期一', '第二大节（10:30 ~ 12:10）', '未开课');
-INSERT INTO `course` VALUES (3, '大学物理', '必修', 1, 5, 50, '7703', '星期二', '第二大节（10:30 ~ 12:10）', '未开课');
-INSERT INTO `course` VALUES (4, '马克思主义哲学', '选修', 1, 5, 50, '7704', '星期三', '第三大节（14:00 ~ 15:40）', '已结课');
+INSERT INTO `course` VALUES (2, '英语', '必修', 2, 5, 50, '7702', '星期一', '第二大节（10:30 ~ 12:10）', '未开课');
+INSERT INTO `course` VALUES (3, '大学物理', '必修', 2, 5, 50, '7703', '星期二', '第二大节（10:30 ~ 12:10）', '未开课');
+INSERT INTO `course` VALUES (4, '马克思主义哲学', '选修', 2, 5, 50, '7704', '星期三', '第三大节（14:00 ~ 15:40）', '已结课');
 INSERT INTO `course` VALUES (5, '线性代数', '必修', 2, 3, 50, '7705', '星期五', '第三大节（14:00 ~ 15:40）', '已结课');
 INSERT INTO `course` VALUES (6, '中国近代史纲要', '选修', 2, 2, 50, '7706', '星期五', '第三大节（14:00 ~ 15:40）', '已结课');
 
@@ -236,7 +236,7 @@ CREATE TABLE `homework`  (
 -- ----------------------------
 INSERT INTO `homework` VALUES (1, '中国近代史纲要第二章第二节作业！', 6, 1, 2, 'http://localhost:9090/files/1733214242205-本科毕业设计（论文）开题报告-219981102-邓余.docx', '80', '还不错！');
 INSERT INTO `homework` VALUES (2, '线性代数第一章作业！', 5, 2, 2, 'http://localhost:9091/files/1740051505226-建议.txt', NULL, '');
-INSERT INTO `homework` VALUES (3, '英语第二章第三节', 2, 3, 1, 'http://localhost:9090/files/1733215312833-本科毕业设计（论文）开题报告-219981102-邓余.docx', '90', '做的不错！！');
+INSERT INTO `homework` VALUES (3, '英语第二章第三节', 2, 3, 2, 'http://localhost:9090/files/1733215312833-本科毕业设计（论文）开题报告-219981102-邓余.docx', '90', '做的不错！！');
 
 -- ----------------------------
 -- Table structure for notice
@@ -299,9 +299,9 @@ CREATE TABLE `score`  (
 -- ----------------------------
 INSERT INTO `score` VALUES (1, 2, 1, 2, 80.00, 90.00, 87.00);
 INSERT INTO `score` VALUES (2, 1, 6, 2, 90.00, 60.00, 69.00);
-INSERT INTO `score` VALUES (3, 1, 4, 1, 75.00, 70.00, 71.50);
-INSERT INTO `score` VALUES (4, 3, 2, 1, 60.00, 55.00, 56.50);
-INSERT INTO `score` VALUES (5, 3, 3, 1, 80.00, 75.00, 76.50);
+INSERT INTO `score` VALUES (3, 1, 4, 2, 75.00, 70.00, 71.50);
+INSERT INTO `score` VALUES (4, 3, 2, 2, 60.00, 55.00, 56.50);
+INSERT INTO `score` VALUES (5, 3, 3, 2, 80.00, 75.00, 76.50);
 
 -- ----------------------------
 -- Table structure for speciality
