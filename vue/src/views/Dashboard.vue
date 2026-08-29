@@ -1,43 +1,45 @@
 <template>
-  <div class="screen">
-    <!-- 顶部标题栏 -->
-    <div class="screen-header">
-      <div class="header-side left">
-        <span class="clock">{{ clock }}</span>
+  <div class="screen-viewport">
+    <div class="screen" :style="screenStyle">
+      <!-- 顶部标题栏 -->
+      <div class="screen-header">
+        <div class="header-side left">
+          <span class="clock">{{ clock }}</span>
+        </div>
+        <div class="header-title">{{ $t('pages.dashboard.title') }}</div>
+        <div class="header-side right">
+          <button class="screen-btn" @click="goBack">{{ $t('pages.dashboard.exit') }}</button>
+        </div>
       </div>
-      <div class="header-title">{{ $t('pages.dashboard.title') }}</div>
-      <div class="header-side right">
-        <button class="screen-btn" @click="goBack">{{ $t('pages.dashboard.exit') }}</button>
-      </div>
-    </div>
 
-    <!-- 指标卡 -->
-    <div class="metric-row">
-      <div v-for="m in metrics" :key="m.key" class="metric-card">
-        <div class="metric-num">{{ m.value }}</div>
-        <div class="metric-label">{{ $t(m.label) }}</div>
+      <!-- 指标卡 -->
+      <div class="metric-row">
+        <div v-for="m in metrics" :key="m.key" class="metric-card">
+          <div class="metric-num">{{ m.value }}</div>
+          <div class="metric-label">{{ $t(m.label) }}</div>
+        </div>
       </div>
-    </div>
 
-    <!-- 图表 3 x 2 -->
-    <div class="chart-grid">
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.scoreChart') }}</div><div ref="chartScore" class="chart"></div></div>
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.attendanceChart') }}</div><div ref="chartAttendance" class="chart"></div></div>
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.collegeChart') }}</div><div ref="chartCollege" class="chart"></div></div>
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.courseTopChart') }}</div><div ref="chartCourseTop" class="chart"></div></div>
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.titleChart') }}</div><div ref="chartTitle" class="chart"></div></div>
-      <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.loginTrendChart') }}</div><div ref="chartLoginTrend" class="chart"></div></div>
-    </div>
-
-    <!-- 底部：通知轮播 + 待办 -->
-    <div class="bottom-row">
-      <div class="notice-strip">
-        <span class="notice-badge">{{ $t('pages.dashboard.notices') }}</span>
-        <div class="notice-text">{{ currentNotice }}</div>
+      <!-- 图表 3 x 2 -->
+      <div class="chart-grid">
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.scoreChart') }}</div><div ref="chartScore" class="chart"></div></div>
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.attendanceChart') }}</div><div ref="chartAttendance" class="chart"></div></div>
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.collegeChart') }}</div><div ref="chartCollege" class="chart"></div></div>
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.courseTopChart') }}</div><div ref="chartCourseTop" class="chart"></div></div>
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.titleChart') }}</div><div ref="chartTitle" class="chart"></div></div>
+        <div class="panel"><div class="panel-title">{{ $t('pages.dashboard.loginTrendChart') }}</div><div ref="chartLoginTrend" class="chart"></div></div>
       </div>
-      <div class="todo-strip">
-        <span class="todo-item">{{ $t('pages.dashboard.pendingApply') }}：{{ stats.pendingApply ?? 0 }}</span>
-        <span class="todo-item">{{ $t('pages.dashboard.ungradedHomework') }}：{{ stats.ungradedHomework ?? 0 }}</span>
+
+      <!-- 底部：通知轮播 + 待办 -->
+      <div class="bottom-row">
+        <div class="notice-strip">
+          <span class="notice-badge">{{ $t('pages.dashboard.notices') }}</span>
+          <div class="notice-text">{{ currentNotice }}</div>
+        </div>
+        <div class="todo-strip">
+          <span class="todo-item">{{ $t('pages.dashboard.pendingApply') }}：{{ stats.pendingApply ?? 0 }}</span>
+          <span class="todo-item">{{ $t('pages.dashboard.ungradedHomework') }}：{{ stats.ungradedHomework ?? 0 }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -78,6 +80,17 @@ const metrics = computed(() => [
   { key: 'loginWeek', value: stats.value.loginWeek ?? '-', label: 'pages.dashboard.loginWeek' },
 ])
 
+// ========== 1920 x 1080 设计稿等比缩放（上下或左右留边，图文比例恒定） ==========
+const DESIGN_W = 1920
+const DESIGN_H = 1080
+const scale = ref(1)
+const screenStyle = computed(() => ({
+  transform: `translate(-50%, -50%) scale(${scale.value})`,
+}))
+const fit = () => {
+  scale.value = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H)
+}
+
 // ========== 时钟 ==========
 const clock = ref('')
 let clockTimer: ReturnType<typeof setInterval> | null = null
@@ -97,12 +110,12 @@ const chartLoginTrend = ref<HTMLElement>()
 const instances: echarts.ECharts[] = []
 
 // 放大的全局字号
-const AXIS_FONT = 18
-const LEGEND_FONT = 18
-const TOOLTIP_FONT = 18
+const AXIS_FONT = 20
+const LEGEND_FONT = 20
+const TOOLTIP_FONT = 20
 const AXUS = 'rgba(140, 180, 255, 0.9)'
 const SPLIT = 'rgba(80, 120, 200, 0.25)'
-const baseGrid = { left: 70, right: 30, top: 36, bottom: 46 }
+const baseGrid = { left: 80, right: 30, top: 40, bottom: 50 }
 const categoryAxis = (data: any[], rotate = 0) => ({
   type: 'category',
   data,
@@ -116,7 +129,7 @@ const valueAxis = () => ({
   splitLine: { lineStyle: { color: SPLIT } },
 })
 
-const handleResize = () => instances.forEach((inst) => inst.resize())
+const handleResize = () => fit()
 
 function initChart(el: HTMLElement | undefined, option: echarts.EChartsCoreOption) {
   if (!el) return
@@ -136,7 +149,7 @@ const renderCharts = () => {
       tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
       xAxis: categoryAxis(xAxis),
       yAxis: valueAxis(),
-      series: [{ type: 'bar', data: values, barWidth: 34, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#2f7cff' } }],
+      series: [{ type: 'bar', data: values, barWidth: 36, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#2f7cff' } }],
     })
   })
 
@@ -146,7 +159,7 @@ const renderCharts = () => {
     const data = res.data.data.data || []
     initChart(chartAttendance.value, {
       tooltip: { trigger: 'item', textStyle: { fontSize: TOOLTIP_FONT } },
-      legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 16, itemHeight: 16 },
+      legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 18, itemHeight: 18 },
       series: [{
         type: 'pie', radius: ['38%', '64%'], center: ['50%', '44%'],
         data,
@@ -164,23 +177,23 @@ const renderCharts = () => {
     tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
     xAxis: categoryAxis((s.collegeDist || []).map((i: any) => i.name), 20),
     yAxis: valueAxis(),
-    series: [{ type: 'bar', data: (s.collegeDist || []).map((i: any) => i.value), barWidth: 34, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#00d4ff' } }],
+    series: [{ type: 'bar', data: (s.collegeDist || []).map((i: any) => i.value), barWidth: 36, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#00d4ff' } }],
   })
 
   // 选课热度 TOP5（横向条形）
   const top = [...(s.courseTop || [])].reverse()
   initChart(chartCourseTop.value, {
-    grid: { left: 190, right: 40, top: 26, bottom: 30 },
+    grid: { left: 210, right: 40, top: 30, bottom: 30 },
     tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
     xAxis: valueAxis(),
     yAxis: { type: 'category', data: top.map((i: any) => i.name), axisLabel: { color: AXUS, fontSize: AXIS_FONT }, axisLine: { lineStyle: { color: SPLIT } } },
-    series: [{ type: 'bar', data: top.map((i: any) => i.value), barWidth: 22, itemStyle: { borderRadius: [0, 10, 10, 0], color: '#22e0a1' } }],
+    series: [{ type: 'bar', data: top.map((i: any) => i.value), barWidth: 24, itemStyle: { borderRadius: [0, 10, 10, 0], color: '#22e0a1' } }],
   })
 
   // 教师职称结构（饼图）
   initChart(chartTitle.value, {
     tooltip: { trigger: 'item', textStyle: { fontSize: TOOLTIP_FONT } },
-    legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 16, itemHeight: 16 },
+    legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 18, itemHeight: 18 },
     series: [{
       type: 'pie', radius: '60%', center: ['50%', '44%'],
       data: s.titleDist || [],
@@ -197,7 +210,7 @@ const renderCharts = () => {
     yAxis: valueAxis(),
     series: [{
       type: 'line', data: (s.loginTrend || []).map((i: any) => i.value),
-      smooth: true, symbol: 'circle', symbolSize: 10,
+      smooth: true, symbol: 'circle', symbolSize: 12,
       lineStyle: { color: '#ffb54d', width: 4 },
       itemStyle: { color: '#ffb54d' },
       areaStyle: { color: 'rgba(255, 181, 77, 0.15)' },
@@ -215,6 +228,7 @@ const loadNotices = () => {
 }
 
 onMounted(async () => {
+  fit()
   window.addEventListener('resize', handleResize)
   updateClock()
   clockTimer = setInterval(updateClock, 1000)
@@ -240,34 +254,44 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
-/* 全屏铺满：视口单位布局，任意分辨率无黑边、无变形 */
-.screen {
+.screen-viewport {
   width: 100vw;
   height: 100vh;
+  background: #03080f;
+  overflow: hidden;
+  position: relative;
+}
+
+.screen {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center;
   background:
     radial-gradient(ellipse at 20% 0%, rgba(47, 124, 255, 0.18) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 100%, rgba(0, 212, 255, 0.12) 0%, transparent 50%),
     linear-gradient(160deg, #050b17 0%, #0a1628 60%, #081222 100%);
   color: #d6e7ff;
-  font-size: 18px;
-  padding: 20px 30px;
+  font-size: 20px;
+  padding: 24px 36px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  overflow: hidden;
+  gap: 20px;
 }
 
 .screen-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: 80px;
   flex-shrink: 0;
   border-bottom: 1px solid rgba(0, 212, 255, 0.25);
 
   .header-title {
-    font-size: 42px;
+    font-size: 46px;
     font-weight: bold;
     letter-spacing: 6px;
     color: #ffffff;
@@ -275,7 +299,7 @@ onBeforeUnmount(() => {
   }
 
   .header-side {
-    width: 340px;
+    width: 360px;
     display: flex;
   }
 
@@ -288,7 +312,7 @@ onBeforeUnmount(() => {
   }
 
   .clock {
-    font-size: 24px;
+    font-size: 26px;
     color: #8cb4ff;
     font-variant-numeric: tabular-nums;
   }
@@ -298,9 +322,9 @@ onBeforeUnmount(() => {
   background: transparent;
   border: 1px solid rgba(0, 212, 255, 0.5);
   color: #00d4ff;
-  padding: 10px 26px;
+  padding: 10px 28px;
   border-radius: 6px;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
 
   &:hover {
@@ -311,9 +335,8 @@ onBeforeUnmount(() => {
 .metric-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 18px;
-  height: 17vh;
-  min-height: 120px;
+  gap: 20px;
+  height: 170px;
   flex-shrink: 0;
 }
 
@@ -325,11 +348,11 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   box-shadow: inset 0 0 30px rgba(0, 100, 255, 0.08);
 
   .metric-num {
-    font-size: 54px;
+    font-size: 60px;
     font-weight: bold;
     color: #00d4ff;
     font-variant-numeric: tabular-nums;
@@ -338,7 +361,7 @@ onBeforeUnmount(() => {
   }
 
   .metric-label {
-    font-size: 22px;
+    font-size: 26px;
     color: #8cb4ff;
   }
 }
@@ -348,7 +371,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: 18px;
+  gap: 20px;
   min-height: 0;
 }
 
@@ -356,19 +379,19 @@ onBeforeUnmount(() => {
   background: rgba(13, 35, 70, 0.45);
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 10px;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
 .panel-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: bold;
   color: #eaf4ff;
-  padding-left: 14px;
+  padding-left: 16px;
   border-left: 5px solid #00d4ff;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .chart {
@@ -378,8 +401,8 @@ onBeforeUnmount(() => {
 
 .bottom-row {
   display: flex;
-  gap: 18px;
-  height: 72px;
+  gap: 20px;
+  height: 80px;
   flex-shrink: 0;
   align-items: stretch;
 }
@@ -388,11 +411,11 @@ onBeforeUnmount(() => {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
   background: rgba(13, 35, 70, 0.45);
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 10px;
-  padding: 0 24px;
+  padding: 0 26px;
   overflow: hidden;
 
   .notice-badge {
@@ -401,12 +424,12 @@ onBeforeUnmount(() => {
     color: #00d4ff;
     border: 1px solid rgba(0, 212, 255, 0.4);
     border-radius: 6px;
-    padding: 6px 16px;
-    font-size: 18px;
+    padding: 8px 18px;
+    font-size: 20px;
   }
 
   .notice-text {
-    font-size: 22px;
+    font-size: 26px;
     color: #d6e7ff;
     white-space: nowrap;
     overflow: hidden;
@@ -415,7 +438,7 @@ onBeforeUnmount(() => {
 }
 
 .todo-strip {
-  width: 480px;
+  width: 520px;
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -424,7 +447,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
 
   .todo-item {
-    font-size: 22px;
+    font-size: 26px;
     color: #ffb54d;
   }
 }
