@@ -210,6 +210,125 @@ manager-vue3
 +-- README.md
 ```
 
+## Docker 快速开始（使用者指南）
+
+> 想直接把系统跑起来的看这一节就够了：**装好 Docker → 克隆代码 → 一条命令启动**，数据库建表、导数据、前后端联调全部自动完成。
+
+### 这套 Docker 部署包含什么
+
+`docker compose up` 会启动三个容器，构成完整系统：
+
+```text
+┌─────────────────┐   /api 反向代理   ┌──────────────────┐      ┌─────────────────┐
+│  frontend 容器   │ ───────────────▶ │   backend 容器    │ ───▶ │   mysql 容器     │
+│  nginx 托管前端   │                  │  Spring Boot     │      │  MySQL 5.7      │
+│  端口 8080       │                  │  端口 9091        │      │  端口 3306       │
+└─────────────────┘                  └──────────────────┘      └─────────────────┘
+```
+
+- **mysql**：首次启动自动按顺序执行 `sql/` 下三个脚本（建表 + 初始数据 + 索引 + theme/locale 迁移），无需手动导库；
+- **backend**：Maven 编译 Spring Boot 并运行，自动连接 mysql 容器；
+- **frontend**：npm 构建前端静态资源，由 nginx 托管并把 `/api` 请求代理到后端；
+- **数据持久化**：数据库存在 `mysql_data` 卷、上传文件存在 `files_data` 卷，停止/删除容器后重建不丢失。
+
+### 第 1 步：安装 Docker
+
+- **Windows / macOS**：下载安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，安装后启动；
+- **Linux 服务器**（Ubuntu/CentOS/Debian）：
+
+```bash
+curl -fsSL https://get.docker.com | sh
+systemctl enable --now docker
+```
+
+验证安装（两条都有版本号输出即可）：
+
+```bash
+docker -v
+docker compose version
+```
+
+### 第 2 步：克隆代码
+
+```bash
+git clone -b cn-en https://github.com/waitrain72-byte/education-admin-system.git
+cd education-admin-system
+```
+
+> 仓库是公开的，无需任何账号令牌即可克隆。`-b cn-en` 指定双语版分支。
+
+### 第 3 步：一条命令启动
+
+```bash
+docker compose up -d --build
+```
+
+**首次构建约 5~10 分钟**（需要下载基础镜像并执行 Maven/npm 依赖安装），期间会看到大量构建日志，属正常现象。之后再启动就是秒级。
+
+命令含义：`-d` 后台运行，`--build` 构建镜像。启动完成后可以用 `docker compose ps` 确认三个容器都是 `Up` 状态（backend 在等数据库就绪时短暂 Restart 属正常，稳定后自愈）。
+
+### 第 4 步：访问系统
+
+| 地址 | 说明 |
+|---|---|
+| `http://localhost:8080` | **系统入口**（前端页面，服务器部署则用 `http://服务器IP:8080`） |
+| `http://localhost:9091/` | 后端接口健康检查，返回 JSON 即正常 |
+
+内置管理员账号：
+
+```text
+账号：admin
+密码：123456
+```
+
+**登录后请立即修改密码**，并按需创建教师/学生账号体验完整流程。
+
+### 日常管理命令
+
+```bash
+docker compose ps                  # 查看容器运行状态
+docker compose logs -f backend     # 实时查看后端日志（排查问题首选）
+docker compose restart backend     # 重启单个服务（backend/mysql/frontend）
+docker compose stop                # 全部停止（保留数据）
+docker compose down                # 停止并删除容器（数据卷保留，不丢数据）
+docker compose down -v             # ⚠️ 停止并删除容器和数据卷（彻底清空重来才用）
+docker compose up -d --build       # 修改代码后重新构建并启动
+```
+
+### 自定义配置（环境变量，不改文件）
+
+| 变量 | 作用 | 默认值 |
+|---|---|---|
+| `JWT_SECRET` | 登录令牌签名密钥 | `change-me-in-production`，**公网部署必须改** |
+| `SPRING_DATASOURCE_PASSWORD` | 数据库密码 | `123456` |
+| `CORS_ALLOWED_ORIGINS` | 允许跨域的前端来源 | `http://localhost:8080` |
+
+用法示例：
+
+```bash
+JWT_SECRET=我的随机长字符串 SPRING_DATASOURCE_PASSWORD=强密码 docker compose up -d --build
+```
+
+### 公网服务器部署注意事项
+
+把系统部署到云服务器（阿里云/腾讯云/海外 VPS）给别人远程访问时，除按上面步骤操作外：
+
+1. **数据库端口不要暴露公网**：编辑 `docker-compose.yml`，把 mysql 服务的 `ports` 中 `"3306:3306"` 一行删除或改为 `"127.0.0.1:3306:3306"`；
+2. 修改 `JWT_SECRET` 与数据库密码（见上表）；
+3. 修改默认管理员密码；
+4. 在云厂商安全组中放行 **8080**（对外入口）端口，9091/3306 无需对外开放；
+5. 需要域名 + HTTPS 时，在前面加一层 nginx 或 Caddy 反代即可。
+
+### 小程序端连接本系统（mobile 分支）
+
+```bash
+git clone -b mobile https://github.com/waitrain72-byte/education-admin-system.git
+```
+
+- 修改 `src/utils/config.js` 的 `baseUrl` 指向本系统后端（模拟器 `http://localhost:9091`，真机用服务器 IP）；
+- `src/manifest.json` 填入自己的小程序 AppID；
+- `npm install && npm run build:mp-weixin`，用微信开发者工具导入 `dist/build/mp-weixin`。
+
 ## 环境要求
 
 请先确认本机已经安装：
