@@ -33,6 +33,13 @@
     color: var(--xm-header-text);
 }
 
+/* 英文标题较长：缩小字号、收紧行高，保证三行以内不超出 60px 头部 */
+.manager-header-left .title.title-en {
+    font-size: 14px;
+    line-height: 1.25;
+    overflow: hidden;
+}
+
 .manager-header-center {
     flex: 1;
     width: 0;

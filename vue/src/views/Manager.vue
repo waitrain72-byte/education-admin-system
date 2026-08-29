@@ -2,9 +2,10 @@
   <div class="manager-container">
     <!--  头部  -->
     <div class="manager-header">
-        <div class="manager-header-left">
+      <div class="manager-header-left">
         <img src="@/assets/imgs/教务系统.png" />
-        <div class="title">{{ $t('layout.title') }}</div>
+        <!-- 英文标题较长，切换小字号避免撑破 60px 头部 -->
+        <div class="title" :class="{ 'title-en': !isZh }">{{ $t('layout.title') }}</div>
       </div>
 
       <div class="manager-header-center">
