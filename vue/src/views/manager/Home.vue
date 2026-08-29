@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="card" style="padding: 15px">
-      您好，{{ user && user.name }}！欢迎使用本系统
+      {{ $t('home.welcome', { name: user && user.name }) }}
     </div>
-    
+
 
     <!-- ========== 通知和考试安排 ========== -->
     <div style="display: flex; margin: 10px 0">
       <div style="width: 50%;" class="card">
-        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">教务通知</div>
+        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">{{ $t('home.notice') }}</div>
         <el-timeline reverse>
           <el-timeline-item v-for="item in notices" :key="item.id" :timestamp="item.time">
             <el-popover placement="right" width="200" trigger="hover" :content="item.content">
@@ -19,7 +19,7 @@
       </div>
 
       <div style="width: 50%;" class="card">
-        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">考试安排</div>
+        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">{{ $t('home.examplan') }}</div>
         <el-timeline reverse>
           <el-timeline-item v-for="item in examplans" :key="item.id" :timestamp="item.time">
             <el-popover placement="right" width="200" trigger="hover" :content="item.content">
@@ -48,6 +48,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
+import { apiMessage } from '@/i18n'
 
 // 按需注册图表组件，避免打包整个 echarts（体积从约 1MB 降至数百 KB）
 echarts.use([
@@ -182,7 +183,7 @@ const getPie = () => {
       pieOptions.series[0].data = res.data.data.data
       pieChart.value.setOption(themeOptions(pieOptions))
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -199,7 +200,7 @@ const getLine = () => {
       lineOptions.series[0].data = res.data.data.yAxis
       lineChart.value.setOption(themeOptions(lineOptions))
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }

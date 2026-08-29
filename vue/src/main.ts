@@ -14,6 +14,7 @@ import '@/assets/css/theme.css'
 import App from './App.vue'
 import router from './router/router-index.ts'
 import request from './utils/request'
+import i18n from '@/i18n'
 import { permission } from '@/directives/permission'
 
 const app = createApp(App)
@@ -40,6 +41,7 @@ app.config.globalProperties.$baseUrl = baseUrl
 window.$baseUrl = baseUrl
 
 app.use(createPinia())
+app.use(i18n)
 app.use(router)
 app.directive('permission', permission)
 

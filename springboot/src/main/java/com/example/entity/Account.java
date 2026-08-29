@@ -28,4 +28,7 @@ public class Account {
     /** 主题偏好：light / dark / system（跟随系统） */
     private String theme;
 
+    /** 界面语言：zh-CN / en-US */
+    private String locale;
+
 }

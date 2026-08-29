@@ -1,6 +1,6 @@
 <template>
-  <!-- el-config-provider：全局组件语言设为中文（原 app.use(ElementPlus, { locale }) 的替代） -->
-  <el-config-provider :locale="zhCn">
+  <!-- el-config-provider：Element Plus 组件语言跟随当前界面语言切换 -->
+  <el-config-provider :locale="elementLocale">
     <div id="app">
       <router-view/>
     </div>
@@ -8,8 +8,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
+import i18n from '@/i18n'
 import { installThemeSync } from '@/composables/useTheme'
+
+// Element Plus 内置语言包随 vue-i18n 当前语言联动
+const elementLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? zhCn : en))
 
 // 主题同步只需在根组件安装一次：模式变化时防抖推送到后端
 installThemeSync()

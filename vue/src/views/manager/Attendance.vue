@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="search">
-      <el-select v-model="courseId" placeholder="请选择课程" style="width: 200px">
+      <el-select v-model="courseId" :placeholder="$t('pages.attendance.coursePlaceholder')" style="width: 200px">
         <el-option v-for="item in courseSearchData" :key="item.id" :label="item.name" :value="item.id" />
       </el-select>
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
 
     <div v-if="user.role === 'TEACHER'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">添加考勤</el-button>
-      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+      <el-button type="primary" plain @click="handleAdd">{{ $t('pages.attendance.addAttendance') }}</el-button>
+      <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
     </div>
 
     <CrudTable
@@ -26,47 +26,48 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-        <el-button link type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button link type="primary" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</el-button>
+        <el-button link type="danger" size="small" @click="del(row.id)">{{ $t('common.delete') }}</el-button>
       </template>
     </CrudTable>
 
-    <el-dialog v-model="formVisible" title="考勤信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="formVisible" :title="$t('pages.attendance.dialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="formRef" label-width="100px" style="padding-right: 50px" :model="form" :rules="rules">
-        <el-form-item prop="courseId" label="选择课程">
-          <el-select v-model="form.courseId" placeholder="请选择课程" style="width: 100%" @change="getStudent">
+        <el-form-item prop="courseId" :label="$t('pages.attendance.selectCourse')">
+          <el-select v-model="form.courseId" :placeholder="$t('pages.attendance.coursePlaceholder')" style="width: 100%" @change="getStudent">
             <el-option v-for="item in courseData" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item prop="studentId" label="选择学生">
-          <el-select v-model="studentId" placeholder="请选择学生" style="width: 100%">
+        <el-form-item prop="studentId" :label="$t('pages.attendance.selectStudent')">
+          <el-select v-model="studentId" :placeholder="$t('pages.attendance.studentPlaceholder')" style="width: 100%">
             <el-option v-for="item in studentData" :key="item.studentId" :label="item.studentName" :value="item.studentId" />
           </el-select>
         </el-form-item>
-        <el-form-item prop="time" label="上课时间">
-          <el-date-picker v-model="form.time" style="width: 100%" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" />
+        <el-form-item prop="time" :label="$t('pages.attendance.timeLabel')">
+          <el-date-picker v-model="form.time" style="width: 100%" type="date" value-format="YYYY-MM-DD" :placeholder="$t('pages.attendance.datePlaceholder')" />
         </el-form-item>
-        <el-form-item prop="status" label="考勤状态">
-          <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="正常" value="正常" />
-            <el-option label="迟到" value="迟到" />
-            <el-option label="早退" value="早退" />
-            <el-option label="缺勤" value="缺勤" />
+        <el-form-item prop="status" :label="$t('pages.attendance.statusLabel')">
+          <el-select v-model="form.status" :placeholder="$t('pages.attendance.statusPlaceholder')" style="width: 100%">
+            <el-option :label="$t('pages.attendance.statusNormal')" value="正常" />
+            <el-option :label="$t('pages.attendance.statusLate')" value="迟到" />
+            <el-option :label="$t('pages.attendance.statusEarlyLeave')" value="早退" />
+            <el-option :label="$t('pages.attendance.statusAbsent')" value="缺勤" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, type FormRules } from 'element-plus'
 import request from '@/utils/request'
+import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -85,24 +86,24 @@ const {
   handleSelectionChange,
 } = useCrud({
   url: '/attendance',
-  rules: {
-    time: [{ required: true, message: '请输入上课时间', trigger: 'blur' }],
-    status: [{ required: true, message: '请输入考勤状态', trigger: 'blur' }],
-  },
+  rules: computed<FormRules>(() => ({
+    time: [{ required: true, message: t('pages.attendance.ruleTimeRequired'), trigger: 'blur' }],
+    status: [{ required: true, message: t('pages.attendance.ruleStatusRequired'), trigger: 'blur' }],
+  })),
   getParams: () => ({ courseId: courseId.value }),
   beforeSave: (formData) => {
     formData.studentId = studentId.value
   },
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
-  { prop: 'courseName', label: '课程名称', showOverflowTooltip: true },
-  { prop: 'teacherName', label: '授课教师', showOverflowTooltip: true },
-  { prop: 'studentName', label: '学生姓名', showOverflowTooltip: true },
-  { prop: 'time', label: '上课时间', showOverflowTooltip: true },
-  { prop: 'status', label: '考勤状态', showOverflowTooltip: true },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.attendance.id'), width: 80, align: 'center', sortable: true },
+  { prop: 'courseName', label: t('pages.attendance.courseName'), showOverflowTooltip: true },
+  { prop: 'teacherName', label: t('pages.attendance.teacherName'), showOverflowTooltip: true },
+  { prop: 'studentName', label: t('pages.attendance.studentName'), showOverflowTooltip: true },
+  { prop: 'time', label: t('pages.attendance.timeLabel'), showOverflowTooltip: true },
+  { prop: 'status', label: t('pages.attendance.statusLabel'), showOverflowTooltip: true },
+])
 
 const loadCourseSearch = () => {
   if (user.value.role === 'STUDENT') {
@@ -120,7 +121,7 @@ const loadCourseSearch = () => {
       if (res.data.code === '200') {
         courseSearchData.value = res.data.data
       } else {
-        ElMessage.error(res.data.msg)
+        ElMessage.error(apiMessage(res.data))
       }
     })
   }
@@ -131,7 +132,7 @@ const loadCourseByTeacher = () => {
     if (res.data.code === '200') {
       courseData.value = res.data.data
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -142,7 +143,7 @@ const getStudent = (cId: any) => {
       studentData.value = res.data.data
       studentId.value = null
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -154,7 +155,7 @@ const getStudentEdit = (cId: any) => {
       studentId.value = form.value.studentId
       formVisible.value = true
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }

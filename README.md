@@ -12,6 +12,7 @@
 - Vue Router
 - Pinia
 - VueUse（useColorMode 主题模式管理）
+- Vue I18n（中英文国际化）
 - Element Plus
 - Axios
 - ECharts
@@ -100,53 +101,63 @@
 - **白名单参数校验**：新增接口对枚举型入参（如主题值仅允许 `light/dark/system`）做服务端白名单校验，非法值直接拒绝。
 - **JWT 拦截器**：主题等用户资料接口统一经过登录态校验，拒绝未授权访问。
 
+### 9. 中英文切换与语言偏好多端同步
+
+系统基于 Vue I18n 实现了完整的界面国际化：
+
+- **全局覆盖**：登录/注册、导航菜单、侧边栏、面包屑、全部 20+ 管理页面的表头/按钮/表单/弹窗、403/404 错误页均已接入双语；语言包按"核心 + 页面分组"模块化组织（`src/locales/`）。
+- **切换入口**：管理端顶部导航与登录/注册页右上角均可一键切换中文/English，Element Plus 组件内置文案通过 `el-config-provider` 联动切换。
+- **本地持久化 + 后端同步**：语言偏好保存在 localStorage（键 `xm-locale`），登录后从后端拉取用户保存的偏好覆盖本地，切换后防抖推送到后端（`GET/PUT /locale`，账号表 `locale` 列，白名单校验 `zh-CN/en-US`），与主题偏好共用同一套"一次设置，多端同步"架构。
+- **后端消息本地化**：前端按 `Result` 错误码映射本地化提示（`errors.*` 词条），未知码回退显示后端原始消息；配合 `fallbackLocale` 兜底，缺失词条永不白屏。
+- **刻意保留中文的部分**：数据库中的业务数据（考勤状态、请假状态等枚举值按中文存储，后端统计按中文分组）与代码注释不做翻译，界面仅翻译展示层文案。
+
 ## 工程化优化
 
 在前述业务功能之外，项目持续进行了工程化层面的优化，主要围绕状态管理、代码复用、构建性能、权限体系与主题体系五个方面。
 
-### 9. Pinia 统一状态管理
+### 10. Pinia 统一状态管理
 
 - 用户登录态由手写模块级 `ref` + 散落的 `localStorage` 读写，重构为 `Pinia store` 统一管理（`src/stores/user.ts`）。
 - 消除 17 处直接 `JSON.parse(localStorage.getItem('xm-user'))` 调用，统一增加异常保护，避免本地存储被污染时整页白屏。
 - 401 响应与退出登录时同步清空内存态与本地存储，修复了"页面显示已登录、存储已清空"的状态不一致问题。
 
-### 10. 配置化通用 CRUD 框架
+### 11. 配置化通用 CRUD 框架
 
 - 抽取 `useCrud` 组合式函数与 `CrudTable` 通用表格组件，统一分页查询、新增、编辑、删除、批量删除与表单校验逻辑。
 - 全部 16 个管理页面的分页、增删改查、批量删除逻辑已完成迁移：约 800 行重复样板代码收敛为约 210 行通用实现，业务页面只需提供「列配置 + 接口路径 + 搜索条件 + 表单」。
 - 支持自定义操作列（按角色/状态显隐按钮）、自定义单元格插槽（如头像、文件下载）、保存前后钩子（如同步全局用户状态），可覆盖带级联下拉、文件上传等复杂表单的页面。
 
-### 11. 构建体积与性能优化
+### 12. 构建体积与性能优化
 
 - Element Plus 改为按需自动引入（`unplugin-vue-components`），图标从全量注册 294 个精简为实际使用的 13 个。
 - ECharts 改为按需注册（饼图、折线图及所需组件），图表库体积从约 1,039 KB 降至 334 KB（gzip 114 KB），降幅约 68%。
 - 应用主包从约 1,225 KB 降至 9.5 KB，并通过 `manualChunks` 将 vue / element-plus / echarts / axios 拆分为独立缓存 chunk，首页首次加载 JS 总量约减少 30%。
 - 修复图表组件重复挂载导致的 resize 监听器累积与实例泄漏，组件卸载时统一移除监听并 `dispose()` 图表。
 
-### 12. RBAC 权限体系
+### 13. RBAC 权限体系
 
 - 路由级权限：每个路由通过 `meta.roles` 声明可访问角色，路由守卫统一校验，无权限访问跳转 `/403` 页。
 - 菜单级权限：侧边栏菜单根据当前角色从路由配置动态生成，与路由权限保持单一数据源。
 - 按钮级权限：提供 `v-permission` 指令，按角色控制按钮显隐（如重置密码仅管理员可见）。
 - 个人中心路由按角色隔离（管理员/教师/学生各自只能访问自己的信息页）。
 
-### 13. JWT 签名密钥独立化
+### 14. JWT 签名密钥独立化
 
 - 签名密钥从"数据库密码"改为独立配置项 `jwt.secret`（支持环境变量 `JWT_SECRET` 覆盖），过期时间可配置（`jwt.expire-hours`）。
 - 用户修改密码后已签发的 token 不再全部失效；拦截器先统一验签（含过期校验）再校验账号有效性。
 
-### 14. 后端代码去重与安全加固
+### 15. 后端代码去重与安全加固
 
 - 抽取泛型 `BaseMapper` / `BaseService`，统一管理员、教师、学生三类账号的登录、新增、改密、增删改查、分页与重置密码逻辑，三个 Service 仅保留角色与 Mapper 配置。
 - CORS 由通配符 `*` 收紧为可配置的前端来源白名单（`app.cors.allowed-origins`）。
 - 数据库脚本为 10 张表的 20 个外键列补充索引，加速按学院/专业/班级/教师/学生/课程维度的关联查询。
 
-### 15. 代码规范与单元测试
+### 16. 代码规范与单元测试
 
 - 引入 ESLint（`eslint-plugin-vue` + `typescript-eslint`）与 Prettier，配置 `npm run lint` / `lint:fix` / `format` 脚本，当前 lint 0 问题。
 - 引入 Vitest + @vue/test-utils（happy-dom 环境），为 Pinia 用户状态与 `useCrud` 组合式函数编写 15 个单元测试（`npm run test`），覆盖本地存储异常降级、登录态持久化、分页加载、新增/编辑/删除/批量删除、表单校验拦截等场景。
 
-### 16. 容器化与 CI
+### 17. 容器化与 CI
 
 - 提供前端（Node 构建 + nginx 托管与反代）、后端（Maven 构建 + JRE）Dockerfile 与 `docker-compose.yml`，一键启动 MySQL（自动导入 SQL）+ 后端 + 前端。
 - 生产环境接口统一走 `/api` 前缀（nginx 反代到后端），文件上传返回相对 URL，本地开发与容器部署共用同一套逻辑。
@@ -260,13 +271,14 @@ sql/xm_educational_manager.sql
 mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager.sql
 ```
 
-主题同步功能还需要为三类账号表补充 `theme` 字段，执行迁移脚本：
+主题同步功能还需要为三类账号表补充 `theme` 字段，界面语言同步需要补充 `locale` 字段，执行迁移脚本：
 
 ```bash
 mysql -uroot -p123456 xm_educational_manager < sql/add_theme_column.sql
+mysql -uroot -p123456 xm_educational_manager < sql/add_locale_column.sql
 ```
 
-该脚本为 `admin`、`teacher`、`student` 三张表各增加一列 `theme`（默认值 `system`，即跟随系统），不影响已有数据。若重复执行会提示"Duplicate column name"，忽略即可。
+迁移脚本为 `admin`、`teacher`、`student` 三张表各增加 `theme`（默认 `system`，跟随系统）与 `locale`（默认 `zh-CN`）列，不影响已有数据。若重复执行会提示"Duplicate column name"，忽略即可。
 
 系统内置管理员账号：
 
@@ -386,6 +398,7 @@ mvn clean package
 
 - 登录、注册、验证码、修改密码
 - 深色/浅色主题切换与多端同步
+- 中英文切换与语言偏好多端同步
 - 管理员管理
 - 教师管理
 - 学生管理
@@ -452,6 +465,8 @@ springboot/src/main/java/com/example/controller/WebController.java
 - `PUT /updatePassword`：修改密码
 - `GET /theme`：查询当前用户的主题偏好
 - `PUT /theme`：保存当前用户的主题偏好（白名单校验，仅接受 `light/dark/system`）
+- `GET /locale`：查询当前用户的界面语言偏好
+- `PUT /locale`：保存当前用户的界面语言偏好（白名单校验，仅接受 `zh-CN/en-US`）
 
 用户管理相关接口还包含管理员重置密码能力：
 
@@ -740,7 +755,7 @@ docker compose up -d --build
 后端：http://localhost:9091
 ```
 
-MySQL 容器首次启动会自动按顺序导入 `sql/` 中的初始化脚本（先建表 + 初始数据 + 索引，再执行主题字段迁移），无需手动处理。可通过环境变量覆盖默认配置：
+MySQL 容器首次启动会自动按顺序导入 `sql/` 中的初始化脚本（先建表 + 初始数据 + 索引，再执行主题/语言字段迁移），无需手动处理。可通过环境变量覆盖默认配置：
 
 ```text
 JWT_SECRET、CORS_ALLOWED_ORIGINS、SPRING_DATASOURCE_PASSWORD

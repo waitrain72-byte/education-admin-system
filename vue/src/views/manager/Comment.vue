@@ -1,10 +1,10 @@
 <template>
   <div>
     <div class="search">
-      <el-input v-model="teacher" placeholder="请输入教师姓名" style="width: 200px" />
-      <el-input v-model="content" placeholder="请输入评教内容" style="width: 200px; margin-left: 5px" />
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-input v-model="teacher" :placeholder="$t('pages.comment.teacherPlaceholder')" style="width: 200px" />
+      <el-input v-model="content" :placeholder="$t('pages.comment.contentPlaceholder')" style="width: 200px; margin-left: 5px" />
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
 
     <CrudTable
@@ -18,16 +18,17 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button link type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button link type="danger" size="small" @click="del(row.id)">{{ $t('common.delete') }}</el-button>
       </template>
     </CrudTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
+import { t } from '@/i18n'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
 const { user } = useUser()
@@ -39,13 +40,13 @@ const { tableData, pageNum, pageSize, total, loading, load, del } = useCrud({
   getParams: () => ({ teacher: teacher.value, content: content.value }),
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
-  { prop: 'name', label: '课程名称', width: 200, showOverflowTooltip: true },
-  { prop: 'teacher', label: '授课教师', width: 100 },
-  { prop: 'content', label: '评教内容' },
-  { prop: 'time', label: '评教时间', width: 250 },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.comment.id'), width: 80, align: 'center', sortable: true },
+  { prop: 'name', label: t('pages.comment.courseName'), width: 200, showOverflowTooltip: true },
+  { prop: 'teacher', label: t('pages.comment.teacherName'), width: 100 },
+  { prop: 'content', label: t('pages.comment.content') },
+  { prop: 'time', label: t('pages.comment.time'), width: 250 },
+])
 
 const reset = () => {
   teacher.value = ''

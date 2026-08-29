@@ -122,6 +122,47 @@ public class WebController {
      */
     private static final List<String> THEME_VALUES = Arrays.asList("light", "dark", "system");
 
+    /** 界面语言取值白名单 */
+    private static final List<String> LOCALE_VALUES = Arrays.asList("zh-CN", "en-US");
+
+    /**
+     * 查询当前登录用户的界面语言偏好
+     */
+    @GetMapping("/locale")
+    public Result getLocale() {
+        Account current = TokenUtils.getCurrentUser();
+        if (ObjectUtil.isEmpty(current.getId())) {
+            return Result.error(ResultCodeEnum.TOKEN_INVALID_ERROR);
+        }
+        String locale = current.getLocale();
+        return Result.success(ObjectUtil.isEmpty(locale) ? "zh-CN" : locale);
+    }
+
+    /**
+     * 保存当前登录用户的界面语言偏好
+     */
+    @PutMapping("/locale")
+    public Result updateLocale(@RequestBody Account account) {
+        if (ObjectUtil.isEmpty(account.getLocale()) || !LOCALE_VALUES.contains(account.getLocale())) {
+            return Result.error(ResultCodeEnum.PARAM_ERROR);
+        }
+        Account current = TokenUtils.getCurrentUser();
+        if (ObjectUtil.isEmpty(current.getId())) {
+            return Result.error(ResultCodeEnum.TOKEN_INVALID_ERROR);
+        }
+        account.setId(current.getId());
+        if (RoleEnum.ADMIN.name().equals(current.getRole())) {
+            adminService.updateLocale(account);
+        } else if (RoleEnum.TEACHER.name().equals(current.getRole())) {
+            teacherService.updateLocale(account);
+        } else if (RoleEnum.STUDENT.name().equals(current.getRole())) {
+            studentService.updateLocale(account);
+        } else {
+            return Result.error(ResultCodeEnum.TOKEN_CHECK_ERROR);
+        }
+        return Result.success();
+    }
+
     /**
      * 查询当前登录用户的主题偏好（供新终端登录时同步，实现"一次设置，多端同步"）
      */

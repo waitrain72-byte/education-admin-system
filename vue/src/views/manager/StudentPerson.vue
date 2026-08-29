@@ -16,20 +16,20 @@
             </div>
           </el-upload>
         </div>
-        <el-form-item label="账号" prop="username">
-          <el-input v-model="user.username" placeholder="用户名" disabled />
+        <el-form-item :label="$t('pages.person.accountLabel')" prop="username">
+          <el-input v-model="user.username" :placeholder="$t('pages.person.usernameLabel')" disabled />
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="user.name" placeholder="姓名" />
+        <el-form-item :label="$t('pages.person.nameLabel')" prop="name">
+          <el-input v-model="user.name" />
         </el-form-item>
-        <el-form-item label="学分" prop="score">
+        <el-form-item :label="$t('pages.person.creditLabel')" prop="score">
           <el-input v-model="user.score" disabled />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
+        <el-form-item :label="$t('pages.person.roleLabel')" prop="role">
           <el-input v-model="user.role" disabled />
         </el-form-item>
         <div style="text-align: center; margin-bottom: 20px">
-          <el-button type="primary" @click="update">保 存</el-button>
+          <el-button type="primary" @click="update">{{ $t('common.save') }}</el-button>
         </div>
       </el-form>
     </el-card>
@@ -39,6 +39,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { t, apiMessage } from '@/i18n'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
@@ -52,11 +53,11 @@ const user = reactive<Record<string, any>>({ ...storeUser.value })
 const update = () => {
   request.put('/student/update', user).then((res: any) => {
     if (res.data.code === '200') {
-      ElMessage.success('保存成功')
+      ElMessage.success(t('common.saveSuccess'))
       updateUser({ ...user })
       emit('update:user')
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }

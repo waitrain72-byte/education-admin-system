@@ -1,0 +1,63 @@
+/**
+ * Group A locale pack (English): admin/teacher/student management + three profile pages.
+ */
+export default {
+    pages: {
+        admin: {
+            searchPlaceholder: 'Enter an account to search',
+            id: 'No.',
+            account: 'Account',
+            username: 'Username',
+            name: 'Name',
+            phone: 'Phone',
+            email: 'Email',
+            avatar: 'Avatar',
+            role: 'Role',
+            dialogTitle: 'Administrator',
+            uploadAvatar: 'Upload Avatar',
+            ruleUsernameRequired: 'Please enter an account',
+            resetConfirm: 'Are you sure you want to reset the password of {username} to 123456?',
+            resetSuccess: 'Password has been reset to 123456',
+        },
+
+        teacher: {
+            searchPlaceholder: 'Enter an account to search',
+            id: 'No.',
+            account: 'Account',
+            username: 'Username',
+            name: 'Name',
+            phone: 'Phone',
+            email: 'Email',
+            avatar: 'Avatar',
+            role: 'Role',
+            title: 'Title',
+            dialogTitle: 'Teacher Information',
+            uploadAvatar: 'Upload Avatar',
+            ruleUsernameRequired: 'Please enter an account',
+            resetConfirm: 'Are you sure you want to reset the password of {username} to 123456?',
+            resetSuccess: 'Password has been reset to 123456',
+        },
+
+        student: {
+            searchPlaceholder: 'Enter an account to search',
+            id: 'No.',
+            account: 'Account',
+            username: 'Username',
+            name: 'Name',
+            avatar: 'Avatar',
+            role: 'Role',
+            college: 'College',
+            collegePlaceholder: 'Select a college',
+            speciality: 'Speciality',
+            specialityPlaceholder: 'Select a speciality',
+            classes: 'Class',
+            classesPlaceholder: 'Select a class',
+            score: 'Credits',
+            dialogTitle: 'Student Information',
+            uploadAvatar: 'Upload Avatar',
+            ruleUsernameRequired: 'Please enter an account',
+            resetConfirm: 'Are you sure you want to reset the password of {username} to 123456?',
+            resetSuccess: 'Password has been reset to 123456',
+        },
+    },
+}

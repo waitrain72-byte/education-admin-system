@@ -1,13 +1,15 @@
 import { ref } from 'vue'
+import type { ComputedRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
+import { apiMessage, t } from '@/i18n'
 
 export interface UseCrudOptions {
     /** 接口基础路径，如 '/college'，自动拼接 /selectPage、/add、/update、/delete/{id}、/delete/batch */
     url: string
-    /** 表单校验规则，供页面 el-form 使用 */
-    rules?: FormRules
+    /** 表单校验规则，供页面 el-form 使用（支持 computed 以响应语言切换） */
+    rules?: FormRules | ComputedRef<FormRules>
     /** 分页查询参数（搜索条件），每次查询时求值 */
     getParams?: () => Record<string, any>
     /** 保存前钩子：可补充或修正表单数据 */
@@ -88,12 +90,12 @@ export function useCrud<T = any>(options: UseCrudOptions) {
                 data: form.value,
             })
             if (res.data.code === '200') {
-                ElMessage.success('保存成功')
+                ElMessage.success(t('common.saveSuccess'))
                 await options.afterSave?.(form.value)
                 load(1)
                 formVisible.value = false
             } else {
-                ElMessage.error(res.data.msg)
+                ElMessage.error(apiMessage(res.data))
             }
         } catch {
             // 错误提示已由 axios 拦截器统一处理
@@ -101,15 +103,15 @@ export function useCrud<T = any>(options: UseCrudOptions) {
     }
 
     const del = (id: number | string) => {
-        ElMessageBox.confirm(options.deleteConfirmMessage || '您确定删除吗？', '确认删除', { type: 'warning' })
+        ElMessageBox.confirm(options.deleteConfirmMessage || t('common.deleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
             .then(async () => {
                 try {
                     const res: any = await request.delete(`${options.url}/delete/${id}`)
                     if (res.data.code === '200') {
-                        ElMessage.success('操作成功')
+                        ElMessage.success(t('common.operationSuccess'))
                         load(1)
                     } else {
-                        ElMessage.error(res.data.msg)
+                        ElMessage.error(apiMessage(res.data))
                     }
                 } catch {
                     // 错误提示已由 axios 拦截器统一处理
@@ -126,20 +128,20 @@ export function useCrud<T = any>(options: UseCrudOptions) {
 
     const delBatch = () => {
         if (!selectedIds.value.length) {
-            ElMessage.warning('请选择数据')
+            ElMessage.warning(t('common.pleaseSelectData'))
             return
         }
-        ElMessageBox.confirm('您确定批量删除这些数据吗？', '确认删除', { type: 'warning' })
+        ElMessageBox.confirm(t('common.batchDeleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
             .then(async () => {
                 try {
                     const res: any = await request.delete(`${options.url}/delete/batch`, {
                         data: selectedIds.value,
                     })
                     if (res.data.code === '200') {
-                        ElMessage.success('操作成功')
+                        ElMessage.success(t('common.operationSuccess'))
                         load(1)
                     } else {
-                        ElMessage.error(res.data.msg)
+                        ElMessage.error(apiMessage(res.data))
                     }
                 } catch {
                     // 错误提示已由 axios 拦截器统一处理

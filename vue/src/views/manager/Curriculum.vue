@@ -2,14 +2,14 @@
   <div>
     <div class="table">
       <el-table :data="tableData" stripe border>
-        <el-table-column prop="segment" label="时间" width="200" />
-        <el-table-column prop="monday" label="星期一" show-overflow-tooltip />
-        <el-table-column prop="tuesday" label="星期二" show-overflow-tooltip />
-        <el-table-column prop="wednesday" label="星期三" show-overflow-tooltip />
-        <el-table-column prop="thursday" label="星期四" show-overflow-tooltip />
-        <el-table-column prop="friday" label="星期五" show-overflow-tooltip />
-        <el-table-column prop="saturday" label="星期六" show-overflow-tooltip />
-        <el-table-column prop="sunday" label="星期日" show-overflow-tooltip />
+        <el-table-column prop="segment" :label="$t('pages.curriculum.time')" width="200" />
+        <el-table-column prop="monday" :label="$t('pages.curriculum.monday')" show-overflow-tooltip />
+        <el-table-column prop="tuesday" :label="$t('pages.curriculum.tuesday')" show-overflow-tooltip />
+        <el-table-column prop="wednesday" :label="$t('pages.curriculum.wednesday')" show-overflow-tooltip />
+        <el-table-column prop="thursday" :label="$t('pages.curriculum.thursday')" show-overflow-tooltip />
+        <el-table-column prop="friday" :label="$t('pages.curriculum.friday')" show-overflow-tooltip />
+        <el-table-column prop="saturday" :label="$t('pages.curriculum.saturday')" show-overflow-tooltip />
+        <el-table-column prop="sunday" :label="$t('pages.curriculum.sunday')" show-overflow-tooltip />
       </el-table>
     </div>
   </div>
@@ -19,12 +19,13 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { apiMessage } from '@/i18n'
 
 const tableData = ref<any[]>([])
 
 const load = () => {
   request.get('/choice/getCurriculum').then((res: any) => {
-    if (res.data.code === '200') { tableData.value = res.data.data } else { ElMessage.error(res.data.msg) }
+    if (res.data.code === '200') { tableData.value = res.data.data } else { ElMessage.error(apiMessage(res.data)) }
   })
 }
 

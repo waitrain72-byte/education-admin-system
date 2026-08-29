@@ -1,14 +1,14 @@
 <template>
   <div>
     <div class="search">
-      <el-input v-model="username" placeholder="请输入账号查询" style="width: 200px" />
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-input v-model="username" :placeholder="$t('pages.student.searchPlaceholder')" style="width: 200px" />
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
 
     <div v-if="user.role !== 'STUDENT'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">新增</el-button>
-      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+      <el-button type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
+      <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
     </div>
 
     <CrudTable
@@ -31,56 +31,58 @@ v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%"
         </div>
       </template>
       <template #actions="{ row }">
-        <el-button v-permission="['ADMIN', 'TEACHER']" link size="small" type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-        <el-button v-permission="'ADMIN'" link size="small" type="warning" :icon="Key" @click="resetPassword(row)">重置密码</el-button>
-        <el-button v-permission="['ADMIN', 'TEACHER']" link size="small" type="danger" :icon="Delete" @click="del(row.id)">删除</el-button>
+        <el-button v-permission="['ADMIN', 'TEACHER']" link size="small" type="primary" :icon="Edit" @click="handleEdit(row)">{{ $t('common.edit') }}</el-button>
+        <el-button v-permission="'ADMIN'" link size="small" type="warning" :icon="Key" @click="resetPassword(row)">{{ $t('common.resetPassword') }}</el-button>
+        <el-button v-permission="['ADMIN', 'TEACHER']" link size="small" type="danger" :icon="Delete" @click="del(row.id)">{{ $t('common.delete') }}</el-button>
       </template>
     </CrudTable>
 
-    <el-dialog v-model="formVisible" title="学生信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="formVisible" :title="$t('pages.student.dialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="formRef" :model="form" label-width="100px" style="padding-right: 50px" :rules="rules">
-        <el-form-item label="头像">
+        <el-form-item :label="$t('pages.student.avatar')">
           <el-upload
 class="avatar-uploader" :action="baseUrl + '/files/upload'"
                      :headers="{ token: user.token }" list-type="picture" :on-success="handleAvatarSuccess">
-            <el-button type="primary">上传头像</el-button>
+            <el-button type="primary">{{ $t('pages.student.uploadAvatar') }}</el-button>
           </el-upload>
         </el-form-item>
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="用户名" />
+        <el-form-item :label="$t('pages.student.username')" prop="username">
+          <el-input v-model="form.username" :placeholder="$t('pages.student.username')" />
         </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" placeholder="姓名" />
+        <el-form-item :label="$t('pages.student.name')" prop="name">
+          <el-input v-model="form.name" :placeholder="$t('pages.student.name')" />
         </el-form-item>
-        <el-form-item label="学院" prop="collegeId">
-          <el-select v-model="form.collegeId" placeholder="请选择学院" style="width: 100%">
+        <el-form-item :label="$t('pages.student.college')" prop="collegeId">
+          <el-select v-model="form.collegeId" :placeholder="$t('pages.student.collegePlaceholder')" style="width: 100%">
             <el-option v-for="item in collegeData" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="专业" prop="specialityId">
-          <el-select v-model="form.specialityId" placeholder="请选择专业" style="width: 100%">
+        <el-form-item :label="$t('pages.student.speciality')" prop="specialityId">
+          <el-select v-model="form.specialityId" :placeholder="$t('pages.student.specialityPlaceholder')" style="width: 100%">
             <el-option v-for="item in specialityData" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="班级" prop="classId">
-          <el-select v-model="form.classId" placeholder="请选择班级" style="width: 100%">
+        <el-form-item :label="$t('pages.student.classes')" prop="classId">
+          <el-select v-model="form.classId" :placeholder="$t('pages.student.classesPlaceholder')" style="width: 100%">
             <el-option v-for="item in classesData" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormRules } from 'element-plus'
 import { Edit, Key, Delete } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -100,9 +102,9 @@ const {
   handleSelectionChange,
 } = useCrud({
   url: '/student',
-  rules: {
-    username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  },
+  rules: computed<FormRules>(() => ({
+    username: [{ required: true, message: t('pages.student.ruleUsernameRequired'), trigger: 'blur' }],
+  })),
   getParams: () => ({ username: username.value }),
   afterSave: (formData) => {
     // 如果修改的是当前登录学生自己的信息，同步全局状态
@@ -116,24 +118,24 @@ const {
   },
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 70, align: 'center', sortable: true },
-  { prop: 'avatar', label: '头像' },
-  { prop: 'username', label: '账号' },
-  { prop: 'name', label: '姓名' },
-  { prop: 'role', label: '角色' },
-  { prop: 'collegeName', label: '学院' },
-  { prop: 'specialityName', label: '专业' },
-  { prop: 'className', label: '班级' },
-  { prop: 'score', label: '学分' },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.student.id'), width: 70, align: 'center', sortable: true },
+  { prop: 'avatar', label: t('pages.student.avatar') },
+  { prop: 'username', label: t('pages.student.account') },
+  { prop: 'name', label: t('pages.student.name') },
+  { prop: 'role', label: t('pages.student.role') },
+  { prop: 'collegeName', label: t('pages.student.college') },
+  { prop: 'specialityName', label: t('pages.student.speciality') },
+  { prop: 'className', label: t('pages.student.classes') },
+  { prop: 'score', label: t('pages.student.score') },
+])
 
 const loadCollege = () => {
   request.get('/college/selectAll').then((res: any) => {
     if (res.data.code === '200') {
       collegeData.value = res.data.data
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -143,7 +145,7 @@ const loadSpeciality = () => {
     if (res.data.code === '200') {
       specialityData.value = res.data.data
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -153,18 +155,18 @@ const loadClasses = () => {
     if (res.data.code === '200') {
       classesData.value = res.data.data
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
 
 const resetPassword = (row: any) => {
-  ElMessageBox.confirm(`确定将账号 ${row.username} 的密码重置为 123456 吗？`, '重置密码', { type: 'warning' }).then(() => {
+  ElMessageBox.confirm(t('pages.student.resetConfirm', { username: row.username }), t('common.resetPassword'), { type: 'warning' }).then(() => {
     request.put('/student/resetPassword/' + row.id).then((res: any) => {
       if (res.data.code === '200') {
-        ElMessage.success('密码已重置为 123456')
+        ElMessage.success(t('pages.student.resetSuccess'))
       } else {
-        ElMessage.error(res.data.msg)
+        ElMessage.error(apiMessage(res.data))
       }
     })
   }).catch(() => {})

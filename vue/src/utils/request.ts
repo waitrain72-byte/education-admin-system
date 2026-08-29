@@ -2,6 +2,7 @@ import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosReques
 import { ElMessage } from 'element-plus'
 import router from '@/router/router-index.ts'
 import { useUserStore } from '@/stores/user'
+import { t } from '@/i18n'
 
 const request: AxiosInstance = axios.create({
     baseURL: import.meta.env.VITE_BASE_URL,
@@ -27,16 +28,16 @@ request.interceptors.response.use(
     (response: AxiosResponse) => {
         const res = response.data as { code?: string; msg?: string }
         if (res.code === '401') {
-            ElMessage.error('请先登录')
+            ElMessage.error(t('errors.401'))
             // 同步清除内存与本地存储，避免 401 后页面仍显示已登录
             useUserStore().clearUser()
             router.push('/login')
-            return Promise.reject(new Error(res.msg || '未授权'))
+            return Promise.reject(new Error(res.msg || t('errors.401')))
         }
         return response
     },
     (error) => {
-        ElMessage.error(error.message || '请求失败')
+        ElMessage.error(error.message || t('request.failed'))
         return Promise.reject(error)
     }
 )

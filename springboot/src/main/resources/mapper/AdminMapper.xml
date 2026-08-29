@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.AdminMapper">
 
     <sql id="Base_Column_List">
-        id,username,password,name,phone,email,avatar,role,theme
+        id,username,password,name,phone,email,avatar,role,theme,locale
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Admin">
@@ -48,6 +48,7 @@
                 <if test="avatar != null">avatar,</if>
                 <if test="role != null">role,</if>
                 <if test="theme != null">theme,</if>
+                <if test="locale != null">locale,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
@@ -59,6 +60,7 @@
                 <if test="avatar != null">#{avatar},</if>
                 <if test="role != null">#{role},</if>
                 <if test="theme != null">#{theme},</if>
+                <if test="locale != null">#{locale},</if>
         </trim>
     </insert>
 
@@ -88,6 +90,9 @@
             </if>
             <if test="theme != null">
                 theme = #{theme},
+            </if>
+            <if test="locale != null">
+                locale = #{locale},
             </if>
         </set>
         where id = #{id} 

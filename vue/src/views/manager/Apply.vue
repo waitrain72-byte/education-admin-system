@@ -1,18 +1,18 @@
 <template>
   <div>
     <div class="search">
-      <el-input v-model="content" placeholder="请输入请假说明" style="width: 200px" />
-      <el-select v-model="status" placeholder="请选择状态" style="width: 200px; margin-left: 5px">
-        <el-option label="待审核" value="待审核" />
-        <el-option label="审核通过" value="审核通过" />
-        <el-option label="审核不通过" value="审核不通过" />
+      <el-input v-model="content" :placeholder="$t('pages.apply.contentPlaceholder')" style="width: 200px" />
+      <el-select v-model="status" :placeholder="$t('pages.apply.statusPlaceholder')" style="width: 200px; margin-left: 5px">
+        <el-option :label="$t('pages.apply.statusPending')" value="待审核" />
+        <el-option :label="$t('pages.apply.statusApproved')" value="审核通过" />
+        <el-option :label="$t('pages.apply.statusRejected')" value="审核不通过" />
       </el-select>
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
 
     <div v-if="user.role === 'STUDENT'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">请假申请</el-button>
+      <el-button type="primary" plain @click="handleAdd">{{ $t('pages.apply.applyLeave') }}</el-button>
     </div>
 
     <CrudTable
@@ -27,61 +27,62 @@
       <template #actions="{ row }">
         <el-button
 v-if="user.role === 'STUDENT' && row.status !== '审核通过'" link type="primary" size="small"
-                   @click="handleEdit(row)">编辑</el-button>
+                   @click="handleEdit(row)">{{ $t('common.edit') }}</el-button>
         <el-button
 v-if="user.role === 'ADMIN' && row.status === '待审核'" link type="primary" size="small"
-                   @click="handleCheck(row)">审核</el-button>
+                   @click="handleCheck(row)">{{ $t('pages.apply.review') }}</el-button>
         <el-button
 v-if="user.role === 'STUDENT' && row.status === '待审核'" link type="danger" size="small"
-                   @click="del(row.id)">撤销申请</el-button>
+                   @click="del(row.id)">{{ $t('pages.apply.withdraw') }}</el-button>
       </template>
     </CrudTable>
 
-    <el-dialog v-model="formVisible" title="请假信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="formVisible" :title="$t('pages.apply.dialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="formRef" label-width="100px" style="padding-right: 50px" :model="form" :rules="rules">
-        <el-form-item prop="content" label="请假说明">
+        <el-form-item prop="content" :label="$t('pages.apply.contentLabel')">
           <el-input v-model="form.content" type="textarea" :rows="4" autocomplete="off" />
         </el-form-item>
-        <el-form-item prop="time" label="请假时间">
+        <el-form-item prop="time" :label="$t('pages.apply.timeLabel')">
           <el-date-picker
 v-model="form.time" style="width: 100%" value-format="YYYY-MM-DD"
-                          type="date" placeholder="选择日期" />
+                          type="date" :placeholder="$t('pages.apply.datePlaceholder')" />
         </el-form-item>
-        <el-form-item prop="day" label="请假天数">
+        <el-form-item prop="day" :label="$t('pages.apply.dayLabel')">
           <el-input v-model="form.day" autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="checkVisible" title="请假审核" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="checkVisible" :title="$t('pages.apply.checkDialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form label-width="100px" style="padding-right: 50px" :model="form">
-        <el-form-item prop="status" label="审核状态">
-          <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="待审核" value="待审核" />
-            <el-option label="审核通过" value="审核通过" />
-            <el-option label="审核不通过" value="审核不通过" />
+        <el-form-item prop="status" :label="$t('pages.apply.statusLabel')">
+          <el-select v-model="form.status" :placeholder="$t('pages.apply.statusPlaceholder')" style="width: 100%">
+            <el-option :label="$t('pages.apply.statusPending')" value="待审核" />
+            <el-option :label="$t('pages.apply.statusApproved')" value="审核通过" />
+            <el-option :label="$t('pages.apply.statusRejected')" value="审核不通过" />
           </el-select>
         </el-form-item>
-        <el-form-item prop="descr" label="审核说明">
+        <el-form-item prop="descr" :label="$t('pages.apply.descrLabel')">
           <el-input v-model="form.descr" type="textarea" :rows="4" autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="checkVisible = false">取 消</el-button>
-        <el-button type="primary" @click="check">确 定</el-button>
+        <el-button @click="checkVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="check">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, type FormRules } from 'element-plus'
 import request from '@/utils/request'
+import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -97,24 +98,24 @@ const {
   load, save, del,
 } = useCrud({
   url: '/apply',
-  deleteConfirmMessage: '您确定撤销申请吗？',
-  rules: {
-    time: [{ required: true, message: '请输入请假时间', trigger: 'blur' }],
-    content: [{ required: true, message: '请输入请假说明', trigger: 'blur' }],
-    day: [{ required: true, message: '请输入请假天数', trigger: 'blur' }],
-  },
+  deleteConfirmMessage: t('pages.apply.deleteConfirm'),
+  rules: computed<FormRules>(() => ({
+    time: [{ required: true, message: t('pages.apply.ruleTimeRequired'), trigger: 'blur' }],
+    content: [{ required: true, message: t('pages.apply.ruleContentRequired'), trigger: 'blur' }],
+    day: [{ required: true, message: t('pages.apply.ruleDayRequired'), trigger: 'blur' }],
+  })),
   getParams: () => ({ status: status.value, content: content.value }),
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
-  { prop: 'studentName', label: '学生姓名', showOverflowTooltip: true },
-  { prop: 'content', label: '请假说明', showOverflowTooltip: true },
-  { prop: 'time', label: '请假时间' },
-  { prop: 'day', label: '请假天数' },
-  { prop: 'status', label: '审核状态' },
-  { prop: 'descr', label: '审核说明' },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.apply.id'), width: 80, align: 'center', sortable: true },
+  { prop: 'studentName', label: t('pages.apply.studentName'), showOverflowTooltip: true },
+  { prop: 'content', label: t('pages.apply.contentLabel'), showOverflowTooltip: true },
+  { prop: 'time', label: t('pages.apply.timeLabel') },
+  { prop: 'day', label: t('pages.apply.dayLabel') },
+  { prop: 'status', label: t('pages.apply.statusLabel') },
+  { prop: 'descr', label: t('pages.apply.descrLabel') },
+])
 
 const handleAdd = () => {
   form.value = { studentId: user.value.id, status: '待审核' }
@@ -136,11 +137,11 @@ const handleCheck = (row: any) => {
 const check = () => {
   request.put('/apply/update', form.value).then((res: any) => {
     if (res.data.code === '200') {
-      ElMessage.success('操作成功')
+      ElMessage.success(t('common.operationSuccess'))
       load(1)
       checkVisible.value = false
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }

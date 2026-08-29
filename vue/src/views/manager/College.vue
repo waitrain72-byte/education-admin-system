@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="search">
-      <el-input v-model="name" placeholder="请输入学院名称" style="width: 200px" />
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-input v-model="name" :placeholder="$t('pages.college.searchPlaceholder')" style="width: 200px" />
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
     <div v-if="user.role === 'ADMIN'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">新增</el-button>
-      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+      <el-button type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
+      <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
     </div>
 
     <CrudTable
@@ -23,32 +23,33 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-        <el-button link type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button link type="primary" size="small" @click="handleEdit(row)">{{ $t('common.edit') }}</el-button>
+        <el-button link type="danger" size="small" @click="del(row.id)">{{ $t('common.delete') }}</el-button>
       </template>
     </CrudTable>
 
-    <el-dialog v-model="formVisible" title="信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="formVisible" :title="$t('pages.college.dialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="formRef" label-width="100px" style="padding-right: 50px" :model="form" :rules="rules">
-        <el-form-item prop="name" label="学院名称">
+        <el-form-item prop="name" :label="$t('pages.college.name')">
           <el-input v-model="form.name" autocomplete="off" />
         </el-form-item>
-        <el-form-item prop="content" label="学院介绍">
+        <el-form-item prop="content" :label="$t('pages.college.content')">
           <el-input v-model="form.content" type="textarea" :rows="5" autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
+import { t } from '@/i18n'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
 const { user } = useUser()
@@ -61,15 +62,17 @@ const {
   handleSelectionChange, delBatch,
 } = useCrud({
   url: '/college',
-  rules: { name: [{ required: true, message: '请输入学院名称', trigger: 'blur' }] },
+  rules: computed(() => ({
+    name: [{ required: true, message: t('pages.college.ruleNameRequired'), trigger: 'blur' }],
+  })),
   getParams: () => ({ name: name.value }),
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
-  { prop: 'name', label: '学院名称', showOverflowTooltip: true },
-  { prop: 'content', label: '学院介绍', showOverflowTooltip: true },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.college.id'), width: 80, align: 'center', sortable: true },
+  { prop: 'name', label: t('pages.college.name'), showOverflowTooltip: true },
+  { prop: 'content', label: t('pages.college.content'), showOverflowTooltip: true },
+])
 
 const reset = () => {
   name.value = ''

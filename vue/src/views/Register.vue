@@ -1,31 +1,36 @@
 <template>
   <div class="container">
-    <!-- 右上角主题切换 -->
-    <div class="theme-toggle" :title="themeLabel" @click="cycleTheme">
-      <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+    <!-- 右上角偏好区：语言 + 主题 -->
+    <div class="corner-actions">
+      <div class="theme-toggle" :title="$t('layout.lang.switch')" @click="toggleLocale">
+        {{ isZh ? 'EN' : '中' }}
+      </div>
+      <div class="theme-toggle" :title="$t(themeLabel)" @click="cycleTheme">
+        <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+      </div>
     </div>
 
     <!-- 左侧图片区域 -->
     <div class="left-panel">
       <div class="left-content">
         <img src="@/assets/imgs/教务系统.png" alt="logo" class="logo" />
-        <div class="system-title">教务管理系统</div>
-        <div class="system-subtitle">Educational Management System</div>
-        <div class="decoration-text">—— 智慧校园 · 高效管理 ——</div>
+        <div class="system-title">{{ $t('login.systemName') }}</div>
+        <div class="system-subtitle">{{ $t('login.systemSub') }}</div>
+        <div class="decoration-text">{{ $t('login.slogan') }}</div>
       </div>
     </div>
 
     <!-- 右侧注册框 -->
     <div class="right-panel">
       <div class="register-box">
-        <div class="register-title">欢迎注册</div>
-        <div class="register-subtitle">创建您的账号</div>
+        <div class="register-title">{{ $t('register.title') }}</div>
+        <div class="register-subtitle">{{ $t('register.subtitle') }}</div>
         <el-form ref="formRef" :model="form" :rules="rules" class="register-form">
           <el-form-item prop="username">
             <el-input
                 v-model="form.username"
                 :prefix-icon="User"
-                placeholder="请输入账号"
+                :placeholder="$t('register.usernamePlaceholder')"
                 size="large"
             />
           </el-form-item>
@@ -33,7 +38,7 @@
             <el-input
                 v-model="form.password"
                 :prefix-icon="Lock"
-                placeholder="请输入密码"
+                :placeholder="$t('register.passwordPlaceholder')"
                 show-password
                 size="large"
             />
@@ -42,17 +47,17 @@
             <el-input
                 v-model="form.confirmPass"
                 :prefix-icon="Lock"
-                placeholder="请确认密码"
+                :placeholder="$t('register.confirmPlaceholder')"
                 show-password
                 size="large"
             />
           </el-form-item>
           <el-form-item>
-            <el-button class="register-button" size="large" @click="register">注 册</el-button>
+            <el-button class="register-button" size="large" @click="register">{{ $t('register.submit') }}</el-button>
           </el-form-item>
           <div class="login-link">
             <div></div>
-            <div>已有账号？请 <router-link to="/login">登录</router-link></div>
+            <div>{{ $t('register.hasAccount') }} <router-link to="/login">{{ $t('register.goLogin') }}</router-link></div>
           </div>
         </el-form>
       </div>
@@ -67,6 +72,8 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useTheme } from '@/composables/useTheme'
+import { currentLocale, setLocale } from '@/composables/useLocale'
+import { apiMessage, t } from '@/i18n'
 
 interface RegisterForm {
   username: string
@@ -81,11 +88,15 @@ const formRef = ref<FormInstance>()
 // 主题切换：浅色 → 深色 → 跟随系统 循环
 const mode = useTheme()
 const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
-const themeLabel = computed(() =>
-    mode.value === 'dark' ? '当前深色模式，点击切换' : mode.value === 'light' ? '当前浅色模式，点击切换' : '当前跟随系统，点击切换'
-)
+const themeLabel = computed(() => `layout.theme.current.${mode.value}`)
 const cycleTheme = () => {
   mode.value = mode.value === 'light' ? 'dark' : mode.value === 'dark' ? 'auto' : 'light'
+}
+
+// 语言切换：中 / EN
+const isZh = computed(() => currentLocale() === 'zh-CN')
+const toggleLocale = () => {
+  setLocale(isZh.value ? 'en-US' : 'zh-CN')
 }
 
 const form = reactive<RegisterForm>({
@@ -98,9 +109,9 @@ const form = reactive<RegisterForm>({
 // 确认密码校验
 const validatePassword = (_rule: any, value: string, callback: (error?: Error) => void) => {
   if (value === '') {
-    callback(new Error('请确认密码'))
+    callback(new Error(t('register.ruleConfirmRequired')))
   } else if (value !== form.password) {
-    callback(new Error('两次输入的密码不一致'))
+    callback(new Error(t('register.ruleConfirmMismatch')))
   } else {
     callback()
   }
@@ -108,12 +119,12 @@ const validatePassword = (_rule: any, value: string, callback: (error?: Error) =
 
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入账号', trigger: 'blur' },
-    { min: 3, max: 20, message: '账号长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: () => t('register.ruleUsernameRequired'), trigger: 'blur' },
+    { min: 3, max: 20, message: () => t('register.ruleUsernameLength'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+    { required: true, message: () => t('register.rulePasswordRequired'), trigger: 'blur' },
+    { min: 6, max: 20, message: () => t('register.rulePasswordLength'), trigger: 'blur' }
   ],
   confirmPass: [
     { validator: validatePassword, trigger: 'blur' }
@@ -129,13 +140,13 @@ const register = (): void => {
         role: form.role
       }).then((res: any) => {
         if (res.data.code === '200') {
-          ElMessage.success('注册成功')
+          ElMessage.success(t('register.success'))
           router.push('/login')
         } else {
-          ElMessage.error(res.data.msg || '注册失败')
+          ElMessage.error(apiMessage(res.data))
         }
       }).catch(() => {
-        ElMessage.error('注册失败，请稍后重试')
+        ElMessage.error(t('register.failedRetry'))
       })
     }
   })
@@ -150,18 +161,27 @@ const register = (): void => {
   position: relative;
 }
 
-/* 右上角主题切换按钮 */
-.theme-toggle {
+/* 右上角偏好区（语言 + 主题） */
+.corner-actions {
   position: absolute;
   top: 20px;
   right: 24px;
   z-index: 2;
+  display: flex;
+  gap: 10px;
+}
+
+/* 偏好按钮 */
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  min-width: 36px;
   height: 36px;
-  border-radius: 50%;
+  padding: 0 8px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--xm-text-regular);
   background: var(--xm-bg-card);
   box-shadow: var(--xm-shadow-card);

@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.StudentMapper">
 
     <sql id="Base_Column_List">
-        id,username,password,name,avatar,role,college_id,speciality_id,class_id,score,theme
+        id,username,password,name,avatar,role,college_id,speciality_id,class_id,score,theme,locale
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Student">
@@ -51,6 +51,7 @@
             <if test="classId != null">class_id,</if>
             <if test="score != null">score,</if>
             <if test="theme != null">theme,</if>
+            <if test="locale != null">locale,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -64,6 +65,7 @@
             <if test="classId != null">#{classId},</if>
             <if test="score != null">#{score},</if>
             <if test="theme != null">#{theme},</if>
+            <if test="locale != null">#{locale},</if>
         </trim>
     </insert>
     <!--college_id,spaciality_id,class_id,score-->
@@ -99,6 +101,9 @@
             </if>
             <if test="theme != null">
                 theme = #{theme},
+            </if>
+            <if test="locale != null">
+                locale = #{locale},
             </if>
         </set>
         where id = #{id}

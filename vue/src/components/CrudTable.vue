@@ -17,7 +17,7 @@
           <slot :name="col.prop" :row="scope.row" />
         </template>
       </el-table-column>
-      <el-table-column v-if="showActions && $slots.actions" label="操作" :width="actionsWidth" align="center">
+      <el-table-column v-if="showActions && $slots.actions" :label="$t('common.operation')" :width="actionsWidth" align="center">
         <template #default="scope">
           <slot name="actions" :row="scope.row" />
         </template>

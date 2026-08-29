@@ -63,6 +63,13 @@
     transition: background-color 0.25s ease;
 }
 
+/* 语言切换入口（中/EN），文字略小以适配圆形 */
+.lang-trigger {
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+}
+
 .theme-switch-trigger:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }

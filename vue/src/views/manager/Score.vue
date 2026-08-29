@@ -1,15 +1,15 @@
 <template>
   <div>
     <div class="search">
-      <el-select v-model="courseId" placeholder="请选择课程" style="width: 200px">
+      <el-select v-model="courseId" :placeholder="$t('pages.score.coursePlaceholder')" style="width: 200px">
         <el-option v-for="item in courseData" :key="item.id" :label="item.name" :value="item.id" />
       </el-select>
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
     <div v-if="user.role === 'TEACHER'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">新增</el-button>
-      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+      <el-button type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
+      <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
     </div>
 
     <CrudTable
@@ -25,41 +25,42 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button link type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button link type="danger" size="small" @click="del(row.id)">{{ $t('common.delete') }}</el-button>
       </template>
     </CrudTable>
 
-    <el-dialog v-model="formVisible" title="信息" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog v-model="formVisible" :title="$t('pages.score.dialogTitle')" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form ref="formRef" label-width="100px" style="padding-right: 50px" :model="form" :rules="rules">
-        <el-form-item prop="courseId" label="选择课程">
-          <el-select v-model="form.courseId" placeholder="请选择课程" style="width: 100%" @change="getStudent">
+        <el-form-item prop="courseId" :label="$t('pages.score.selectCourse')">
+          <el-select v-model="form.courseId" :placeholder="$t('pages.score.coursePlaceholder')" style="width: 100%" @change="getStudent">
             <el-option v-for="item in courseData" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
-        <el-form-item prop="studentId" label="选择学生">
-          <el-select v-model="studentId" placeholder="请选择学生" style="width: 100%">
+        <el-form-item prop="studentId" :label="$t('pages.score.selectStudent')">
+          <el-select v-model="studentId" :placeholder="$t('pages.score.studentPlaceholder')" style="width: 100%">
             <el-option v-for="item in studentData" :key="item.studentId" :label="item.studentName" :value="item.studentId" />
           </el-select>
         </el-form-item>
-        <el-form-item prop="ordinaryScore" label="平时分">
+        <el-form-item prop="ordinaryScore" :label="$t('pages.score.ordinaryScore')">
           <el-input v-model="form.ordinaryScore" autocomplete="off" />
         </el-form-item>
-        <el-form-item prop="examScore" label="期末分">
+        <el-form-item prop="examScore" :label="$t('pages.score.examScore')">
           <el-input v-model="form.examScore" autocomplete="off" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="formVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="save">{{ $t('common.ok') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, type FormRules } from 'element-plus'
 import request from '@/utils/request'
+import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -77,33 +78,33 @@ const {
   handleSelectionChange,
 } = useCrud({
   url: '/score',
-  deleteConfirmMessage: '您确定删除吗？删除后该学生的学分也会相应的减少，您需要重新再次录入？',
-  rules: {
-    ordinaryScore: [{ required: true, message: '请输入平时分', trigger: 'blur' }],
-    examScore: [{ required: true, message: '请输入期末分', trigger: 'blur' }],
-  },
+  deleteConfirmMessage: t('pages.score.deleteConfirm'),
+  rules: computed<FormRules>(() => ({
+    ordinaryScore: [{ required: true, message: t('pages.score.ruleOrdinaryRequired'), trigger: 'blur' }],
+    examScore: [{ required: true, message: t('pages.score.ruleExamRequired'), trigger: 'blur' }],
+  })),
   getParams: () => ({ courseId: courseId.value }),
   beforeSave: (formData) => {
     formData.studentId = studentId.value
   },
 })
 
-const columns: CrudColumn[] = [
-  { prop: 'id', label: '序号', width: 80, align: 'center', sortable: true },
-  { prop: 'studentName', label: '学生姓名', showOverflowTooltip: true },
-  { prop: 'courseName', label: '课程名称', showOverflowTooltip: true },
-  { prop: 'teacherName', label: '授课教师', showOverflowTooltip: true },
-  { prop: 'ordinaryScore', label: '平时分', showOverflowTooltip: true },
-  { prop: 'examScore', label: '期末分', showOverflowTooltip: true },
-  { prop: 'score', label: '总成绩', showOverflowTooltip: true },
-]
+const columns = computed<CrudColumn[]>(() => [
+  { prop: 'id', label: t('pages.score.id'), width: 80, align: 'center', sortable: true },
+  { prop: 'studentName', label: t('pages.score.studentName'), showOverflowTooltip: true },
+  { prop: 'courseName', label: t('pages.score.courseName'), showOverflowTooltip: true },
+  { prop: 'teacherName', label: t('pages.score.teacherName'), showOverflowTooltip: true },
+  { prop: 'ordinaryScore', label: t('pages.score.ordinaryScore'), showOverflowTooltip: true },
+  { prop: 'examScore', label: t('pages.score.examScore'), showOverflowTooltip: true },
+  { prop: 'score', label: t('pages.score.totalScore'), showOverflowTooltip: true },
+])
 
 const loadCourse = () => {
   request.get('/course/selectAll', { params: { teacherId: user.value.id } }).then((res: any) => {
     if (res.data.code === '200') {
       courseData.value = res.data.data
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }
@@ -114,7 +115,7 @@ const getStudent = (cId: any) => {
       studentData.value = res.data.data
       studentId.value = null
     } else {
-      ElMessage.error(res.data.msg)
+      ElMessage.error(apiMessage(res.data))
     }
   })
 }

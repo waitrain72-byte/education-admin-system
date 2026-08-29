@@ -1,31 +1,36 @@
 <template>
   <div class="container">
-    <!-- 右上角主题切换：登录前也能调整，保存到 localStorage -->
-    <div class="theme-toggle" :title="themeLabel" @click="cycleTheme">
-      <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+    <!-- 右上角偏好区：语言 + 主题（登录前也能调整，保存到 localStorage） -->
+    <div class="corner-actions">
+      <div class="theme-toggle" :title="$t('layout.lang.switch')" @click="toggleLocale">
+        {{ isZh ? 'EN' : '中' }}
+      </div>
+      <div class="theme-toggle" :title="$t(themeLabel)" @click="cycleTheme">
+        <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+      </div>
     </div>
 
     <!-- 左侧图片区域 -->
     <div class="left-panel">
       <div class="left-content">
         <img src="@/assets/imgs/教务系统.png" alt="logo" class="logo" />
-        <div class="system-title">教务管理系统</div>
-        <div class="system-subtitle">Educational Management System</div>
-        <div class="decoration-text">—— 智慧校园 · 高效管理 ——</div>
+        <div class="system-title">{{ $t('login.systemName') }}</div>
+        <div class="system-subtitle">{{ $t('login.systemSub') }}</div>
+        <div class="decoration-text">{{ $t('login.slogan') }}</div>
       </div>
     </div>
 
     <!-- 右侧登录框 -->
     <div class="right-panel">
       <div class="login-box">
-        <div class="login-title">欢迎登录</div>
-        <div class="login-subtitle">请输入您的账号信息</div>
+        <div class="login-title">{{ $t('login.title') }}</div>
+        <div class="login-subtitle">{{ $t('login.subtitle') }}</div>
         <el-form ref="formRef" :model="form" :rules="rules" class="login-form">
           <el-form-item prop="username">
             <el-input
                 v-model="form.username"
                 :prefix-icon="User"
-                placeholder="请输入账号"
+                :placeholder="$t('login.usernamePlaceholder')"
                 size="large"
             />
           </el-form-item>
@@ -33,7 +38,7 @@
             <el-input
                 v-model="form.password"
                 :prefix-icon="Lock"
-                placeholder="请输入密码"
+                :placeholder="$t('login.passwordPlaceholder')"
                 show-password
                 size="large"
             />
@@ -43,31 +48,31 @@
               <el-input
                   v-model="form.captcha"
                   :prefix-icon="Picture"
-                  placeholder="请输入验证码"
+                  :placeholder="$t('login.captchaPlaceholder')"
                   size="large"
               />
               <img
                   :src="captchaUrl"
                   class="captcha-img"
-                  title="点击刷新"
+                  :title="$t('login.captchaRefresh')"
                   alt="验证码"
                   @click="refreshCaptcha"
               />
             </div>
           </el-form-item>
           <el-form-item prop="role">
-            <el-select v-model="form.role" placeholder="请选择角色" class="role-select" size="large">
-              <el-option label="管理员" value="ADMIN" />
-              <el-option label="教师" value="TEACHER" />
-              <el-option label="学生" value="STUDENT" />
+            <el-select v-model="form.role" :placeholder="$t('login.rolePlaceholder')" class="role-select" size="large">
+              <el-option :label="$t('login.roleAdmin')" value="ADMIN" />
+              <el-option :label="$t('login.roleTeacher')" value="TEACHER" />
+              <el-option :label="$t('login.roleStudent')" value="STUDENT" />
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button class="login-button" size="large" @click="login">登 录</el-button>
+            <el-button class="login-button" size="large" @click="login">{{ $t('login.submit') }}</el-button>
           </el-form-item>
           <div class="register-link">
             <div></div>
-            <div>还没有账号？请 <router-link to="/register">注册</router-link></div>
+            <div>{{ $t('login.noAccount') }} <router-link to="/register">{{ $t('login.goRegister') }}</router-link></div>
           </div>
         </el-form>
       </div>
@@ -83,6 +88,8 @@ import { User, Lock, Picture, Sunny, Moon, Monitor } from '@element-plus/icons-v
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { useTheme, pullThemeFromServer } from '@/composables/useTheme'
+import { currentLocale, setLocale, pullLocaleFromServer } from '@/composables/useLocale'
+import { apiMessage, t } from '@/i18n'
 
 interface LoginForm {
   username: string
@@ -104,11 +111,15 @@ const captchaUrl = ref<string>('')
 // 主题切换：浅色 → 深色 → 跟随系统 循环（登录后管理端有下拉可选）
 const mode = useTheme()
 const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
-const themeLabel = computed(() =>
-    mode.value === 'dark' ? '当前深色模式，点击切换' : mode.value === 'light' ? '当前浅色模式，点击切换' : '当前跟随系统，点击切换'
-)
+const themeLabel = computed(() => `layout.theme.current.${mode.value}`)
 const cycleTheme = () => {
   mode.value = mode.value === 'light' ? 'dark' : mode.value === 'dark' ? 'auto' : 'light'
+}
+
+// 语言切换：中 / EN
+const isZh = computed(() => currentLocale() === 'zh-CN')
+const toggleLocale = () => {
+  setLocale(isZh.value ? 'en-US' : 'zh-CN')
 }
 
 const form = reactive<LoginForm>({
@@ -119,10 +130,10 @@ const form = reactive<LoginForm>({
 })
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入账号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  captcha:  [{ required: true, message: '请输入验证码', trigger: 'blur' }],
-  role:     [{ required: true, message: '请选择角色', trigger: 'change' }],
+  username: [{ required: true, message: () => t('register.ruleUsernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('register.rulePasswordRequired'), trigger: 'blur' }],
+  captcha:  [{ required: true, message: () => t('login.captchaPlaceholder'), trigger: 'blur' }],
+  role:     [{ required: true, message: () => t('login.rolePlaceholder'), trigger: 'change' }],
 }
 
 const refreshCaptcha = async (): Promise<void> => {
@@ -135,7 +146,7 @@ const refreshCaptcha = async (): Promise<void> => {
       captchaUrl.value = URL.createObjectURL(response.data)
     }
   } catch {
-    ElMessage.error('获取验证码失败')
+    ElMessage.error(t('login.captchaFailed'))
   }
 }
 
@@ -148,16 +159,17 @@ const login = (): void => {
               // 登录态写入 Pinia store（内部负责持久化到 localStorage）
               useUserStore().updateUser(res.data.data as Record<string, any>)
               router.push('/')
-              // 从后端拉取该用户保存的主题偏好，覆盖本地默认，实现多端同步
+              // 从后端拉取该用户保存的主题与语言偏好，覆盖本地默认，实现多端同步
               pullThemeFromServer()
-              ElMessage.success('登录成功')
+              pullLocaleFromServer()
+              ElMessage.success(t('common.operationSuccess'))
             } else {
-              ElMessage.error(res.data.msg)
+              ElMessage.error(apiMessage(res.data))
               refreshCaptcha()
             }
           })
           .catch(() => {
-            ElMessage.error('登录失败')
+            ElMessage.error(t('login.loginFailed'))
             refreshCaptcha()
           })
     }
@@ -177,18 +189,27 @@ onMounted(() => {
   position: relative;
 }
 
-/* 右上角主题切换按钮 */
-.theme-toggle {
+/* 右上角偏好区（语言 + 主题） */
+.corner-actions {
   position: absolute;
   top: 20px;
   right: 24px;
   z-index: 2;
+  display: flex;
+  gap: 10px;
+}
+
+/* 偏好按钮 */
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  min-width: 36px;
   height: 36px;
-  border-radius: 50%;
+  padding: 0 8px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--xm-text-regular);
   background: var(--xm-bg-card);
   box-shadow: var(--xm-shadow-card);

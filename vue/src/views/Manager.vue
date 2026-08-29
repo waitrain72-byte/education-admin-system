@@ -2,34 +2,47 @@
   <div class="manager-container">
     <!--  头部  -->
     <div class="manager-header">
-      <div class="manager-header-left">
+        <div class="manager-header-left">
         <img src="@/assets/imgs/教务系统.png" />
-        <div class="title">教务管理系统</div>
+        <div class="title">{{ $t('layout.title') }}</div>
       </div>
 
       <div class="manager-header-center">
         <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item :to="{ path: route.path }">{{ route.meta?.name || '页面' }}</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/' }">{{ $t('layout.breadcrumbHome') }}</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: route.path }">{{ route.meta?.name ? $t(route.meta.name as string) : $t('common.page') }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
 
       <div class="manager-header-right">
+        <!-- 语言切换：中文 / English -->
+        <el-dropdown placement="bottom" @command="setLocale">
+          <span class="theme-switch-trigger lang-trigger" :title="$t('layout.lang.switch')">
+            {{ isZh ? '中' : 'EN' }}
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="zh-CN" :data-active="isZh">中文</el-dropdown-item>
+              <el-dropdown-item command="en-US" :data-active="!isZh">English</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
         <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
         <el-dropdown placement="bottom" class="theme-switch" @command="setTheme">
-          <span class="theme-switch-trigger" :title="themeLabel">
+          <span class="theme-switch-trigger" :title="$t(themeLabel)">
             <el-icon :size="20"><component :is="themeIcon" /></el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="light" :data-active="mode === 'light'">
-                <el-icon><Sunny /></el-icon>浅色模式
+                <el-icon><Sunny /></el-icon>{{ $t('layout.theme.light') }}
               </el-dropdown-item>
               <el-dropdown-item command="dark" :data-active="mode === 'dark'">
-                <el-icon><Moon /></el-icon>深色模式
+                <el-icon><Moon /></el-icon>{{ $t('layout.theme.dark') }}
               </el-dropdown-item>
               <el-dropdown-item command="auto" :data-active="mode === 'auto'">
-                <el-icon><Monitor /></el-icon>跟随系统
+                <el-icon><Monitor /></el-icon>{{ $t('layout.theme.auto') }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -38,13 +51,13 @@
         <el-dropdown placement="bottom" @command="handleCommand">
           <div class="avatar">
             <img :src="user.avatar || defaultAvatar" />
-            <div>{{ user.name || '游客' }}</div>
+            <div>{{ user.name || $t('layout.guest') }}</div>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="person">个人信息</el-dropdown-item>
-              <el-dropdown-item command="password">修改密码</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              <el-dropdown-item command="person">{{ $t('layout.profile') }}</el-dropdown-item>
+              <el-dropdown-item command="password">{{ $t('layout.changePassword') }}</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>{{ $t('layout.logout') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -63,16 +76,16 @@
         >
           <el-menu-item index="/home">
             <el-icon><HomeFilled /></el-icon>
-            <span>系统首页</span>
+            <span>{{ $t('menu.home') }}</span>
           </el-menu-item>
 
           <el-sub-menu v-for="group in menuGroups" :key="group.key" :index="group.key">
             <template #title>
               <el-icon><component :is="group.icon" /></el-icon>
-              <span>{{ group.title }}</span>
+              <span>{{ $t(group.title) }}</span>
             </template>
             <el-menu-item v-for="item in group.items" :key="item.path" :index="item.path">
-              {{ item.name }}
+              {{ $t(item.name) }}
             </el-menu-item>
           </el-sub-menu>
         </el-menu>
@@ -93,6 +106,8 @@ import { ElMessage } from 'element-plus'
 import { Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
+import { currentLocale, setLocale } from '@/composables/useLocale'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const route = useRoute()
@@ -102,13 +117,13 @@ const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726
 // 使用全局用户状态
 const { user, refreshUser, clearUser } = useUser()
 
-// 菜单分组配置：顺序即展示顺序
+// 菜单分组配置：顺序即展示顺序（标题为 i18n 键）
 const menuGroupConfig: Record<string, { title: string; icon: string }> = {
-  info: { title: '信息公告', icon: 'ChatRound' },
-  admin: { title: '行政管理', icon: 'Message' },
-  teach: { title: '教学管理', icon: 'Opportunity' },
-  edu: { title: '教务管理', icon: 'Stamp' },
-  user: { title: '用户管理', icon: 'User' },
+  info: { title: 'layout.groupInfo', icon: 'ChatRound' },
+  admin: { title: 'layout.groupAdmin', icon: 'Message' },
+  teach: { title: 'layout.groupTeach', icon: 'Opportunity' },
+  edu: { title: 'layout.groupEdu', icon: 'Stamp' },
+  user: { title: 'layout.groupUser', icon: 'User' },
 }
 
 // 根据当前角色从路由配置动态生成侧边菜单，与路由 meta.roles 保持单一数据源
@@ -136,12 +151,13 @@ const openeds = ref<string[]>(Object.keys(menuGroupConfig))
 // 主题模式（light/dark/auto），切换后由 useTheme 负责持久化与后端同步
 const mode = useTheme()
 const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
-const themeLabel = computed(() =>
-    mode.value === 'dark' ? '深色模式' : mode.value === 'light' ? '浅色模式' : '跟随系统'
-)
+const themeLabel = computed(() => `layout.theme.current.${mode.value}`)
 const setTheme = (command: string) => {
     mode.value = command as 'light' | 'dark' | 'auto'
 }
+
+// 语言偏好（zh-CN/en-US），切换后持久化并同步后端
+const isZh = computed(() => currentLocale() === 'zh-CN')
 
 // 提供 refreshUser 方法给子组件
 provide('refreshUser', refreshUser)
@@ -178,7 +194,7 @@ const goToPerson = () => {
 
 const logout = () => {
   clearUser()
-  ElMessage.success('已退出登录')
+  ElMessage.success(t('layout.loggedOut'))
   router.push('/login')
 }
 </script>
