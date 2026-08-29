@@ -36,6 +36,7 @@ const routes: RouteRecordRaw[] = [
     },
     { path: '/login',    name: 'Login',    component: () => import('@/views/Login.vue') },
     { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
+    { path: '/dashboard', name: 'Dashboard', component: () => import('@/views/Dashboard.vue') },
     { path: '/403',      name: 'Forbidden', component: () => import('@/views/manager/403.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/404.vue') },
 ]

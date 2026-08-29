@@ -1,7 +1,8 @@
 <template>
   <div>
-    <div class="card" style="padding: 15px">
-      {{ $t('home.welcome', { name: user && user.name }) }}
+    <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between">
+      <span>{{ $t('home.welcome', { name: user && user.name }) }}</span>
+      <el-button type="primary" size="small" @click="router.push('/dashboard')">{{ $t('pages.dashboard.entry') }}</el-button>
     </div>
 
 
@@ -49,6 +50,9 @@ import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
 import { apiMessage } from '@/i18n'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // 按需注册图表组件，避免打包整个 echarts（体积从约 1MB 降至数百 KB）
 echarts.use([

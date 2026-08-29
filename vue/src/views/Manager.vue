@@ -13,6 +13,22 @@
           <el-breadcrumb-item :to="{ path: '/' }">{{ $t('layout.breadcrumbHome') }}</el-breadcrumb-item>
           <el-breadcrumb-item :to="{ path: route.path }">{{ route.meta?.name ? $t(route.meta.name as string) : $t('common.page') }}</el-breadcrumb-item>
         </el-breadcrumb>
+
+        <!-- 多标签页：紧跟在面包屑后面，可快速切换/关闭 -->
+        <div class="manager-tabs">
+          <div
+              v-for="tab in tabs"
+              :key="tab.path"
+              class="manager-tab"
+              :class="{ active: route.path === tab.path }"
+              @click="router.push(tab.path)"
+          >
+            <span>{{ $t(tab.name) }}</span>
+            <el-icon v-if="tab.path !== '/home'" class="tab-close" @click.stop="closeTab(tab.path)">
+              <CircleClose />
+            </el-icon>
+          </div>
+        </div>
       </div>
 
       <div class="manager-header-right">
@@ -62,22 +78,6 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-      </div>
-    </div>
-
-    <!-- 多标签页：记录访问过的页面，可快速切换/关闭 -->
-    <div class="manager-tabs">
-      <div
-          v-for="tab in tabs"
-          :key="tab.path"
-          class="manager-tab"
-          :class="{ active: route.path === tab.path }"
-          @click="router.push(tab.path)"
-      >
-        <span>{{ $t(tab.name) }}</span>
-        <el-icon v-if="tab.path !== '/home'" class="tab-close" @click.stop="closeTab(tab.path)">
-          <CircleClose />
-        </el-icon>
       </div>
     </div>
 

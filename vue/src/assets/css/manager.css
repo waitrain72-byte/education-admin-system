@@ -45,6 +45,33 @@
     width: 0;
     display: flex;
     align-items: center;
+    gap: 16px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* 面包屑在蓝色头部上的配色：文字白色（Element 默认深色在蓝底上不可读） */
+.manager-header-center .el-breadcrumb {
+    flex-shrink: 0;
+}
+
+.manager-header-center .el-breadcrumb .el-breadcrumb__inner {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: normal;
+}
+
+.manager-header-center .el-breadcrumb .el-breadcrumb__inner a:hover,
+.manager-header-center .el-breadcrumb .el-breadcrumb__inner:hover {
+    color: #ffffff;
+}
+
+.manager-header-center .el-breadcrumb .el-breadcrumb__item:last-child .el-breadcrumb__inner {
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.manager-header-center .el-breadcrumb .el-breadcrumb__separator {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .manager-header-right {
@@ -106,15 +133,14 @@ html.dark .theme-switch-trigger:hover {
     overflow: hidden;
 }
 
-/* 多标签页栏 */
+/* 多标签页：嵌在头部内、面包屑右侧，半透明白胶囊风格 */
 .manager-tabs {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 10px;
-    background-color: var(--xm-bg-page);
-    flex-shrink: 0;
     overflow-x: auto;
+    min-width: 0;
+    padding: 2px 0;
 }
 
 .manager-tab {
@@ -123,10 +149,9 @@ html.dark .theme-switch-trigger:hover {
     gap: 4px;
     padding: 4px 12px;
     font-size: 13px;
-    border-radius: 4px;
-    border: 1px solid var(--xm-border);
-    background-color: var(--xm-bg-card);
-    color: var(--xm-text-regular);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
     cursor: pointer;
     white-space: nowrap;
     user-select: none;
@@ -134,13 +159,13 @@ html.dark .theme-switch-trigger:hover {
 }
 
 .manager-tab:hover {
-    color: var(--xm-brand);
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 .manager-tab.active {
-    background-color: var(--xm-brand);
-    border-color: var(--xm-brand);
-    color: #ffffff;
+    background-color: #ffffff;
+    color: var(--xm-header);
+    font-weight: bold;
 }
 
 .manager-tab .tab-close {
@@ -153,9 +178,13 @@ html.dark .theme-switch-trigger:hover {
     background-color: rgba(255, 255, 255, 0.4);
 }
 
+.manager-tab.active .tab-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
 .manager-main-left {
     width: 200px;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 60px);
     background-color: var(--xm-sidebar-bg);
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
