@@ -1,0 +1,309 @@
+/* ================= 主题变量体系（与 Web 端 theme.css 同源） ================= */
+page {
+  background: #f3f6fe;
+}
+
+.theme-light {
+  --xm-bg-page: #f3f6fe;
+  --xm-bg-card: #ffffff;
+  --xm-bg-input: #f5f7fa;
+  --xm-bg-hover: #eef0f3;
+  --xm-text: #303133;
+  --xm-text-2: #909399;
+  --xm-border: #e4e7ed;
+  --xm-brand: #7684ff;
+  --xm-header: #006eff;
+  --xm-header-text: #ffffff;
+  --xm-danger: #f56c6c;
+  --xm-warning: #e6a23c;
+  --xm-success: #67c23a;
+}
+
+.theme-dark {
+  --xm-bg-page: #101418;
+  --xm-bg-card: #1b1f26;
+  --xm-bg-input: #1b1f26;
+  --xm-bg-hover: #242a33;
+  --xm-text: #e5eaf3;
+  --xm-text-2: #a3a6ad;
+  --xm-border: #363b44;
+  --xm-brand: #8b97ff;
+  --xm-header: #1a2634;
+  --xm-header-text: #e5eaf3;
+  --xm-danger: #f56c6c;
+  --xm-warning: #e6a23c;
+  --xm-success: #67c23a;
+}
+
+/* 页面根容器：由每个页面的根 view 绑定 themeClass（全局混入） */
+.xm-page {
+  min-height: 100vh;
+  background: var(--xm-bg-page);
+  color: var(--xm-text);
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+/* ================= 通用组件类 ================= */
+.xm-card {
+  background: var(--xm-bg-card);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.xm-card-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.xm-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.xm-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.xm-label {
+  font-size: 26rpx;
+  color: var(--xm-text-2);
+}
+
+.xm-value {
+  font-size: 28rpx;
+  color: var(--xm-text);
+  word-break: break-all;
+}
+
+.xm-empty {
+  text-align: center;
+  color: var(--xm-text-2);
+  font-size: 26rpx;
+  padding: 60rpx 0;
+}
+
+/* 按钮：覆盖小程序原生 button 样式 */
+.xm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  padding: 0 28rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: 10rpx;
+  margin: 0;
+  border: 1rpx solid transparent;
+}
+
+.xm-btn::after {
+  border: none;
+}
+
+.xm-btn-primary {
+  background: var(--xm-brand);
+  color: #ffffff;
+}
+
+.xm-btn-plain {
+  background: transparent;
+  border-color: var(--xm-border);
+  color: var(--xm-text);
+}
+
+.xm-btn-danger {
+  background: transparent;
+  border-color: var(--xm-danger);
+  color: var(--xm-danger);
+}
+
+.xm-btn-block {
+  display: flex;
+  width: 100%;
+}
+
+.xm-btn[disabled] {
+  opacity: 0.5;
+}
+
+/* 表单 */
+.xm-form-item {
+  margin-bottom: 24rpx;
+}
+
+.xm-form-label {
+  font-size: 26rpx;
+  color: var(--xm-text-2);
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.xm-input {
+  background: var(--xm-bg-input);
+  border: 1rpx solid var(--xm-border);
+  border-radius: 10rpx;
+  height: 76rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  color: var(--xm-text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.xm-textarea {
+  background: var(--xm-bg-input);
+  border: 1rpx solid var(--xm-border);
+  border-radius: 10rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+  color: var(--xm-text);
+  width: 100%;
+  min-height: 140rpx;
+  box-sizing: border-box;
+}
+
+/* 标签 */
+.xm-tag {
+  display: inline-block;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid var(--xm-border);
+  color: var(--xm-text-2);
+}
+
+.xm-tag-success {
+  color: var(--xm-success);
+  border-color: var(--xm-success);
+}
+
+.xm-tag-warning {
+  color: var(--xm-warning);
+  border-color: var(--xm-warning);
+}
+
+.xm-tag-danger {
+  color: var(--xm-danger);
+  border-color: var(--xm-danger);
+}
+
+/* 操作行 */
+.xm-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 16rpx;
+}
+
+.xm-link-btn {
+  font-size: 26rpx;
+  color: var(--xm-brand);
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: 1.4;
+  height: auto;
+}
+
+.xm-link-btn::after {
+  border: none;
+}
+
+.xm-link-danger {
+  color: var(--xm-danger);
+}
+
+.xm-link-warning {
+  color: var(--xm-warning);
+}
+
+/* 底部弹层表单 */
+.xm-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+.xm-popup {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--xm-bg-card);
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 100;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.xm-popup-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+/* 首页宫格菜单：小屏 3 列，宽屏（平板/横屏）自动加列 */
+.xm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+@media (min-width: 600px) {
+  .xm-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .xm-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .xm-page {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+}
+
+.xm-grid-item {
+  background: var(--xm-bg-card);
+  border-radius: 16rpx;
+  padding: 28rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--xm-text);
+}
+
+.xm-grid-item-emoji {
+  font-size: 40rpx;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+/* 统计条 */
+.xm-bar-wrap {
+  background: var(--xm-bg-input);
+  border-radius: 8rpx;
+  height: 20rpx;
+  overflow: hidden;
+  flex: 1;
+}
+
+.xm-bar {
+  height: 100%;
+  border-radius: 8rpx;
+  background: var(--xm-brand);
+}

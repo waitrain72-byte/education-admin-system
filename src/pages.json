@@ -1,0 +1,33 @@
+{
+    "pages": [
+        { "path": "pages/login/login", "style": { "navigationStyle": "custom" } },
+        { "path": "pages/register/register", "style": { "navigationBarTitleText": "注册" } },
+        { "path": "pages/home/home", "style": { "navigationBarTitleText": "系统首页" } },
+        { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人信息" } },
+        { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } },
+        { "path": "pages/notice/notice", "style": { "navigationBarTitleText": "教务通知" } },
+        { "path": "pages/examplan/examplan", "style": { "navigationBarTitleText": "考试安排" } },
+        { "path": "pages/roomplan/roomplan", "style": { "navigationBarTitleText": "教室安排" } },
+        { "path": "pages/college/college", "style": { "navigationBarTitleText": "学院信息" } },
+        { "path": "pages/speciality/speciality", "style": { "navigationBarTitleText": "专业信息" } },
+        { "path": "pages/classes/classes", "style": { "navigationBarTitleText": "班级信息" } },
+        { "path": "pages/course/course", "style": { "navigationBarTitleText": "课程信息" } },
+        { "path": "pages/choice/choice", "style": { "navigationBarTitleText": "我的选课" } },
+        { "path": "pages/curriculum/curriculum", "style": { "navigationBarTitleText": "我的课表" } },
+        { "path": "pages/score/score", "style": { "navigationBarTitleText": "我的成绩" } },
+        { "path": "pages/comment/comment", "style": { "navigationBarTitleText": "网上评教" } },
+        { "path": "pages/apply/apply", "style": { "navigationBarTitleText": "请假申请" } },
+        { "path": "pages/homework/homework", "style": { "navigationBarTitleText": "作业提交" } },
+        { "path": "pages/attendance/attendance", "style": { "navigationBarTitleText": "考勤信息" } },
+        { "path": "pages/admin/admin", "style": { "navigationBarTitleText": "管理员信息" } },
+        { "path": "pages/teacher/teacher", "style": { "navigationBarTitleText": "教师信息" } },
+        { "path": "pages/student/student", "style": { "navigationBarTitleText": "学生信息" } }
+    ],
+    "globalStyle": {
+        "navigationBarTextStyle": "white",
+        "navigationBarTitleText": "教务管理系统",
+        "navigationBarBackgroundColor": "#006eff",
+        "backgroundColor": "#f3f6fe",
+        "enablePullDownRefresh": false
+    }
+}

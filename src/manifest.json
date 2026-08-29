@@ -1,0 +1,50 @@
+{
+    "name": "教务管理系统",
+    "appid": "",
+    "description": "教务管理系统微信小程序版：管理员/教师/学生三端，支持中英文切换与深浅色主题",
+    "versionName": "1.0.0",
+    "versionCode": "100",
+    "transformPx": false,
+    "app-plus": {
+        "usingComponents": true,
+        "nvueStyleCompiler": "uni-app",
+        "compilerVersion": 3,
+        "splashscreen": {
+            "alwaysShowBeforeRender": true,
+            "waiting": true,
+            "autoclose": true,
+            "delay": 0
+        },
+        "modules": {},
+        "distribute": {
+            "android": {
+                "permissions": [
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>"
+                ]
+            },
+            "ios": {},
+            "sdkConfigs": {}
+        }
+    },
+    "quickapp": {},
+    "mp-weixin": {
+        "appid": "wxc920bae714c05351",
+        "setting": {
+            "urlCheck": false
+        },
+        "usingComponents": true
+    },
+    "mp-alipay": {
+        "usingComponents": true
+    },
+    "mp-baidu": {
+        "usingComponents": true
+    },
+    "mp-toutiao": {
+        "usingComponents": true
+    },
+    "uniStatistics": {
+        "enable": false
+    },
+    "vueVersion": "3"
+}
