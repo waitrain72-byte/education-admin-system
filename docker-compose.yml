@@ -19,11 +19,13 @@ services:
       start_period: 30s
     volumes:
       - mysql_data:/var/lib/mysql
-      # 初始化脚本按文件名顺序执行：先建表导入数据，再为账号表补充 theme / locale / 日志表
+      # 初始化脚本按文件名顺序执行：建表导数据 → theme/locale 迁移 → 日志表 → 演示账号与演示业务数据
       - ./sql/xm_educational_manager.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./sql/add_theme_column.sql:/docker-entrypoint-initdb.d/02-theme.sql:ro
       - ./sql/add_locale_column.sql:/docker-entrypoint-initdb.d/03-locale.sql:ro
       - ./sql/add_log_tables.sql:/docker-entrypoint-initdb.d/04-log.sql:ro
+      - ./sql/add_demo_accounts.sql:/docker-entrypoint-initdb.d/05-demo-accounts.sql:ro
+      - ./sql/add_demo_data.sql:/docker-entrypoint-initdb.d/06-demo-data.sql:ro
 
   backend:
     build: ./springboot
