@@ -66,11 +66,17 @@ const currentNotice = computed(() => {
   return list[noticeIndex.value % list.length].title || ''
 })
 
-const goBack = () => {
-  window.history.length > 1 ? router.back() : router.push('/home')
+// 1920 x 1080 设计稿等比缩放
+const DESIGN_W = 1920
+const DESIGN_H = 1080
+const scale = ref(1)
+const screenStyle = computed(() => ({
+  transform: `translate(-50%, -50%) scale(${scale.value})`,
+}))
+const fit = () => {
+  scale.value = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H)
 }
 
-// ========== 指标卡 ==========
 const metrics = computed(() => [
   { key: 'student', value: stats.value.studentCount ?? '-', label: 'pages.dashboard.studentCount' },
   { key: 'teacher', value: stats.value.teacherCount ?? '-', label: 'pages.dashboard.teacherCount' },
@@ -80,15 +86,8 @@ const metrics = computed(() => [
   { key: 'loginWeek', value: stats.value.loginWeek ?? '-', label: 'pages.dashboard.loginWeek' },
 ])
 
-// ========== 1920 x 1080 设计稿等比缩放（上下或左右留边，图文比例恒定） ==========
-const DESIGN_W = 1920
-const DESIGN_H = 1080
-const scale = ref(1)
-const screenStyle = computed(() => ({
-  transform: `translate(-50%, -50%) scale(${scale.value})`,
-}))
-const fit = () => {
-  scale.value = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H)
+const goBack = () => {
+  window.history.length > 1 ? router.back() : router.push('/home')
 }
 
 // ========== 时钟 ==========
@@ -109,27 +108,10 @@ const chartTitle = ref<HTMLElement>()
 const chartLoginTrend = ref<HTMLElement>()
 const instances: echarts.ECharts[] = []
 
-// 放大的全局字号
-const AXIS_FONT = 20
-const LEGEND_FONT = 20
-const TOOLTIP_FONT = 20
-const AXUS = 'rgba(140, 180, 255, 0.9)'
+const AXUS = 'rgba(140, 180, 255, 0.8)'
 const SPLIT = 'rgba(80, 120, 200, 0.25)'
-const baseGrid = { left: 80, right: 30, top: 40, bottom: 50 }
-const categoryAxis = (data: any[], rotate = 0) => ({
-  type: 'category',
-  data,
-  axisLabel: { color: AXUS, fontSize: AXIS_FONT, interval: 0, rotate },
-  axisLine: { lineStyle: { color: SPLIT } },
-})
-const valueAxis = () => ({
-  type: 'value',
-  minInterval: 1,
-  axisLabel: { color: AXUS, fontSize: AXIS_FONT },
-  splitLine: { lineStyle: { color: SPLIT } },
-})
 
-const handleResize = () => fit()
+const baseGrid = { left: 50, right: 20, top: 30, bottom: 30 }
 
 function initChart(el: HTMLElement | undefined, option: echarts.EChartsCoreOption) {
   if (!el) return
@@ -146,10 +128,10 @@ const renderCharts = () => {
     const values: number[] = res.data.data.yAxis || []
     initChart(chartScore.value, {
       grid: baseGrid,
-      tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
-      xAxis: categoryAxis(xAxis),
-      yAxis: valueAxis(),
-      series: [{ type: 'bar', data: values, barWidth: 36, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#2f7cff' } }],
+      tooltip: {},
+      xAxis: { type: 'category', data: xAxis, axisLabel: { color: AXUS, fontSize: 12, interval: 0 }, axisLine: { lineStyle: { color: SPLIT } } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { color: AXUS }, splitLine: { lineStyle: { color: SPLIT } } },
+      series: [{ type: 'bar', data: values, barWidth: 22, itemStyle: { borderRadius: [4, 4, 0, 0], color: '#2f7cff' } }],
     })
   })
 
@@ -158,12 +140,12 @@ const renderCharts = () => {
     if (res.data.code !== '200') return
     const data = res.data.data.data || []
     initChart(chartAttendance.value, {
-      tooltip: { trigger: 'item', textStyle: { fontSize: TOOLTIP_FONT } },
-      legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 18, itemHeight: 18 },
+      tooltip: { trigger: 'item' },
+      legend: { bottom: 0, textStyle: { color: AXUS }, itemWidth: 12, itemHeight: 12 },
       series: [{
-        type: 'pie', radius: ['38%', '64%'], center: ['50%', '44%'],
+        type: 'pie', radius: ['40%', '68%'], center: ['50%', '45%'],
         data,
-        label: { color: AXUS, fontSize: AXIS_FONT },
+        label: { color: AXUS },
         itemStyle: { borderRadius: 6, borderColor: '#0a1628', borderWidth: 2 },
       }],
     })
@@ -174,30 +156,30 @@ const renderCharts = () => {
   // 各学院学生人数（柱状）
   initChart(chartCollege.value, {
     grid: baseGrid,
-    tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
-    xAxis: categoryAxis((s.collegeDist || []).map((i: any) => i.name), 20),
-    yAxis: valueAxis(),
-    series: [{ type: 'bar', data: (s.collegeDist || []).map((i: any) => i.value), barWidth: 36, itemStyle: { borderRadius: [6, 6, 0, 0], color: '#00d4ff' } }],
+    tooltip: {},
+    xAxis: { type: 'category', data: (s.collegeDist || []).map((i: any) => i.name), axisLabel: { color: AXUS, fontSize: 11, interval: 0, rotate: 20 }, axisLine: { lineStyle: { color: SPLIT } } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { color: AXUS }, splitLine: { lineStyle: { color: SPLIT } } },
+    series: [{ type: 'bar', data: (s.collegeDist || []).map((i: any) => i.value), barWidth: 24, itemStyle: { borderRadius: [4, 4, 0, 0], color: '#00d4ff' } }],
   })
 
   // 选课热度 TOP5（横向条形）
   const top = [...(s.courseTop || [])].reverse()
   initChart(chartCourseTop.value, {
-    grid: { left: 210, right: 40, top: 30, bottom: 30 },
-    tooltip: { textStyle: { fontSize: TOOLTIP_FONT } },
-    xAxis: valueAxis(),
-    yAxis: { type: 'category', data: top.map((i: any) => i.name), axisLabel: { color: AXUS, fontSize: AXIS_FONT }, axisLine: { lineStyle: { color: SPLIT } } },
-    series: [{ type: 'bar', data: top.map((i: any) => i.value), barWidth: 24, itemStyle: { borderRadius: [0, 10, 10, 0], color: '#22e0a1' } }],
+    grid: { left: 130, right: 30, top: 20, bottom: 20 },
+    tooltip: {},
+    xAxis: { type: 'value', minInterval: 1, axisLabel: { color: AXUS }, splitLine: { lineStyle: { color: SPLIT } } },
+    yAxis: { type: 'category', data: top.map((i: any) => i.name), axisLabel: { color: AXUS, fontSize: 12 }, axisLine: { lineStyle: { color: SPLIT } } },
+    series: [{ type: 'bar', data: top.map((i: any) => i.value), barWidth: 16, itemStyle: { borderRadius: [0, 8, 8, 0], color: '#22e0a1' } }],
   })
 
   // 教师职称结构（饼图）
   initChart(chartTitle.value, {
-    tooltip: { trigger: 'item', textStyle: { fontSize: TOOLTIP_FONT } },
-    legend: { bottom: 0, textStyle: { color: AXUS, fontSize: LEGEND_FONT }, itemWidth: 18, itemHeight: 18 },
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0, textStyle: { color: AXUS }, itemWidth: 12, itemHeight: 12 },
     series: [{
-      type: 'pie', radius: '60%', center: ['50%', '44%'],
+      type: 'pie', radius: '62%', center: ['50%', '45%'],
       data: s.titleDist || [],
-      label: { color: AXUS, fontSize: AXIS_FONT, formatter: '{b} {c}' },
+      label: { color: AXUS, formatter: '{b} {c}' },
       itemStyle: { borderRadius: 4, borderColor: '#0a1628', borderWidth: 2 },
     }],
   })
@@ -205,13 +187,13 @@ const renderCharts = () => {
   // 近 7 天登录趋势（折线）
   initChart(chartLoginTrend.value, {
     grid: baseGrid,
-    tooltip: { trigger: 'axis', textStyle: { fontSize: TOOLTIP_FONT } },
-    xAxis: { ...categoryAxis((s.loginTrend || []).map((i: any) => i.date)), boundaryGap: false },
-    yAxis: valueAxis(),
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: (s.loginTrend || []).map((i: any) => i.date), axisLabel: { color: AXUS }, axisLine: { lineStyle: { color: SPLIT } }, boundaryGap: false },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { color: AXUS }, splitLine: { lineStyle: { color: SPLIT } } },
     series: [{
       type: 'line', data: (s.loginTrend || []).map((i: any) => i.value),
-      smooth: true, symbol: 'circle', symbolSize: 12,
-      lineStyle: { color: '#ffb54d', width: 4 },
+      smooth: true, symbol: 'circle', symbolSize: 8,
+      lineStyle: { color: '#ffb54d', width: 3 },
       itemStyle: { color: '#ffb54d' },
       areaStyle: { color: 'rgba(255, 181, 77, 0.15)' },
     }],
@@ -229,7 +211,7 @@ const loadNotices = () => {
 
 onMounted(async () => {
   fit()
-  window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', fit)
   updateClock()
   clockTimer = setInterval(updateClock, 1000)
 
@@ -246,7 +228,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('resize', fit)
   if (clockTimer) clearInterval(clockTimer)
   if (noticeTimer) clearInterval(noticeTimer)
   instances.forEach((inst) => inst.dispose())
@@ -274,24 +256,23 @@ onBeforeUnmount(() => {
     radial-gradient(ellipse at 80% 100%, rgba(0, 212, 255, 0.12) 0%, transparent 50%),
     linear-gradient(160deg, #050b17 0%, #0a1628 60%, #081222 100%);
   color: #d6e7ff;
-  font-size: 20px;
-  padding: 24px 36px;
+  font-size: 16px;
+  padding: 20px 30px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .screen-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
-  flex-shrink: 0;
+  height: 64px;
   border-bottom: 1px solid rgba(0, 212, 255, 0.25);
 
   .header-title {
-    font-size: 46px;
+    font-size: 40px;
     font-weight: bold;
     letter-spacing: 6px;
     color: #ffffff;
@@ -299,7 +280,7 @@ onBeforeUnmount(() => {
   }
 
   .header-side {
-    width: 360px;
+    width: 320px;
     display: flex;
   }
 
@@ -312,7 +293,7 @@ onBeforeUnmount(() => {
   }
 
   .clock {
-    font-size: 26px;
+    font-size: 22px;
     color: #8cb4ff;
     font-variant-numeric: tabular-nums;
   }
@@ -322,9 +303,9 @@ onBeforeUnmount(() => {
   background: transparent;
   border: 1px solid rgba(0, 212, 255, 0.5);
   color: #00d4ff;
-  padding: 10px 28px;
+  padding: 8px 22px;
   border-radius: 6px;
-  font-size: 20px;
+  font-size: 16px;
   cursor: pointer;
 
   &:hover {
@@ -335,9 +316,8 @@ onBeforeUnmount(() => {
 .metric-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 20px;
-  height: 170px;
-  flex-shrink: 0;
+  gap: 18px;
+  height: 130px;
 }
 
 .metric-card {
@@ -348,20 +328,19 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   box-shadow: inset 0 0 30px rgba(0, 100, 255, 0.08);
 
   .metric-num {
-    font-size: 60px;
+    font-size: 44px;
     font-weight: bold;
     color: #00d4ff;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 0 18px rgba(0, 212, 255, 0.5);
-    line-height: 1;
   }
 
   .metric-label {
-    font-size: 26px;
+    font-size: 18px;
     color: #8cb4ff;
   }
 }
@@ -371,7 +350,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: 20px;
+  gap: 18px;
   min-height: 0;
 }
 
@@ -379,19 +358,19 @@ onBeforeUnmount(() => {
   background: rgba(13, 35, 70, 0.45);
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 10px;
-  padding: 18px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
 .panel-title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: bold;
   color: #eaf4ff;
-  padding-left: 16px;
-  border-left: 5px solid #00d4ff;
-  margin-bottom: 10px;
+  padding-left: 12px;
+  border-left: 4px solid #00d4ff;
+  margin-bottom: 6px;
 }
 
 .chart {
@@ -401,9 +380,8 @@ onBeforeUnmount(() => {
 
 .bottom-row {
   display: flex;
-  gap: 20px;
-  height: 80px;
-  flex-shrink: 0;
+  gap: 18px;
+  height: 64px;
   align-items: stretch;
 }
 
@@ -411,11 +389,11 @@ onBeforeUnmount(() => {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
   background: rgba(13, 35, 70, 0.45);
   border: 1px solid rgba(0, 212, 255, 0.2);
   border-radius: 10px;
-  padding: 0 26px;
+  padding: 0 24px;
   overflow: hidden;
 
   .notice-badge {
@@ -424,12 +402,12 @@ onBeforeUnmount(() => {
     color: #00d4ff;
     border: 1px solid rgba(0, 212, 255, 0.4);
     border-radius: 6px;
-    padding: 8px 18px;
-    font-size: 20px;
+    padding: 4px 14px;
+    font-size: 15px;
   }
 
   .notice-text {
-    font-size: 26px;
+    font-size: 18px;
     color: #d6e7ff;
     white-space: nowrap;
     overflow: hidden;
@@ -438,7 +416,7 @@ onBeforeUnmount(() => {
 }
 
 .todo-strip {
-  width: 520px;
+  width: 460px;
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -447,7 +425,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
 
   .todo-item {
-    font-size: 26px;
+    font-size: 18px;
     color: #ffb54d;
   }
 }
