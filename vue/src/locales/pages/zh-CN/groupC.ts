@@ -41,6 +41,7 @@ export default {
             courseName: '课程名称',
             teacherName: '授课教师',
             totalScore: '总成绩',
+            exportExcel: '导出 Excel',
         },
 
         comment: {

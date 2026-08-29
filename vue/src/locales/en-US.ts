@@ -46,6 +46,8 @@ export default {
         student: 'Students',
         person: 'Profile',
         password: 'Change Password',
+        operlog: 'Operation Logs',
+        loginlog: 'Login Logs',
     },
 
     layout: {
@@ -61,6 +63,7 @@ export default {
         groupTeach: 'Teaching',
         groupEdu: 'Academic Affairs',
         groupUser: 'User Management',
+        groupSystem: 'System',
         theme: {
             light: 'Light Mode',
             dark: 'Dark Mode',
@@ -148,6 +151,7 @@ export default {
         '403': 'You are not allowed to perform this action',
         '500': 'Server error',
         '4001': 'Missing parameters',
+        '4008': 'Account locked, please try again later',
         '5001': 'Username already exists',
         '5002': 'Not signed in',
         '5003': 'Incorrect username or password',
@@ -193,6 +197,25 @@ export default {
             creditLabel: 'Credits',
             roleLabel: 'Role',
             titleLabel: 'Professional Title',
+        },
+
+        operlog: {
+            username: 'Operator',
+            module: 'Operation',
+            type: 'Method',
+            url: 'Request URL',
+            code: 'Status',
+            duration: 'Duration (ms)',
+            time: 'Time',
+        },
+
+        loginlog: {
+            username: 'Account',
+            status: 'Status',
+            statusSuccess: 'Success',
+            statusFail: 'Failed',
+            msg: 'Detail',
+            time: 'Time',
         },
     },
 }

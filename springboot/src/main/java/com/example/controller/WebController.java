@@ -6,7 +6,9 @@ import com.example.common.Result;
 import com.example.common.enums.ResultCodeEnum;
 import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
+import com.example.exception.CustomException;
 import com.example.service.AdminService;
+import com.example.service.LoginProtectService;
 import com.example.service.StudentService;
 import com.example.service.TeacherService;
 import com.example.utils.TokenUtils;
@@ -31,6 +33,8 @@ public class WebController {
     private TeacherService teacherService;
     @Resource
     private StudentService studentService;
+    @Resource
+    private LoginProtectService loginProtectService;
 
     @GetMapping("/")
     public Result hello() {
@@ -38,7 +42,7 @@ public class WebController {
     }
 
     /**
-     * 登录
+     * 登录（带验证码校验、连续失败锁定与登录日志）
      */
     @PostMapping("/login")
     public Result login(@RequestBody Account account, HttpServletRequest request) {
@@ -47,23 +51,35 @@ public class WebController {
             return Result.error(ResultCodeEnum.PARAM_LOST_ERROR);
         }
 
+        String ip = request.getRemoteAddr();
+
         // 验证码校验
         String sessionCaptcha = (String) request.getSession().getAttribute("captcha");
         if (ObjectUtil.isEmpty(account.getCaptcha()) || !account.getCaptcha().toLowerCase().equals(sessionCaptcha)) {
+            loginProtectService.recordFailure(account.getUsername(), ip, "验证码错误");
             return Result.error(ResultCodeEnum.CAPTCHA_ERROR);
         }
 
-        if (RoleEnum.ADMIN.name().equals(account.getRole())) {
-            account = adminService.login(account);
-        }
-        if (RoleEnum.TEACHER.name().equals(account.getRole())) {
-            account = teacherService.login(account);
-        }
-        if (RoleEnum.STUDENT.name().equals(account.getRole())) {
-            account = studentService.login(account);
-        }
+        // 连续失败锁定校验
+        loginProtectService.checkLocked(account.getUsername());
 
-        return Result.success(account);
+        try {
+            if (RoleEnum.ADMIN.name().equals(account.getRole())) {
+                account = adminService.login(account);
+            }
+            if (RoleEnum.TEACHER.name().equals(account.getRole())) {
+                account = teacherService.login(account);
+            }
+            if (RoleEnum.STUDENT.name().equals(account.getRole())) {
+                account = studentService.login(account);
+            }
+            loginProtectService.recordSuccess(account.getUsername(), ip);
+            return Result.success(account);
+        } catch (CustomException e) {
+            // 账号或密码错误等业务异常：记录失败日志并向上抛出（全局异常处理器统一返回）
+            loginProtectService.recordFailure(account.getUsername(), ip, e.getMessage());
+            throw e;
+        }
     }
 
     /**

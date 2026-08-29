@@ -40,6 +40,7 @@ export default {
             courseName: 'Course Name',
             teacherName: 'Teacher',
             totalScore: 'Total Score',
+            exportExcel: 'Export Excel',
         },
 
         comment: {

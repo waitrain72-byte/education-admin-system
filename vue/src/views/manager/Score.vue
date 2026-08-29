@@ -7,9 +7,10 @@
       <el-button type="info" plain style="margin-left: 10px" @click="load(1)">{{ $t('common.search') }}</el-button>
       <el-button type="warning" plain style="margin-left: 10px" @click="reset">{{ $t('common.reset') }}</el-button>
     </div>
-    <div v-if="user.role === 'TEACHER'" class="operation">
-      <el-button type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
-      <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
+    <div v-if="user.role !== 'STUDENT'" class="operation">
+      <el-button v-if="user.role === 'TEACHER'" type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
+      <el-button v-if="user.role === 'TEACHER'" type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
+      <el-button type="success" plain @click="exportExcel">{{ $t('pages.score.exportExcel') }}</el-button>
     </div>
 
     <CrudTable
@@ -64,6 +65,18 @@ import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
+
+// 导出全部成绩为 Excel
+const exportExcel = () => {
+  request.get('/score/export', { responseType: 'blob' }).then((res: any) => {
+    const url = URL.createObjectURL(res.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '成绩列表.xlsx'
+    link.click()
+    URL.revokeObjectURL(url)
+  })
+}
 
 const { user } = useUser()
 const courseId = ref('')

@@ -10,12 +10,20 @@ services:
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     ports:
       - "3306:3306"
+    healthcheck:
+      # 数据库就绪检查：backend 等 healthy 后再启动，避免连库失败反复重启
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     volumes:
       - mysql_data:/var/lib/mysql
-      # 初始化脚本按文件名顺序执行：先建表导入数据，再为账号表补充 theme / locale 字段
+      # 初始化脚本按文件名顺序执行：先建表导入数据，再为账号表补充 theme / locale / 日志表
       - ./sql/xm_educational_manager.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./sql/add_theme_column.sql:/docker-entrypoint-initdb.d/02-theme.sql:ro
       - ./sql/add_locale_column.sql:/docker-entrypoint-initdb.d/03-locale.sql:ro
+      - ./sql/add_log_tables.sql:/docker-entrypoint-initdb.d/04-log.sql:ro
 
   backend:
     build: ./springboot
@@ -28,7 +36,8 @@ services:
     ports:
       - "9091:9091"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     volumes:
       - files_data:/app/files
 

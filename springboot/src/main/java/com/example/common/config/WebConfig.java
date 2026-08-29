@@ -20,6 +20,13 @@ public class WebConfig implements  WebMvcConfigurer {
                 .excludePathPatterns("/login")
                 .excludePathPatterns("/register")
                 .excludePathPatterns("/captcha")  // 排除验证码接口
-                .excludePathPatterns("/files/**");
+                .excludePathPatterns("/files/**")
+                // 排除 Knife4j / Swagger 接口文档相关资源
+                .excludePathPatterns("/doc.html")
+                .excludePathPatterns("/webjars/**")
+                .excludePathPatterns("/swagger-resources")
+                .excludePathPatterns("/swagger-resources/**")
+                .excludePathPatterns("/v2/api-docs")
+                .excludePathPatterns("/favicon.ico");
     }
 }

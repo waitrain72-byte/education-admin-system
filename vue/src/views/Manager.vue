@@ -65,6 +65,22 @@
       </div>
     </div>
 
+    <!-- 多标签页：记录访问过的页面，可快速切换/关闭 -->
+    <div class="manager-tabs">
+      <div
+          v-for="tab in tabs"
+          :key="tab.path"
+          class="manager-tab"
+          :class="{ active: route.path === tab.path }"
+          @click="router.push(tab.path)"
+      >
+        <span>{{ $t(tab.name) }}</span>
+        <el-icon v-if="tab.path !== '/home'" class="tab-close" @click.stop="closeTab(tab.path)">
+          <CircleClose />
+        </el-icon>
+      </div>
+    </div>
+
     <!--  主体  -->
     <div class="manager-main">
       <!--  侧边栏  -->
@@ -101,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, provide } from 'vue'
+import { ref, computed, watch, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Sunny, Moon, Monitor } from '@element-plus/icons-vue'
@@ -125,6 +141,7 @@ const menuGroupConfig: Record<string, { title: string; icon: string }> = {
   teach: { title: 'layout.groupTeach', icon: 'Opportunity' },
   edu: { title: 'layout.groupEdu', icon: 'Stamp' },
   user: { title: 'layout.groupUser', icon: 'User' },
+  system: { title: 'layout.groupSystem', icon: 'Setting' },
 }
 
 // 根据当前角色从路由配置动态生成侧边菜单，与路由 meta.roles 保持单一数据源
@@ -159,6 +176,34 @@ const setTheme = (command: string) => {
 
 // 语言偏好（zh-CN/en-US），切换后持久化并同步后端
 const isZh = computed(() => currentLocale() === 'zh-CN')
+
+// ========== 多标签页 ==========
+interface TabItem {
+  path: string
+  name: string
+}
+
+const tabs = ref<TabItem[]>([{ path: '/home', name: 'menu.home' }])
+
+// 路由变化时把新页面加入标签（首页固定不可关闭）
+watch(
+    () => route.path,
+    (path) => {
+      if (tabs.value.some((tab) => tab.path === path)) return
+      const name = typeof route.meta?.name === 'string' ? route.meta.name : path
+      tabs.value.push({ path, name })
+    }
+)
+
+const closeTab = (path: string) => {
+  const index = tabs.value.findIndex((tab) => tab.path === path)
+  if (index === -1) return
+  tabs.value.splice(index, 1)
+  // 关闭的是当前页时，跳到最后一个标签
+  if (route.path === path) {
+    router.push(tabs.value[tabs.value.length - 1].path)
+  }
+}
 
 // 提供 refreshUser 方法给子组件
 provide('refreshUser', refreshUser)

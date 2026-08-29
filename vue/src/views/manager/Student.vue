@@ -9,6 +9,19 @@
     <div v-if="user.role !== 'STUDENT'" class="operation">
       <el-button type="primary" plain @click="handleAdd">{{ $t('common.add') }}</el-button>
       <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
+      <el-button type="success" plain @click="exportExcel">{{ $t('pages.student.exportExcel') }}</el-button>
+      <el-button type="warning" plain @click="downloadTemplate">{{ $t('pages.student.importTemplate') }}</el-button>
+      <el-upload
+          :action="baseUrl + '/student/import'"
+          :headers="{ token: user.token }"
+          accept=".xlsx"
+          :show-file-list="false"
+          :on-success="onImportSuccess"
+          :on-error="() => ElMessage.error(t('pages.student.importFailed'))"
+          style="display: inline-block; margin-left: 10px"
+      >
+        <el-button type="primary" plain>{{ $t('pages.student.importExcel') }}</el-button>
+      </el-upload>
     </div>
 
     <CrudTable
@@ -174,6 +187,38 @@ const resetPassword = (row: any) => {
 
 const handleAvatarSuccess = (response: any) => {
   form.value.avatar = response.data
+}
+
+// ========== Excel 导入导出 ==========
+const exportExcel = () => {
+  request.get('/student/export', { responseType: 'blob' }).then((res: any) => {
+    const url = URL.createObjectURL(res.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '学生列表.xlsx'
+    link.click()
+    URL.revokeObjectURL(url)
+  })
+}
+
+const downloadTemplate = () => {
+  request.get('/student/importTemplate', { responseType: 'blob' }).then((res: any) => {
+    const url = URL.createObjectURL(res.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '学生导入模板.xlsx'
+    link.click()
+    URL.revokeObjectURL(url)
+  })
+}
+
+const onImportSuccess = (response: any) => {
+  if (response.code === '200') {
+    ElMessage.success(t('pages.student.importResult', { result: response.data }))
+    load(1)
+  } else {
+    ElMessage.error(apiMessage(response))
+  }
 }
 
 const reset = () => {

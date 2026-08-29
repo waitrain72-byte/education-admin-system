@@ -1,16 +1,21 @@
 package com.example.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.example.common.Result;
 import com.example.entity.Score;
+import com.example.entity.excel.ScoreExcel;
 import com.example.service.ScoreService;
 import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 成绩信息表前端操作接口
@@ -85,6 +90,29 @@ public class ScoreController {
                              @RequestParam(defaultValue = "10") Integer pageSize) {
         PageInfo<Score> page = scoreService.selectPage(score, pageNum, pageSize);
         return Result.success(page);
+    }
+
+    /**
+     * 导出全部成绩为 Excel
+     */
+    @GetMapping("/export")
+    public void export(HttpServletResponse response) throws Exception {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        String fileName = URLEncoder.encode("成绩列表", "UTF-8").replaceAll("\\+", "%20");
+        response.setHeader("Content-Disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+
+        List<ScoreExcel> rows = scoreService.selectAll(new Score()).stream().map(s -> {
+            ScoreExcel row = new ScoreExcel();
+            row.setCourseName(s.getCourseName());
+            row.setStudentName(s.getStudentName());
+            row.setTeacherName(s.getTeacherName());
+            row.setOrdinaryScore(s.getOrdinaryScore());
+            row.setExamScore(s.getExamScore());
+            row.setScore(s.getScore());
+            return row;
+        }).collect(Collectors.toList());
+        EasyExcel.write(response.getOutputStream(), ScoreExcel.class).sheet("成绩列表").doWrite(rows);
     }
 
     /**

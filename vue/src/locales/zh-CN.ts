@@ -48,6 +48,8 @@ export default {
         student: '学生信息',
         person: '个人信息',
         password: '修改密码',
+        operlog: '操作日志',
+        loginlog: '登录日志',
     },
 
     layout: {
@@ -63,6 +65,7 @@ export default {
         groupTeach: '教学管理',
         groupEdu: '教务管理',
         groupUser: '用户管理',
+        groupSystem: '系统管理',
         theme: {
             light: '浅色模式',
             dark: '深色模式',
@@ -151,6 +154,7 @@ export default {
         '403': '无权限执行该操作',
         '500': '系统异常',
         '4001': '参数缺失',
+        '4008': '账号已锁定，请稍后再试',
         '5001': '用户名已存在',
         '5002': '用户未登录',
         '5003': '账号或密码错误',
@@ -196,6 +200,25 @@ export default {
             creditLabel: '学分',
             roleLabel: '角色',
             titleLabel: '职称',
+        },
+
+        operlog: {
+            username: '操作人',
+            module: '操作模块',
+            type: '请求方式',
+            url: '请求地址',
+            code: '状态码',
+            duration: '耗时(ms)',
+            time: '操作时间',
+        },
+
+        loginlog: {
+            username: '账号',
+            status: '状态',
+            statusSuccess: '成功',
+            statusFail: '失败',
+            msg: '说明',
+            time: '时间',
         },
     },
 }
