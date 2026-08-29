@@ -146,6 +146,19 @@ public abstract class BaseService<T extends Account> {
     }
 
     /**
+     * 更新主题偏好：取值合法性（light/dark/system）由调用方白名单校验，
+     * 这里回读当前数据后仅覆盖 theme 字段，避免误改其他资料。
+     */
+    public void updateTheme(Account account) {
+        T dbAccount = getMapper().selectById(account.getId());
+        if (ObjectUtil.isNull(dbAccount)) {
+            throw new CustomException(ResultCodeEnum.USER_NOT_EXIST_ERROR);
+        }
+        dbAccount.setTheme(account.getTheme());
+        getMapper().updateById(dbAccount);
+    }
+
+    /**
      * 管理员重置密码（仅管理员可调用）
      */
     public void resetPassword(Integer id) {

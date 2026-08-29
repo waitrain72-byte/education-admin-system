@@ -12,7 +12,9 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql/xm_educational_manager.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # 初始化脚本按文件名顺序执行：先建表导入数据，再为账号表补充 theme 字段
+      - ./sql/xm_educational_manager.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./sql/add_theme_column.sql:/docker-entrypoint-initdb.d/02-theme.sql:ro
 
   backend:
     build: ./springboot

@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
 import { PieChart, LineChart } from 'echarts/charts'
@@ -47,6 +47,7 @@ import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from
 import { CanvasRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
+import { useTheme } from '@/composables/useTheme'
 
 // 按需注册图表组件，避免打包整个 echarts（体积从约 1MB 降至数百 KB）
 echarts.use([
@@ -124,6 +125,50 @@ const lineOptions: any = {
   series: [{ data: [], type: 'line' }]
 }
 
+// 图表配色跟随主题：echarts 画布不感知 CSS 变量，需在暗色下显式替换文字与网格线颜色
+const mode = useTheme()
+const chartTheme = computed(() => {
+  const dark = mode.value === 'dark'
+  return {
+    textColor: dark ? '#cfd3dc' : '#303133',
+    subTextColor: dark ? '#a3a6ad' : '#909399',
+    axisLineColor: dark ? '#363b44' : '#e4e7ed',
+    splitLineColor: dark ? '#2a2f37' : '#e4e7ed',
+  }
+})
+
+const themeOptions = (opts: any): any => {
+  const t = chartTheme.value
+  const themed: any = { ...opts, textStyle: { color: t.textColor } }
+  if (themed.title) {
+    themed.title = { ...themed.title, textStyle: { color: t.textColor }, subtextStyle: { color: t.subTextColor } }
+  }
+  if (themed.legend) {
+    themed.legend = { ...themed.legend, textStyle: { color: t.textColor } }
+  }
+  if (themed.xAxis) {
+    themed.xAxis = {
+      ...themed.xAxis,
+      axisLabel: { ...themed.xAxis.axisLabel, color: t.textColor },
+      axisLine: { ...themed.xAxis.axisLine, lineStyle: { ...themed.xAxis.axisLine?.lineStyle, color: t.axisLineColor } },
+    }
+  }
+  if (themed.yAxis) {
+    themed.yAxis = {
+      ...themed.yAxis,
+      axisLabel: { ...themed.yAxis.axisLabel, color: t.textColor },
+      splitLine: { ...themed.yAxis.splitLine, lineStyle: { ...themed.yAxis.splitLine?.lineStyle, color: t.splitLineColor } },
+    }
+  }
+  return themed
+}
+
+// 主题切换时重绘两块图表
+watch(mode, () => {
+  pieChart.value?.setOption(themeOptions(pieOptions))
+  lineChart.value?.setOption(themeOptions(lineOptions))
+})
+
 const getPie = () => {
   request.get('/attendance/getPie').then((res: any) => {
     if (res.data.code === '200') {
@@ -135,7 +180,7 @@ const getPie = () => {
       pieOptions.title.subtext = res.data.data.subtext
       pieOptions.series[0].name = res.data.data.name
       pieOptions.series[0].data = res.data.data.data
-      pieChart.value.setOption(pieOptions)
+      pieChart.value.setOption(themeOptions(pieOptions))
     } else {
       ElMessage.error(res.data.msg)
     }
@@ -152,7 +197,7 @@ const getLine = () => {
       lineOptions.title.subtext = res.data.data.subtext
       lineOptions.xAxis.data = res.data.data.xAxis
       lineOptions.series[0].data = res.data.data.yAxis
-      lineChart.value.setOption(lineOptions)
+      lineChart.value.setOption(themeOptions(lineOptions))
     } else {
       ElMessage.error(res.data.msg)
     }
@@ -190,7 +235,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .card {
-  background: white;
+  background: var(--xm-bg-card);
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;

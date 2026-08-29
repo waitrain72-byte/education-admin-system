@@ -9,12 +9,15 @@ import com.example.entity.Account;
 import com.example.service.AdminService;
 import com.example.service.StudentService;
 import com.example.service.TeacherService;
+import com.example.utils.TokenUtils;
 import com.wf.captcha.SpecCaptcha;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 基础前端接口
@@ -109,6 +112,50 @@ public class WebController {
         }
         if (RoleEnum.STUDENT.name().equals(account.getRole())) {
             studentService.updatePassword(account);
+        }
+        return Result.success();
+    }
+
+    /**
+     * 主题偏好取值白名单：防注入的第一道防线是 #{} 预编译，
+     * 白名单校验进一步保证只有合法枚举值能落库
+     */
+    private static final List<String> THEME_VALUES = Arrays.asList("light", "dark", "system");
+
+    /**
+     * 查询当前登录用户的主题偏好（供新终端登录时同步，实现"一次设置，多端同步"）
+     */
+    @GetMapping("/theme")
+    public Result getTheme() {
+        Account current = TokenUtils.getCurrentUser();
+        if (ObjectUtil.isEmpty(current.getId())) {
+            return Result.error(ResultCodeEnum.TOKEN_INVALID_ERROR);
+        }
+        String theme = current.getTheme();
+        return Result.success(ObjectUtil.isEmpty(theme) ? "system" : theme);
+    }
+
+    /**
+     * 保存当前登录用户的主题偏好
+     */
+    @PutMapping("/theme")
+    public Result updateTheme(@RequestBody Account account) {
+        if (ObjectUtil.isEmpty(account.getTheme()) || !THEME_VALUES.contains(account.getTheme())) {
+            return Result.error(ResultCodeEnum.PARAM_ERROR);
+        }
+        Account current = TokenUtils.getCurrentUser();
+        if (ObjectUtil.isEmpty(current.getId())) {
+            return Result.error(ResultCodeEnum.TOKEN_INVALID_ERROR);
+        }
+        account.setId(current.getId());
+        if (RoleEnum.ADMIN.name().equals(current.getRole())) {
+            adminService.updateTheme(account);
+        } else if (RoleEnum.TEACHER.name().equals(current.getRole())) {
+            teacherService.updateTheme(account);
+        } else if (RoleEnum.STUDENT.name().equals(current.getRole())) {
+            studentService.updateTheme(account);
+        } else {
+            return Result.error(ResultCodeEnum.TOKEN_CHECK_ERROR);
         }
         return Result.success();
     }

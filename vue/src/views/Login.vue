@@ -1,5 +1,10 @@
 <template>
   <div class="container">
+    <!-- 右上角主题切换：登录前也能调整，保存到 localStorage -->
+    <div class="theme-toggle" :title="themeLabel" @click="cycleTheme">
+      <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+    </div>
+
     <!-- 左侧图片区域 -->
     <div class="left-panel">
       <div class="left-content">
@@ -71,12 +76,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { User, Lock, Picture } from '@element-plus/icons-vue'
+import { User, Lock, Picture, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
+import { useTheme, pullThemeFromServer } from '@/composables/useTheme'
 
 interface LoginForm {
   username: string
@@ -94,6 +100,16 @@ interface LoginResponse {
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const captchaUrl = ref<string>('')
+
+// 主题切换：浅色 → 深色 → 跟随系统 循环（登录后管理端有下拉可选）
+const mode = useTheme()
+const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
+const themeLabel = computed(() =>
+    mode.value === 'dark' ? '当前深色模式，点击切换' : mode.value === 'light' ? '当前浅色模式，点击切换' : '当前跟随系统，点击切换'
+)
+const cycleTheme = () => {
+  mode.value = mode.value === 'light' ? 'dark' : mode.value === 'dark' ? 'auto' : 'light'
+}
 
 const form = reactive<LoginForm>({
   username: '',
@@ -132,6 +148,8 @@ const login = (): void => {
               // 登录态写入 Pinia store（内部负责持久化到 localStorage）
               useUserStore().updateUser(res.data.data as Record<string, any>)
               router.push('/')
+              // 从后端拉取该用户保存的主题偏好，覆盖本地默认，实现多端同步
+              pullThemeFromServer()
               ElMessage.success('登录成功')
             } else {
               ElMessage.error(res.data.msg)
@@ -156,6 +174,31 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   overflow: hidden;
+  position: relative;
+}
+
+/* 右上角主题切换按钮 */
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--xm-text-regular);
+  background: var(--xm-bg-card);
+  box-shadow: var(--xm-shadow-card);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--xm-brand);
+  transform: scale(1.08);
 }
 
 /* ===== 左侧图片区域 ===== */
@@ -229,7 +272,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
+  background: var(--xm-bg-page);
   padding: 40px;
 }
 
@@ -237,7 +280,7 @@ onMounted(() => {
   width: 100%;
   max-width: 400px;
   padding: 50px 40px;
-  background: white;
+  background: var(--xm-bg-card);
   border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
 }
@@ -246,14 +289,14 @@ onMounted(() => {
   text-align: center;
   font-size: 28px;
   font-weight: bold;
-  color: #1a2332;
+  color: var(--xm-text-primary);
   margin-bottom: 8px;
 }
 
 .login-subtitle {
   text-align: center;
   font-size: 14px;
-  color: #909399;
+  color: var(--xm-text-secondary);
   margin-bottom: 30px;
 }
 
@@ -275,7 +318,7 @@ onMounted(() => {
 
 /* 输入框样式 */
 :deep(.el-input__wrapper) {
-  background: #f5f7fa !important;
+  background: var(--xm-bg-input) !important;
   box-shadow: none !important;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -283,27 +326,27 @@ onMounted(() => {
 }
 
 :deep(.el-input__wrapper:hover) {
-  background: #eef0f3 !important;
-  border-color: #7684ff;
+  background: var(--xm-bg-input-hover) !important;
+  border-color: var(--xm-brand);
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  background: white !important;
-  border-color: #7684ff;
+  background: var(--xm-bg-card) !important;
+  border-color: var(--xm-brand);
   box-shadow: 0 0 0 3px rgba(118, 132, 255, 0.12) !important;
 }
 
 :deep(.el-input__inner) {
-  color: #333 !important;
+  color: var(--xm-text-primary) !important;
 }
 
 :deep(.el-input__inner::placeholder) {
-  color: #aaa;
+  color: var(--xm-text-secondary);
 }
 
 /* 前缀图标 */
 :deep(.el-input__prefix-inner .el-icon) {
-  color: #7684ff;
+  color: var(--xm-brand);
   font-size: 18px;
 }
 
@@ -313,29 +356,29 @@ onMounted(() => {
 }
 
 .role-select :deep(.el-input__wrapper) {
-  background: #f5f7fa !important;
+  background: var(--xm-bg-input) !important;
   box-shadow: none !important;
   border-radius: 8px;
   border: 1px solid transparent;
 }
 
 .role-select :deep(.el-input__wrapper:hover) {
-  background: #eef0f3 !important;
-  border-color: #7684ff;
+  background: var(--xm-bg-input-hover) !important;
+  border-color: var(--xm-brand);
 }
 
 .role-select :deep(.el-input__wrapper.is-focus) {
-  background: white !important;
-  border-color: #7684ff;
+  background: var(--xm-bg-card) !important;
+  border-color: var(--xm-brand);
   box-shadow: 0 0 0 3px rgba(118, 132, 255, 0.12) !important;
 }
 
 .role-select :deep(.el-input__inner) {
-  color: #333 !important;
+  color: var(--xm-text-primary) !important;
 }
 
 .role-select :deep(.el-select__caret) {
-  color: #7684ff;
+  color: var(--xm-brand);
 }
 
 /* 验证码行 */
@@ -355,12 +398,12 @@ onMounted(() => {
   border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
-  border: 1px solid #e8ecf1;
+  border: 1px solid var(--xm-border);
   transition: border-color 0.3s ease;
 }
 
 .captcha-img:hover {
-  border-color: #7684ff;
+  border-color: var(--xm-brand);
 }
 
 /* 登录按钮 */
@@ -394,19 +437,19 @@ onMounted(() => {
   justify-content: space-between;
   width: 100%;
   margin-top: 20px;
-  color: #606266;
+  color: var(--xm-text-regular);
   font-size: 14px;
 }
 
 .register-link a {
-  color: #7684ff;
+  color: var(--xm-brand);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .register-link a:hover {
-  color: #4a5bcf;
+  color: var(--xm-brand-strong);
   text-decoration: underline;
 }
 

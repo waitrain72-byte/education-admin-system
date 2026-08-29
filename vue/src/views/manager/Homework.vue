@@ -24,13 +24,13 @@
       </template>
       <template #actions="{ row }">
         <el-button
-v-if="user.role === 'STUDENT' && !row.score" plain type="primary" size="small"
+v-if="user.role === 'STUDENT' && !row.score" link type="primary" size="small"
                    @click="handleEdit(row)">编辑</el-button>
         <el-button
-v-if="user.role === 'STUDENT'" plain type="danger" size="small"
+v-if="user.role === 'STUDENT'" link type="danger" size="small"
                    @click="del(row.id)">删除</el-button>
         <el-button
-v-if="user.role === 'TEACHER'" plain type="primary" size="small"
+v-if="user.role === 'TEACHER'" link type="primary" size="small"
                    @click="handleCheck(row)">打分</el-button>
       </template>
     </CrudTable>

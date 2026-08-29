@@ -26,13 +26,13 @@
     >
       <template #actions="{ row }">
         <el-button
-v-if="user.role === 'STUDENT' && row.status !== '审核通过'" plain type="primary" size="small"
+v-if="user.role === 'STUDENT' && row.status !== '审核通过'" link type="primary" size="small"
                    @click="handleEdit(row)">编辑</el-button>
         <el-button
-v-if="user.role === 'ADMIN' && row.status === '待审核'" plain type="primary" size="small"
+v-if="user.role === 'ADMIN' && row.status === '待审核'" link type="primary" size="small"
                    @click="handleCheck(row)">审核</el-button>
         <el-button
-v-if="user.role === 'STUDENT' && row.status === '待审核'" plain type="danger" size="small"
+v-if="user.role === 'STUDENT' && row.status === '待审核'" link type="danger" size="small"
                    @click="del(row.id)">撤销申请</el-button>
       </template>
     </CrudTable>

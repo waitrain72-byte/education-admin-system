@@ -19,6 +19,7 @@
         :total="total"
         :loading="loading"
         :selectable="user.role !== 'STUDENT'"
+        :actions-width="200"
         @selection-change="handleSelectionChange"
         @page-change="load"
     >
@@ -30,9 +31,9 @@ v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%"
         </div>
       </template>
       <template #actions="{ row }">
-        <el-button v-permission="'ADMIN'" size="small" type="primary" plain @click="handleEdit(row)">编辑</el-button>
-        <el-button v-permission="'ADMIN'" size="small" type="warning" plain :disabled="row.id === user.id" @click="resetPassword(row)">重置密码</el-button>
-        <el-button v-permission="'ADMIN'" size="small" type="danger" plain @click="del(row.id)">删除</el-button>
+        <el-button v-permission="'ADMIN'" link size="small" type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+        <el-button v-permission="'ADMIN'" link size="small" type="warning" :icon="Key" :disabled="row.id === user.id" @click="resetPassword(row)">重置密码</el-button>
+        <el-button v-permission="'ADMIN'" link size="small" type="danger" :icon="Delete" @click="del(row.id)">删除</el-button>
       </template>
     </CrudTable>
 
@@ -69,6 +70,7 @@ class="avatar-uploader" :action="baseUrl + '/files/upload'"
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Edit, Key, Delete } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'

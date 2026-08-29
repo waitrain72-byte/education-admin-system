@@ -1,5 +1,5 @@
 .manager-container {
-    background-color: #f3f6fe;
+    background-color: var(--xm-bg-page);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -7,7 +7,7 @@
 
 .manager-header {
     display: flex;
-    background-color: #006eff;
+    background-color: var(--xm-header-bg);
     height: 60px;
     flex-shrink: 0;
 }
@@ -30,7 +30,7 @@
     margin-left: 5px;
     font-size: 20px;
     font-weight: bold;
-    color: #fff;
+    color: var(--xm-header-text);
 }
 
 .manager-header-center {
@@ -48,10 +48,33 @@
     padding-right: 20px;
 }
 
+/* 主题切换入口（浅色/深色/跟随系统） */
+.theme-switch-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 14px;
+    border-radius: 50%;
+    color: var(--xm-header-text);
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.25s ease;
+}
+
+.theme-switch-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+html.dark .theme-switch-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 .manager-header-right .avatar {
     display: flex;
     align-items: center;
-    color: #fff;
+    color: var(--xm-header-text);
     cursor: default;
 }
 
@@ -72,7 +95,7 @@
 .manager-main-left {
     width: 200px;
     height: calc(100vh - 60px);
-    background-color: #ffffff;
+    background-color: var(--xm-sidebar-bg);
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
     flex-shrink: 0;
@@ -83,30 +106,30 @@
     width: 0;
     padding: 10px;
     overflow-y: auto;
-    background-color:#f3f6fe;
+    background-color: var(--xm-bg-page);
 }
 
 .manager-main-right .search {
     padding: 10px;
-    background-color: #fff;
+    background-color: var(--xm-bg-card);
     border-radius: 5px;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--xm-shadow-card);
 }
 
 .manager-main-right .operation {
     margin-top: 5px;
     padding: 10px;
-    background-color: #fff;
+    background-color: var(--xm-bg-card);
     border-radius: 5px;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--xm-shadow-card);
 }
 
 .manager-main-right .table {
     margin-top: 5px;
     padding: 15px 10px;
-    background-color: #fff;
+    background-color: var(--xm-bg-card);
     border-radius: 5px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--xm-shadow-card-lg);
 }
 
 .manager-main-right .table .pagination {
@@ -115,9 +138,9 @@
 
 .card {
     padding: 20px;
-    background-color: #fff;
+    background-color: var(--xm-bg-card);
     border-radius: 5px;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--xm-shadow-card);
 }
 
 /* 滚动条样式 */
@@ -129,7 +152,7 @@
 
 .manager-main-left::-webkit-scrollbar-thumb,
 .manager-main-right::-webkit-scrollbar-thumb {
-    background: #ddd;
+    background: var(--xm-scrollbar-thumb);
     border-radius: 3px;
 }
 

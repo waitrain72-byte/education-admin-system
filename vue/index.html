@@ -6,6 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/favicon.ico">
   <title>教务管理系统</title>
+  <script>
+    // 防闪烁：应用挂载前根据本地偏好/系统颜色模式预设 dark 类，
+    // 与 src/composables/useTheme.ts 中的 storageKey 保持一致
+    (function () {
+      try {
+        var mode = localStorage.getItem('xm-color-mode') || 'auto'
+        var dark = mode === 'dark' ||
+            (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        if (dark) document.documentElement.classList.add('dark')
+      } catch (e) { /* 忽略存储不可用的情况 */ }
+    })()
+  </script>
 </head>
 <body>
 <noscript>

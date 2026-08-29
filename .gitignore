@@ -12,6 +12,7 @@ springboot/target/
 
 # Claude config
 .claude/
+.zcode/
 
 # IDE and editor files
 .idea/
@@ -43,3 +44,6 @@ desktop.ini
 # Java runtime dumps
 hs_err_pid*
 replay_pid*
+
+# CI 配置：当前 token 无 workflow 权限，暂不入库（拿到带 workflow scope 的 token 后可移除此行）
+.github/

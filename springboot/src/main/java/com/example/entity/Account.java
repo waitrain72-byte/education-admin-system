@@ -25,4 +25,7 @@ public class Account {
 
     private String captcha;
 
+    /** 主题偏好：light / dark / system（跟随系统） */
+    private String theme;
+
 }

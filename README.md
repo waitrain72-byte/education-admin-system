@@ -11,6 +11,7 @@
 - TypeScript
 - Vue Router
 - Pinia
+- VueUse（useColorMode 主题模式管理）
 - Element Plus
 - Axios
 - ECharts
@@ -36,7 +37,7 @@
 
 ## 项目特色
 
-本项目在基础教务管理功能之外，补充了安全性、文件存储和可维护性方面的优化，适合作为毕业设计中的系统亮点说明。
+本项目在基础教务管理功能之外，补充了主题体验、安全性、文件存储和可维护性方面的优化，适合作为毕业设计中的系统亮点说明。
 
 ### 1. 多角色教务业务闭环
 
@@ -80,53 +81,72 @@
 
 项目增加了 `.editorconfig`，并在 Spring Boot 中配置了 UTF-8 响应编码，降低中文注释、页面文案和接口提示出现乱码的概率。
 
+### 7. 深色/浅色主题自适应与用户偏好多端同步
+
+系统实现了一套完整的主题自适应方案，是前端工程化与前后端协作的结合点：
+
+- **自动跟随系统**：基于 VueUse 的 `useColorMode` 组合式 API，通过 CSS 媒体查询 `prefers-color-scheme` 自动检测操作系统（Windows/macOS/移动端）的颜色模式；"跟随系统"模式下系统切换深浅色时页面实时响应。
+- **手动三档切换**：用户可在"浅色 / 深色 / 跟随系统"三种模式间自由切换。管理端在顶部导航栏提供下拉切换，登录页/注册页提供右上角快捷切换（登录前也可用）。
+- **本地持久化**：主题状态实时保存到浏览器 `localStorage`，刷新页面不丢失；`index.html` 中通过防闪烁脚本在应用挂载前预设 `dark` 类，避免刷新时出现"白屏闪烁"。
+- **后端同步**：Spring Boot 提供 `GET /theme` / `PUT /theme` 接口，将主题偏好作为用户资料字段存储到 MySQL（`admin`/`teacher`/`student` 三表的 `theme` 列，取值 `light/dark/system`）。用户在其他终端登录时，前端先请求后端保存的主题值覆盖本地默认，实现"一次设置，多端同步"；模式变化经防抖后自动推送后端。
+- **CSS 自定义属性体系**：全部自定义颜色收敛为 CSS 变量（`:root` 浅色 / `html.dark` 深色），与 Element Plus 官方暗色变量共用 `<html>` 上的 `dark` 类开关，并配合平滑过渡动画；ECharts 图表监听主题变化，暗色下自动切换为浅色文字与网格线重绘。
+
+### 8. SQL 注入防御
+
+数据访问层的安全性经过完整审计与加固，形成多层防御：
+
+- **预编译参数绑定**：全部 16 个 Mapper XML 及所有注解 SQL 均使用 MyBatis `#{}` 预编译占位符，不存在任何 `${}` 字符串拼接，模糊查询同样通过 `concat('%', #{username}, '%')` 在参数值内拼接，SQL 结构不受用户输入影响。
+- **关闭多语句执行**：JDBC 连接串不开启 `allowMultiQueries`，禁止一次请求执行多条 SQL，作为防御纵深。
+- **白名单参数校验**：新增接口对枚举型入参（如主题值仅允许 `light/dark/system`）做服务端白名单校验，非法值直接拒绝。
+- **JWT 拦截器**：主题等用户资料接口统一经过登录态校验，拒绝未授权访问。
+
 ## 工程化优化
 
-在前述业务功能之外，项目持续进行了工程化层面的优化，主要围绕状态管理、代码复用、构建性能与权限体系四个方面。
+在前述业务功能之外，项目持续进行了工程化层面的优化，主要围绕状态管理、代码复用、构建性能、权限体系与主题体系五个方面。
 
-### 7. Pinia 统一状态管理
+### 9. Pinia 统一状态管理
 
 - 用户登录态由手写模块级 `ref` + 散落的 `localStorage` 读写，重构为 `Pinia store` 统一管理（`src/stores/user.ts`）。
 - 消除 17 处直接 `JSON.parse(localStorage.getItem('xm-user'))` 调用，统一增加异常保护，避免本地存储被污染时整页白屏。
 - 401 响应与退出登录时同步清空内存态与本地存储，修复了"页面显示已登录、存储已清空"的状态不一致问题。
 
-### 8. 配置化通用 CRUD 框架
+### 10. 配置化通用 CRUD 框架
 
 - 抽取 `useCrud` 组合式函数与 `CrudTable` 通用表格组件，统一分页查询、新增、编辑、删除、批量删除与表单校验逻辑。
 - 全部 16 个管理页面的分页、增删改查、批量删除逻辑已完成迁移：约 800 行重复样板代码收敛为约 210 行通用实现，业务页面只需提供「列配置 + 接口路径 + 搜索条件 + 表单」。
 - 支持自定义操作列（按角色/状态显隐按钮）、自定义单元格插槽（如头像、文件下载）、保存前后钩子（如同步全局用户状态），可覆盖带级联下拉、文件上传等复杂表单的页面。
 
-### 9. 构建体积与性能优化
+### 11. 构建体积与性能优化
 
 - Element Plus 改为按需自动引入（`unplugin-vue-components`），图标从全量注册 294 个精简为实际使用的 13 个。
 - ECharts 改为按需注册（饼图、折线图及所需组件），图表库体积从约 1,039 KB 降至 334 KB（gzip 114 KB），降幅约 68%。
 - 应用主包从约 1,225 KB 降至 9.5 KB，并通过 `manualChunks` 将 vue / element-plus / echarts / axios 拆分为独立缓存 chunk，首页首次加载 JS 总量约减少 30%。
 - 修复图表组件重复挂载导致的 resize 监听器累积与实例泄漏，组件卸载时统一移除监听并 `dispose()` 图表。
 
-### 10. RBAC 权限体系
+### 12. RBAC 权限体系
 
 - 路由级权限：每个路由通过 `meta.roles` 声明可访问角色，路由守卫统一校验，无权限访问跳转 `/403` 页。
 - 菜单级权限：侧边栏菜单根据当前角色从路由配置动态生成，与路由权限保持单一数据源。
 - 按钮级权限：提供 `v-permission` 指令，按角色控制按钮显隐（如重置密码仅管理员可见）。
 - 个人中心路由按角色隔离（管理员/教师/学生各自只能访问自己的信息页）。
 
-### 11. JWT 签名密钥独立化
+### 13. JWT 签名密钥独立化
 
 - 签名密钥从"数据库密码"改为独立配置项 `jwt.secret`（支持环境变量 `JWT_SECRET` 覆盖），过期时间可配置（`jwt.expire-hours`）。
 - 用户修改密码后已签发的 token 不再全部失效；拦截器先统一验签（含过期校验）再校验账号有效性。
 
-### 12. 后端代码去重与安全加固
+### 14. 后端代码去重与安全加固
 
 - 抽取泛型 `BaseMapper` / `BaseService`，统一管理员、教师、学生三类账号的登录、新增、改密、增删改查、分页与重置密码逻辑，三个 Service 仅保留角色与 Mapper 配置。
 - CORS 由通配符 `*` 收紧为可配置的前端来源白名单（`app.cors.allowed-origins`）。
 - 数据库脚本为 10 张表的 20 个外键列补充索引，加速按学院/专业/班级/教师/学生/课程维度的关联查询。
 
-### 13. 代码规范与单元测试
+### 15. 代码规范与单元测试
 
 - 引入 ESLint（`eslint-plugin-vue` + `typescript-eslint`）与 Prettier，配置 `npm run lint` / `lint:fix` / `format` 脚本，当前 lint 0 问题。
 - 引入 Vitest + @vue/test-utils（happy-dom 环境），为 Pinia 用户状态与 `useCrud` 组合式函数编写 15 个单元测试（`npm run test`），覆盖本地存储异常降级、登录态持久化、分页加载、新增/编辑/删除/批量删除、表单校验拦截等场景。
 
-### 14. 容器化与 CI
+### 16. 容器化与 CI
 
 - 提供前端（Node 构建 + nginx 托管与反代）、后端（Maven 构建 + JRE）Dockerfile 与 `docker-compose.yml`，一键启动 MySQL（自动导入 SQL）+ 后端 + 前端。
 - 生产环境接口统一走 `/api` 前缀（nginx 反代到后端），文件上传返回相对 URL，本地开发与容器部署共用同一套逻辑。
@@ -136,13 +156,13 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 数据库初始化脚本（建表 + 初始数据 + 索引）
++-- sql/                          # 数据库脚本（建表 + 初始数据 + 索引；add_theme_column.sql 为主题字段迁移脚本）
 +-- vue/                         # 前端项目
 |   +-- public/                  # 静态资源
 |   +-- src/
-|   |   +-- assets/              # 图片、全局样式
+|   |   +-- assets/              # 图片、全局样式（theme.css 为主题变量体系）
 |   |   +-- components/          # 公共组件（CrudTable 等）
-|   |   +-- composables/         # 组合式函数（useCrud 等）
+|   |   +-- composables/         # 组合式函数（useCrud、useTheme 主题同步等）
 |   |   +-- directives/          # 自定义指令（v-permission）
 |   |   +-- stores/              # Pinia 状态管理（含单元测试）
 |   |   +-- router/              # 路由配置
@@ -239,6 +259,14 @@ sql/xm_educational_manager.sql
 ```bash
 mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager.sql
 ```
+
+主题同步功能还需要为三类账号表补充 `theme` 字段，执行迁移脚本：
+
+```bash
+mysql -uroot -p123456 xm_educational_manager < sql/add_theme_column.sql
+```
+
+该脚本为 `admin`、`teacher`、`student` 三张表各增加一列 `theme`（默认值 `system`，即跟随系统），不影响已有数据。若重复执行会提示"Duplicate column name"，忽略即可。
 
 系统内置管理员账号：
 
@@ -357,6 +385,7 @@ mvn clean package
 项目当前包含的主要页面和接口模块包括：
 
 - 登录、注册、验证码、修改密码
+- 深色/浅色主题切换与多端同步
 - 管理员管理
 - 教师管理
 - 学生管理
@@ -421,6 +450,8 @@ springboot/src/main/java/com/example/controller/WebController.java
 - `POST /login`：登录
 - `POST /register`：注册
 - `PUT /updatePassword`：修改密码
+- `GET /theme`：查询当前用户的主题偏好
+- `PUT /theme`：保存当前用户的主题偏好（白名单校验，仅接受 `light/dark/system`）
 
 用户管理相关接口还包含管理员重置密码能力：
 
@@ -661,6 +692,16 @@ chcp 65001
 
 当前上传逻辑已按文件内容 MD5 去重。同一张图片重复上传时不会重复保存。用户更换头像后，系统会在确认旧头像无人引用时自动删除旧文件。
 
+### 8. 切换主题后提示接口报错 / 其他设备不同步
+
+主题同步依赖账号表的 `theme` 字段。请确认已执行迁移脚本：
+
+```bash
+mysql -uroot -p123456 xm_educational_manager < sql/add_theme_column.sql
+```
+
+执行后重启后端即可。未登录时主题只保存在浏览器 `localStorage` 中；登录后才会与后端同步。
+
 ## 打包部署
 
 ### 前端打包
@@ -699,7 +740,7 @@ docker compose up -d --build
 后端：http://localhost:9091
 ```
 
-MySQL 容器首次启动会自动导入 `sql/` 初始化脚本（建表 + 初始数据 + 索引）。可通过环境变量覆盖默认配置：
+MySQL 容器首次启动会自动按顺序导入 `sql/` 中的初始化脚本（先建表 + 初始数据 + 索引，再执行主题字段迁移），无需手动处理。可通过环境变量覆盖默认配置：
 
 ```text
 JWT_SECRET、CORS_ALLOWED_ORIGINS、SPRING_DATASOURCE_PASSWORD

@@ -5,6 +5,11 @@ import {
     Opportunity, Plus, Stamp, Star, User, Warning,
 } from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
+// Element Plus 暗色变量：配合 <html> 上的 dark 类生效
+import 'element-plus/theme-chalk/dark/css-vars.css'
+// 全局样式：基础 reset + 自定义主题变量（需在 element-plus 之后引入以覆盖默认值）
+import '@/assets/css/global.css'
+import '@/assets/css/theme.css'
 
 import App from './App.vue'
 import router from './router/router-index.ts'

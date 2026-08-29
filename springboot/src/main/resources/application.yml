@@ -11,7 +11,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 123456
-    url: jdbc:mysql://${ip}:3306/xm_educational_manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # 不开启 allowMultiQueries：禁止一次请求执行多条 SQL，作为 SQL 注入的防御纵深
+    url: jdbc:mysql://${ip}:3306/xm_educational_manager?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
   servlet:
     multipart:
       max-file-size: 100MB

@@ -22,9 +22,9 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button v-if="user.role !== 'STUDENT'" plain type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-        <el-button v-if="user.role === 'STUDENT'" plain type="primary" size="small" :disabled="row.status !== '未开课'" @click="choiceCourse(row)">选课</el-button>
-        <el-button v-if="user.role === 'ADMIN'" plain type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button v-if="user.role !== 'STUDENT'" link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+        <el-button v-if="user.role === 'STUDENT'" link type="primary" size="small" :disabled="row.status !== '未开课'" @click="choiceCourse(row)">选课</el-button>
+        <el-button v-if="user.role === 'ADMIN'" link type="danger" size="small" @click="del(row.id)">删除</el-button>
       </template>
     </CrudTable>
 

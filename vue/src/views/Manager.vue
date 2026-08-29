@@ -15,6 +15,26 @@
       </div>
 
       <div class="manager-header-right">
+        <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
+        <el-dropdown placement="bottom" class="theme-switch" @command="setTheme">
+          <span class="theme-switch-trigger" :title="themeLabel">
+            <el-icon :size="20"><component :is="themeIcon" /></el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="light" :data-active="mode === 'light'">
+                <el-icon><Sunny /></el-icon>浅色模式
+              </el-dropdown-item>
+              <el-dropdown-item command="dark" :data-active="mode === 'dark'">
+                <el-icon><Moon /></el-icon>深色模式
+              </el-dropdown-item>
+              <el-dropdown-item command="auto" :data-active="mode === 'auto'">
+                <el-icon><Monitor /></el-icon>跟随系统
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+
         <el-dropdown placement="bottom" @command="handleCommand">
           <div class="avatar">
             <img :src="user.avatar || defaultAvatar" />
@@ -70,7 +90,9 @@
 import { ref, computed, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -110,6 +132,16 @@ const menuGroups = computed(() => {
 })
 
 const openeds = ref<string[]>(Object.keys(menuGroupConfig))
+
+// 主题模式（light/dark/auto），切换后由 useTheme 负责持久化与后端同步
+const mode = useTheme()
+const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
+const themeLabel = computed(() =>
+    mode.value === 'dark' ? '深色模式' : mode.value === 'light' ? '浅色模式' : '跟随系统'
+)
+const setTheme = (command: string) => {
+    mode.value = command as 'light' | 'dark' | 'auto'
+}
 
 // 提供 refreshUser 方法给子组件
 provide('refreshUser', refreshUser)

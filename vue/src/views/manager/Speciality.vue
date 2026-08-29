@@ -23,8 +23,8 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button plain type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-        <el-button plain type="danger" size="small" @click="del(row.id)">删除</el-button>
+        <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+        <el-button link type="danger" size="small" @click="del(row.id)">删除</el-button>
       </template>
     </CrudTable>
 

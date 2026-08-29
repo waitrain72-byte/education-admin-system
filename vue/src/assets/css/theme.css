@@ -1,0 +1,95 @@
+/* ============================================================
+   主题变量体系：所有自定义颜色统一收敛为 CSS 自定义属性，
+   浅色定义在 :root，深色定义在 html.dark（与 Element Plus 暗色
+   方案同一开关，由 useColorMode 在 <html> 上维护 dark 类）。
+   ============================================================ */
+
+:root {
+    /* 页面与卡片背景 */
+    --xm-bg-page: #f3f6fe;
+    --xm-bg-card: #ffffff;
+    --xm-bg-hover: #f5f7fa;
+    --xm-bg-input: #f5f7fa;
+    --xm-bg-input-hover: #eef0f3;
+
+    /* 布局区域 */
+    --xm-header-bg: #006eff;
+    --xm-header-text: #ffffff;
+    --xm-sidebar-bg: #ffffff;
+
+    /* 文字 */
+    --xm-text-primary: #303133;
+    --xm-text-regular: #606266;
+    --xm-text-secondary: #909399;
+
+    /* 边框与阴影 */
+    --xm-border: #e4e7ed;
+    --xm-border-dashed: #d9d9d9;
+    --xm-scrollbar-thumb: #ddd;
+    --xm-shadow-card: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    --xm-shadow-card-lg: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+    /* 品牌色 */
+    --xm-brand: #7684ff;
+    --xm-brand-strong: #4a5bcf;
+}
+
+html.dark {
+    --xm-bg-page: #101418;
+    --xm-bg-card: #1b1f26;
+    --xm-bg-hover: #242a33;
+    --xm-bg-input: #1b1f26;
+    --xm-bg-input-hover: #242a33;
+
+    --xm-header-bg: #1a2634;
+    --xm-header-text: #e5eaf3;
+    --xm-sidebar-bg: #1b1f26;
+
+    --xm-text-primary: #e5eaf3;
+    --xm-text-regular: #cfd3dc;
+    --xm-text-secondary: #a3a6ad;
+
+    --xm-border: #363b44;
+    --xm-border-dashed: #4c4d4f;
+    --xm-scrollbar-thumb: #363b44;
+    --xm-shadow-card: 0 2px 5px 0 rgba(0, 0, 0, 0.4);
+    --xm-shadow-card-lg: 0 2px 12px 0 rgba(0, 0, 0, 0.4);
+
+    /* 品牌色：深色下提亮以保证对比度 */
+    --xm-brand: #8b97ff;
+    --xm-brand-strong: #a5b0ff;
+}
+
+/* 告知浏览器表单/滚动条等原生控件跟随主题渲染 */
+:root {
+    color-scheme: light;
+}
+html.dark {
+    color-scheme: dark;
+}
+
+/* 主题下拉菜单中当前选中项高亮 */
+.el-dropdown-menu__item[data-active="true"] {
+    color: var(--xm-brand);
+    font-weight: 600;
+}
+
+/* 主题切换过渡动画：背景、文字、边框平滑渐变 */
+body,
+.manager-container,
+.manager-header,
+.manager-main-left,
+.manager-main-right,
+.manager-main-right .search,
+.manager-main-right .operation,
+.manager-main-right .table,
+.card,
+.el-table,
+.el-dialog,
+.el-card {
+    transition:
+        background-color 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease;
+}

@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.TeacherMapper">
 
     <sql id="Base_Column_List">
-        id,username,password,name,phone,email,avatar,role,title
+        id,username,password,name,phone,email,avatar,role,title,theme
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Teacher">
@@ -47,6 +47,7 @@
             <if test="avatar != null">avatar,</if>
             <if test="role != null">role,</if>
             <if test="title != null">title,</if>
+            <if test="theme != null">theme,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -58,6 +59,7 @@
             <if test="avatar != null">#{avatar},</if>
             <if test="role != null">#{role},</if>
             <if test="title != null">#{title},</if>
+            <if test="theme != null">#{theme},</if>
         </trim>
     </insert>
 
@@ -87,6 +89,9 @@
             </if>
             <if test="title != null">
                 title = #{title},
+            </if>
+            <if test="theme != null">
+                theme = #{theme},
             </if>
         </set>
         where id = #{id}

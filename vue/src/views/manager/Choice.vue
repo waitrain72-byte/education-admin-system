@@ -11,8 +11,8 @@
         @page-change="load"
     >
       <template #actions="{ row }">
-        <el-button plain type="danger" size="small" :disabled="row.status !== '未开课'" @click="del(row.id)">取消选课</el-button>
-        <el-button plain type="primary" size="small" :disabled="row.status !== '已结课'" @click="initComment(row)">评教</el-button>
+        <el-button link type="danger" size="small" :disabled="row.status !== '未开课'" @click="del(row.id)">取消选课</el-button>
+        <el-button link type="primary" size="small" :disabled="row.status !== '已结课'" @click="initComment(row)">评教</el-button>
       </template>
     </CrudTable>
 

@@ -45,7 +45,7 @@ import { useUser } from '@/components/useUser.ts'
 
 const emit = defineEmits(['update:user'])
 
-// 使用本地副本编辑，保存成功后才写回全局状态
+// 使用本地副本编辑，保存成功后才写回全局状态，避免表单输入污染登录状态
 const { user: storeUser, updateUser } = useUser()
 const user = reactive<Record<string, any>>({ ...storeUser.value })
 
@@ -72,7 +72,7 @@ const handleAvatarSuccess = (response: any) => {
   justify-content: center;
 }
 :deep(.avatar-uploader .el-upload) {
-  border: 1px dashed #d9d9d9;
+  border: 1px dashed var(--xm-border-dashed);
   border-radius: 50%;
   cursor: pointer;
   overflow: hidden;
@@ -94,6 +94,6 @@ const handleAvatarSuccess = (response: any) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: var(--xm-bg-hover);
 }
 </style>

@@ -9,4 +9,8 @@
 
 <script setup lang="ts">
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import { installThemeSync } from '@/composables/useTheme'
+
+// 主题同步只需在根组件安装一次：模式变化时防抖推送到后端
+installThemeSync()
 </script>

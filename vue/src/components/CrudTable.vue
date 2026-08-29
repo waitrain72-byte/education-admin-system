@@ -17,7 +17,7 @@
           <slot :name="col.prop" :row="scope.row" />
         </template>
       </el-table-column>
-      <el-table-column v-if="showActions && $slots.actions" label="操作" width="180" align="center">
+      <el-table-column v-if="showActions && $slots.actions" label="操作" :width="actionsWidth" align="center">
         <template #default="scope">
           <slot name="actions" :row="scope.row" />
         </template>
@@ -48,18 +48,21 @@ export interface CrudColumn {
 }
 
 withDefaults(defineProps<{
-  data: any[]
-  columns: CrudColumn[]
-  pageNum: number
-  pageSize: number
-  total: number
-  loading?: boolean
-  selectable?: boolean
-  showActions?: boolean
+    data: any[]
+    columns: CrudColumn[]
+    pageNum: number
+    pageSize: number
+    total: number
+    loading?: boolean
+    selectable?: boolean
+    showActions?: boolean
+    /** 操作列宽度：按钮较多时（如用户管理的 编辑/重置密码/删除）可传更大值 */
+    actionsWidth?: number
 }>(), {
-  loading: false,
-  selectable: false,
-  showActions: true,
+    loading: false,
+    selectable: false,
+    showActions: true,
+    actionsWidth: 180,
 })
 
 defineEmits<{
