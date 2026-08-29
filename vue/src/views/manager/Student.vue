@@ -38,9 +38,7 @@
     >
       <template #avatar="{ row }">
         <div style="display: flex; align-items: center">
-          <el-image
-v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%"
-                    :src="row.avatar" :preview-src-list="[row.avatar]" />
+          <el-image v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%" :src="row.avatar" />
         </div>
       </template>
       <template #actions="{ row }">
