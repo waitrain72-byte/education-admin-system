@@ -167,7 +167,7 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 数据库脚本（建表 + 初始数据 + 索引；add_theme_column.sql 为主题字段迁移脚本）
++-- sql/                          # 完整数据库备份（全部表结构 + 演示账号与演示数据，单一文件导入）
 +-- vue/                         # 前端项目
 |   +-- public/                  # 静态资源
 |   +-- src/
@@ -378,26 +378,19 @@ CREATE DATABASE xm_educational_manager
 springboot/src/main/resources/application.yml
 ```
 
-数据库初始化脚本位于：
+完整数据库备份位于：
 
 ```text
-sql/xm_educational_manager.sql
+sql/xm_educational_manager-full.sql
 ```
 
-脚本包含全部建表语句、初始数据以及外键列索引。创建数据库后直接导入即可：
+备份包含全部表结构、演示账号与演示业务数据（含日志表、主题/语言字段），创建数据库后导入这一个文件即可：
 
 ```bash
-mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager.sql
+mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.sql
 ```
 
-主题同步功能还需要为三类账号表补充 `theme` 字段，界面语言同步需要补充 `locale` 字段，执行迁移脚本：
-
-```bash
-mysql -uroot -p123456 xm_educational_manager < sql/add_theme_column.sql
-mysql -uroot -p123456 xm_educational_manager < sql/add_locale_column.sql
-```
-
-迁移脚本为 `admin`、`teacher`、`student` 三张表各增加 `theme`（默认 `system`，跟随系统）与 `locale`（默认 `zh-CN`）列，不影响已有数据。若重复执行会提示"Duplicate column name"，忽略即可。
+备份中的账号表已包含 `theme`（主题偏好）与 `locale`（界面语言）字段，无需额外操作。
 
 系统内置管理员账号：
 
@@ -828,13 +821,7 @@ chcp 65001
 
 ### 8. 切换主题后提示接口报错 / 其他设备不同步
 
-主题同步依赖账号表的 `theme` 字段。请确认已执行迁移脚本：
-
-```bash
-mysql -uroot -p123456 xm_educational_manager < sql/add_theme_column.sql
-```
-
-执行后重启后端即可。未登录时主题只保存在浏览器 `localStorage` 中；登录后才会与后端同步。
+请确认数据库已导入完整备份 `sql/xm_educational_manager-full.sql`（内含 `theme`/`locale` 字段与日志表），导入后重启后端即可。未登录时偏好只保存在浏览器 `localStorage` 中；登录后才会与后端同步。
 
 ## 打包部署
 
@@ -874,7 +861,7 @@ docker compose up -d --build
 后端：http://localhost:9091
 ```
 
-MySQL 容器首次启动会自动按顺序导入 `sql/` 中的初始化脚本（先建表 + 初始数据 + 索引，再执行主题/语言字段迁移），无需手动处理。可通过环境变量覆盖默认配置：
+MySQL 容器首次启动会自动导入 `sql/xm_educational_manager-full.sql` 完整数据库备份（全部表结构、演示账号与演示数据），无需手动处理。可通过环境变量覆盖默认配置：
 
 ```text
 JWT_SECRET、CORS_ALLOWED_ORIGINS、SPRING_DATASOURCE_PASSWORD
@@ -915,5 +902,5 @@ java -jar target/springboot-0.0.1-SNAPSHOT.jar
 ## 注意事项
 
 - 项目根目录和 `vue/` 目录都存在 `node_modules`，一般只需要在 `vue/` 目录维护前端依赖。
-- 数据库初始化脚本位于 `sql/xm_educational_manager.sql`，新建环境时直接导入即可。
+- 数据库备份位于 `sql/xm_educational_manager-full.sql`，新建环境时导入该文件即可。
 - 生产环境请通过环境变量覆盖默认的 `JWT_SECRET` 与 `CORS_ALLOWED_ORIGINS`。
