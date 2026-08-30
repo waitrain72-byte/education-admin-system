@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Comment;
 import com.example.service.CommentService;
 import com.github.pagehelper.PageInfo;
@@ -22,6 +23,7 @@ public class CommentController {
     /**
      * 新增
      */
+    @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Comment comment) {
         commentService.add(comment);

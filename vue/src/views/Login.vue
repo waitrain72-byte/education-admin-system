@@ -430,7 +430,7 @@ onMounted(() => {
 /* 登录按钮 */
 .login-button {
   width: 100%;
-  background: linear-gradient(135deg, #87cefa 0%, #7684ff 100%);
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
   border: none;
   color: white;
   border-radius: 8px;
@@ -443,8 +443,8 @@ onMounted(() => {
 
 .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(118, 132, 255, 0.4);
-  background: linear-gradient(135deg, #7bc4f5 0%, #6a78f0 100%);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
 }
 
 .login-button:active {

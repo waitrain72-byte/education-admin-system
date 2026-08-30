@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Roomplan' })
+
 import { ref, onMounted, computed } from 'vue'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'

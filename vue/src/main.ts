@@ -7,9 +7,11 @@ import {
 import 'element-plus/dist/index.css'
 // Element Plus 暗色变量：配合 <html> 上的 dark 类生效
 import 'element-plus/theme-chalk/dark/css-vars.css'
-// 全局样式：基础 reset + 自定义主题变量（需在 element-plus 之后引入以覆盖默认值）
+// 全局样式：基础 reset + 主题变量 + 后台布局样式（manager.css 曾放在 Manager.vue 的
+// style @import 中，Vite 热更新场景下会偶发丢失导致布局错乱，现统一在入口引入）
 import '@/assets/css/global.css'
 import '@/assets/css/theme.css'
+import '@/assets/css/manager.css'
 
 import App from './App.vue'
 import router from './router/router-index.ts'

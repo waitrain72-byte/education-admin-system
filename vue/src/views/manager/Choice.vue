@@ -31,6 +31,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Choice' })
+
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import request from '@/utils/request'

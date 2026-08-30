@@ -1,4 +1,4 @@
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useColorMode, useDebounceFn } from '@vueuse/core'
 import type { UseColorModeReturn } from '@vueuse/core'
 import request from '@/utils/request'
@@ -17,6 +17,19 @@ const SERVER_TO_LOCAL: Record<string, ThemeMode> = { light: 'light', dark: 'dark
 
 /** localStorage 键名：页面加载前 index.html 的防闪烁脚本会读取同一个键 */
 const STORAGE_KEY = 'xm-color-mode'
+
+/** 当前是否处于深色显示（auto 模式下通过系统偏好实时判断） */
+export const isDark = computed(() => {
+    const mode = useTheme().value
+    if (mode === 'dark') return true
+    if (mode === 'light') return false
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+})
+
+/** 直接设置为主题模式（供开关式 UI 调用） */
+export function setThemeMode(mode: ThemeMode) {
+    useTheme().value = mode
+}
 
 /** 模块级单例：全应用共享同一个 colorMode 实例，避免重复绑定 storage/媒体查询监听 */
 let colorMode: UseColorModeReturn<ThemeMode> | null = null

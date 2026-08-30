@@ -1,8 +1,10 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Homework;
 import com.example.service.HomeworkService;
+import com.example.websocket.NoticeWebSocketServer;
 import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,11 +22,16 @@ public class HomeworkController {
     private HomeworkService homeworkService;
 
     /**
-     * 新增
+     * 新增（提交作业实时通知教师）
      */
+    @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Homework homework) {
         homeworkService.add(homework);
+        if (homework.getTeacherId() != null) {
+            NoticeWebSocketServer.sendToUser(homework.getTeacherId(), "TEACHER",
+                    "作业提交通知", "学生提交了新的作业，请到【作业提交】页面查看");
+        }
         return Result.success();
     }
 
@@ -47,11 +54,16 @@ public class HomeworkController {
     }
 
     /**
-     * 修改
+     * 修改（教师批改实时推送学生）
      */
+    @NoRepeatSubmit
     @PutMapping("/update")
     public Result updateById(@RequestBody Homework homework) {
         homeworkService.updateById(homework);
+        if (homework.getScore() != null && homework.getStudentId() != null) {
+            NoticeWebSocketServer.sendToUser(homework.getStudentId(), "STUDENT",
+                    "作业批改通知", "你提交的作业已批改，得分：" + homework.getScore());
+        }
         return Result.success();
     }
 

@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'LoginLog' })
+
 import { ref, computed, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'

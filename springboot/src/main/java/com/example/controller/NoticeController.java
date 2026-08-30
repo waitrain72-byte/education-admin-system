@@ -1,8 +1,10 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Notice;
 import com.example.service.NoticeService;
+import com.example.websocket.NoticeWebSocketServer;
 import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
@@ -19,11 +21,13 @@ public class NoticeController {
     private NoticeService noticeService;
 
     /**
-     * 新增
+     * 新增（全员实时广播）
      */
+    @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Notice notice) {
         noticeService.add(notice);
+        NoticeWebSocketServer.sendToAll("新教务通知", notice.getTitle());
         return Result.success();
     }
 

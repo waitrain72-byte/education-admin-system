@@ -2,9 +2,11 @@ package com.example.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Score;
 import com.example.entity.excel.ScoreExcel;
 import com.example.service.ScoreService;
+import com.example.websocket.NoticeWebSocketServer;
 import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,11 +30,14 @@ public class ScoreController {
     private ScoreService scoreService;
 
     /**
-     * 新增
+     * 新增（发布成绩实时推送学生）
      */
+    @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Score score) {
         scoreService.add(score);
+        NoticeWebSocketServer.sendToUser(score.getStudentId(), "STUDENT",
+                "成绩发布通知", "你有一门课程的成绩已发布，请到【我的成绩】查看");
         return Result.success();
     }
 
@@ -55,11 +60,14 @@ public class ScoreController {
     }
 
     /**
-     * 修改
+     * 修改（修改成绩实时推送学生）
      */
+    @NoRepeatSubmit
     @PutMapping("/update")
     public Result updateById(@RequestBody Score score) {
         scoreService.updateById(score);
+        NoticeWebSocketServer.sendToUser(score.getStudentId(), "STUDENT",
+                "成绩发布通知", "你有一门课程的成绩已更新，请到【我的成绩】查看");
         return Result.success();
     }
 

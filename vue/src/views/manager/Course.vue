@@ -77,6 +77,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Course' })
+
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'

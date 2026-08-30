@@ -45,25 +45,17 @@
           </template>
         </el-dropdown>
 
-        <!-- 主题切换：浅色 / 深色 / 跟随系统 -->
-        <el-dropdown placement="bottom" class="theme-switch" @command="setTheme">
-          <span class="theme-switch-trigger" :title="$t(themeLabel)">
-            <el-icon :size="20"><component :is="themeIcon" /></el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="light" :data-active="mode === 'light'">
-                <el-icon><Sunny /></el-icon>{{ $t('layout.theme.light') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="dark" :data-active="mode === 'dark'">
-                <el-icon><Moon /></el-icon>{{ $t('layout.theme.dark') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="auto" :data-active="mode === 'auto'">
-                <el-icon><Monitor /></el-icon>{{ $t('layout.theme.auto') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <!-- 主题切换开关：浅色 / 深色 -->
+        <el-tooltip :content="isDark ? $t('layout.theme.light') : $t('layout.theme.dark')" placement="bottom">
+          <el-switch
+              v-model="darkSwitch"
+              class="theme-switch"
+              size="large"
+              inline-prompt
+              :active-icon="Moon"
+              :inactive-icon="Sunny"
+          />
+        </el-tooltip>
 
         <el-dropdown placement="bottom" @command="handleCommand">
           <div class="avatar">
@@ -108,9 +100,13 @@
         </el-menu>
       </div>
 
-      <!--  数据表格  -->
+      <!--  数据表格（keep-alive 缓存已打开标签页对应的页面，关闭标签即释放缓存）  -->
       <div class="manager-main-right">
-        <router-view @update:user="refreshUser" />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="cachedViews">
+            <component :is="Component" @update:user="refreshUser" />
+          </keep-alive>
+        </router-view>
       </div>
     </div>
   </div>
@@ -120,9 +116,9 @@
 import { ref, computed, watch, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Sunny, Moon, Monitor } from '@element-plus/icons-vue'
+import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
-import { useTheme } from '@/composables/useTheme'
+import { isDark, setThemeMode } from '@/composables/useTheme'
 import { currentLocale, setLocale } from '@/composables/useLocale'
 import { t } from '@/i18n'
 
@@ -166,13 +162,11 @@ const menuGroups = computed(() => {
 
 const openeds = ref<string[]>(Object.keys(menuGroupConfig))
 
-// 主题模式（light/dark/auto），切换后由 useTheme 负责持久化与后端同步
-const mode = useTheme()
-const themeIcon = computed(() => (mode.value === 'dark' ? Moon : mode.value === 'light' ? Sunny : Monitor))
-const themeLabel = computed(() => `layout.theme.current.${mode.value}`)
-const setTheme = (command: string) => {
-    mode.value = command as 'light' | 'dark' | 'auto'
-}
+// 主题切换开关（浅色 / 深色），偏好持久化并同步后端
+const darkSwitch = computed({
+    get: () => isDark.value,
+    set: (value: boolean) => setThemeMode(value ? 'dark' : 'light'),
+})
 
 // 语言偏好（zh-CN/en-US），切换后持久化并同步后端
 const isZh = computed(() => currentLocale() === 'zh-CN')
@@ -181,9 +175,12 @@ const isZh = computed(() => currentLocale() === 'zh-CN')
 interface TabItem {
   path: string
   name: string
+  routeName: string
 }
 
-const tabs = ref<TabItem[]>([{ path: '/home', name: 'menu.home' }])
+const tabs = ref<TabItem[]>([{ path: '/home', name: 'menu.home', routeName: 'Home' }])
+
+const cachedViews = computed(() => tabs.value.map((tab) => tab.routeName))
 
 // 路由变化时把新页面加入标签（首页固定不可关闭）
 watch(
@@ -191,7 +188,8 @@ watch(
     (path) => {
       if (tabs.value.some((tab) => tab.path === path)) return
       const name = typeof route.meta?.name === 'string' ? route.meta.name : path
-      tabs.value.push({ path, name })
+      const routeName = typeof route.name === 'string' ? route.name : path
+      tabs.value.push({ path, name, routeName })
     }
 )
 
@@ -245,6 +243,3 @@ const logout = () => {
 }
 </script>
 
-<style >
-@import "@/assets/css/manager.css";
-</style>

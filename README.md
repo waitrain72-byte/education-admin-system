@@ -1,5 +1,16 @@
 # 教务管理系统
 
+<div align="center">
+
+![Vue](https://img.shields.io/badge/Vue-3.4-42B883?logo=vuedotjs&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.5.9-6DB33F?logo=springboot&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-5.7%20%7C%208.x-4479A1?logo=mysql&logoColor=white)
+![Element Plus](https://img.shields.io/badge/Element%20Plus-2.x-409EFF?logo=element&logoColor=white)
+![uni-app](https://img.shields.io/badge/uni--app-小程序端-2B9939)
+![GitHub stars](https://img.shields.io/github/stars/waitrain72-byte/education-admin-system?style=social)
+
+</div>
+
 这是一个前后端分离的教务管理系统，前端基于 Vue 3 + Vite + TypeScript + Element Plus，后端基于 Spring Boot + MyBatis + MySQL，并提供基于 uni-app（Vue 3）的微信小程序端。系统包含管理员、教师、学生等角色，主要覆盖学院、专业、班级、课程、选课、课表、成绩、考试安排、教室安排、请假、作业、考勤、通知、评教等教务管理功能。
 
 ## 仓库分支说明
@@ -217,9 +228,23 @@
 
 ### 23. 演示数据与一键体验
 
+<!-- 系统截图：将图片放入 docs/screenshots/ 目录后取消注释即可展示
+![登录页](docs/screenshots/login.png)
+![管理端](docs/screenshots/manager.png)
+![数据大屏](docs/screenshots/dashboard.png)
+![小程序](docs/screenshots/mobile.png)
+-->
+
 - 内置 **20 个教师账号**（`t01`~`t20`，职称涵盖教授/副教授/讲师/助教）与 **50 个学生账号**（`2024001`~`2024050`，分属 5 个班级），初始密码均为 `123456`，并附带 70 张自动生成的卡通头像。
 - 全模块演示业务数据：课程、选课、成绩（覆盖各分数段）、考勤、请假（三种审核状态）、作业（含已批改/未批改）、评教、通知、考试安排、教室安排。
 - 数据库备份文件已包含以上全部内容，导入即得完整可演示环境（见下文"数据库准备"）。
+
+### 24. 实时通知与健壮性增强
+
+- **WebSocket 实时通知**：请假审核结果、成绩发布/更新、作业批改实时推送到学生端；学生提交作业实时通知教师；管理员发布新教务通知全员广播。前端登录后自动建立连接，断线 10 秒自动重连，收到消息弹出右上角通知。
+- **防重复提交**：自定义 `@NoRepeatSubmit` 注解 + AOP，选课、请假、评教、作业提交、成绩录入等关键写接口在 2 秒内重复点击会被直接拒绝（同一用户维度隔离，互不影响）。
+- **XSS 中和**：自定义 Jackson 字符串反序列化器，对所有 JSON 请求体中的字符串做脚本标签与 `javascript:` 协议中和，恶意内容入库前即被无害化（与 Vue 模板转义形成双重防线）。
+- **定时任务**：每天凌晨 2 点自动清理 90 天前的操作日志与登录日志，防止日志表无限增长。
 
 ## 项目结构
 

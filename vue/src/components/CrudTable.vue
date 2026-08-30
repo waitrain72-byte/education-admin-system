@@ -1,6 +1,10 @@
 <template>
   <div class="table">
-    <el-table v-loading="loading" :data="data" stripe @selection-change="$emit('selection-change', $event)">
+    <!-- 首次加载且无数据时显示骨架屏，替代全屏转圈 -->
+    <div v-if="loading && !data.length" class="table-skeleton">
+      <el-skeleton v-for="r in 4" :key="r" :rows="2" animated style="margin-bottom: 24px" />
+    </div>
+    <el-table v-else v-loading="loading && !!data.length" :data="data" stripe @selection-change="$emit('selection-change', $event)">
       <el-table-column v-if="selectable" type="selection" width="55" align="center" />
       <el-table-column
           v-for="col in columns"
@@ -22,6 +26,9 @@
           <slot name="actions" :row="scope.row" />
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty :image-size="88" :description="$t('common.empty')" />
+      </template>
     </el-table>
     <div class="pagination">
       <el-pagination

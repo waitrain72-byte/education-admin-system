@@ -35,4 +35,7 @@ public interface LoginLogMapper {
             "<foreach collection='ids' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
             "</script>")
     int deleteBatch(@Param("ids") List<Integer> ids);
+
+    @Delete("delete from sys_login_log where create_time < DATE_SUB(NOW(), INTERVAL #{days} DAY)")
+    int deleteOlderThanDays(int days);
 }

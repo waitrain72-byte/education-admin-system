@@ -30,6 +30,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'OperLog' })
+
 import { ref, computed } from 'vue'
 import { onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'

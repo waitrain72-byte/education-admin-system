@@ -37,6 +37,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'StudentPerson' })
+
 import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { t, apiMessage } from '@/i18n'

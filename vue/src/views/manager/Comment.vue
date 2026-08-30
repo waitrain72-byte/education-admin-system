@@ -25,6 +25,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Comment' })
+
 import { ref, computed, onMounted } from 'vue'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'

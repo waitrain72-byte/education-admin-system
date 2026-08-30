@@ -358,8 +358,8 @@ const register = (): void => {
 
 .register-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(118, 132, 255, 0.4);
-  background: linear-gradient(135deg, #7bc4f5 0%, #6a78f0 100%);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
 }
 
 .register-button:active {

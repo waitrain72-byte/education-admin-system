@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Choice;
 import com.example.entity.Curriculum;
 import com.example.service.ChoiceService;
@@ -21,8 +22,9 @@ public class ChoiceController {
     private ChoiceService choiceService;
 
     /**
-     * 新增
+     * 新增（选课）
      */
+    @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Choice choice) {
         choiceService.add(choice);

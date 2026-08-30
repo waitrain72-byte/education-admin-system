@@ -46,6 +46,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Examplan' })
+
 import { ref, onMounted, computed } from 'vue'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'

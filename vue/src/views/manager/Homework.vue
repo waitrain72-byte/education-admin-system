@@ -77,6 +77,8 @@ class="avatar-uploader" :action="baseUrl + '/files/upload'"
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Homework' })
+
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, type FormRules } from 'element-plus'
 import request from '@/utils/request'

@@ -40,6 +40,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Home' })
+
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'

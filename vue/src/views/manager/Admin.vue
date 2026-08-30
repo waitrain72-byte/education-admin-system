@@ -66,6 +66,8 @@ class="avatar-uploader" :action="baseUrl + '/files/upload'"
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: 'Admin' })
+
 import { ref, onMounted, inject, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormRules } from 'element-plus'

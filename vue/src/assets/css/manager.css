@@ -7,7 +7,9 @@
 
 .manager-header {
     display: flex;
+    align-items: center;
     background-color: var(--xm-header-bg);
+    border-bottom: 1px solid var(--xm-header-border);
     height: 60px;
     flex-shrink: 0;
 }
@@ -44,72 +46,73 @@
     flex: 1;
     width: 0;
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 16px;
     min-width: 0;
     overflow: hidden;
 }
 
-/* 面包屑在蓝色头部上的配色：文字白色（Element 默认深色在蓝底上不可读） */
+/* 面包屑配色：跟随头部文字色，当前页加粗 */
 .manager-header-center .el-breadcrumb {
     flex-shrink: 0;
 }
 
 .manager-header-center .el-breadcrumb .el-breadcrumb__inner {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--xm-text-secondary);
     font-weight: normal;
 }
 
 .manager-header-center .el-breadcrumb .el-breadcrumb__inner a:hover,
 .manager-header-center .el-breadcrumb .el-breadcrumb__inner:hover {
-    color: #ffffff;
+    color: var(--xm-brand);
 }
 
 .manager-header-center .el-breadcrumb .el-breadcrumb__item:last-child .el-breadcrumb__inner {
-    color: #ffffff;
+    color: var(--xm-header-text);
     font-weight: bold;
 }
 
 .manager-header-center .el-breadcrumb .el-breadcrumb__separator {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--xm-text-secondary);
 }
 
 .manager-header-right {
-    width: 200px;
+    width: 240px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     padding-right: 20px;
 }
 
-/* 主题切换入口（浅色/深色/跟随系统） */
-.theme-switch-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
+/* 主题切换开关（浅色/深色） */
+.theme-switch {
     margin-right: 14px;
-    border-radius: 50%;
+    --el-switch-on-color: #4f46e5;
+    --el-switch-off-color: #d1d5db;
+}
+
+html.dark .theme-switch {
+    --el-switch-off-color: #374151;
+}
+
+/* 语言切换入口（中/EN） */
+.lang-trigger {
+    margin-right: 14px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--xm-header-text);
-    cursor: pointer;
+    background: transparent;
+    border: none;
     outline: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
     transition: background-color 0.25s ease;
 }
 
-/* 语言切换入口（中/EN），文字略小以适配圆形 */
-.lang-trigger {
-    font-size: 13px;
-    font-weight: 600;
-    user-select: none;
-}
-
-.theme-switch-trigger:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-html.dark .theme-switch-trigger:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+.lang-trigger:hover {
+    background-color: var(--xm-bg-hover);
 }
 
 .manager-header-right .avatar {
@@ -133,25 +136,163 @@ html.dark .theme-switch-trigger:hover {
     overflow: hidden;
 }
 
-/* 多标签页：嵌在头部内、面包屑右侧，半透明白胶囊风格 */
+.manager-main-left {
+    width: 200px;
+    height: calc(100vh - 60px);
+    background-color: var(--xm-sidebar-bg, var(--xm-bg-card));
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 8px 6px;
+    box-sizing: border-box;
+}
+
+/* 菜单项胶囊选中态（soybean 风格） */
+.manager-main-left .el-menu {
+    border-right: none;
+    background: transparent;
+}
+
+.manager-main-left .el-menu-item,
+.manager-main-left .el-sub-menu__title {
+    height: 44px;
+    line-height: 44px;
+    margin: 4px 0;
+    border-radius: 8px;
+}
+
+.manager-main-left .el-menu-item.is-active {
+    background-color: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
+    font-weight: 600;
+}
+
+.manager-main-left::-webkit-scrollbar,
+.manager-main-right::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.manager-main-left::-webkit-scrollbar-thumb,
+.manager-main-right::-webkit-scrollbar-thumb {
+    background: var(--xm-scrollbar-thumb);
+    border-radius: 4px;
+}
+
+.manager-main-left::-webkit-scrollbar-track,
+.manager-main-right::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.manager-main-right {
+    flex: 1;
+    width: 0;
+    padding: 16px;
+    overflow-y: auto;
+    background-color: var(--xm-bg-page);
+}
+
+.manager-main-right .search,
+.manager-main-right .operation,
+.manager-main-right .table {
+    background: var(--xm-bg-card);
+    border: 1px solid var(--xm-border);
+    border-radius: 12px;
+    box-shadow: var(--xm-shadow-card);
+    overflow: hidden;
+}
+
+.manager-main-right .search {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+
+.manager-main-right .operation {
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.manager-main-right .table {
+    padding: 16px 16px 6px;
+    box-shadow: var(--xm-shadow-card-lg);
+}
+
+/* 相邻卡片视觉合并为一张：搜索 + 操作 + 表格 */
+.manager-main-right .search:has(+ .operation),
+.manager-main-right .search:has(+ .table),
+.manager-main-right .operation:has(+ .table) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.manager-main-right .search + .operation,
+.manager-main-right .search + .table,
+.manager-main-right .operation + .table {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: 0;
+}
+
+.manager-main-right .table .pagination {
+    margin-top: 10px;
+}
+
+.card {
+    padding: 20px;
+    background: var(--xm-bg-card);
+    border: 1px solid var(--xm-border);
+    border-radius: 12px;
+    box-shadow: var(--xm-shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--xm-shadow-card-lg);
+}
+
+/* 页面切换过渡（配合 Manager.vue 中 router-view 的 transition） */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.fade-slide-enter-from {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+
+/* 澶氭爣绛鹃〉锛氬祵鍦ㄥご閮ㄥ唴銆侀潰鍖呭睉鍙充晶锛涙案杩滃崟琛屾í鍚戞粴鍔?*/
 .manager-tabs {
+    flex: 1 1 auto;
     display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
     align-items: center;
     gap: 8px;
     overflow-x: auto;
+    overflow-y: hidden;
     min-width: 0;
     padding: 2px 0;
+    white-space: nowrap;
 }
 
 .manager-tab {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 12px;
     font-size: 13px;
     border-radius: 14px;
-    background-color: rgba(255, 255, 255, 0.18);
-    color: #ffffff;
+    background-color: var(--xm-bg-hover);
+    color: var(--xm-text-regular);
     cursor: pointer;
     white-space: nowrap;
     user-select: none;
@@ -159,13 +300,14 @@ html.dark .theme-switch-trigger:hover {
 }
 
 .manager-tab:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: var(--xm-bg-input-hover);
+    color: var(--xm-brand);
 }
 
 .manager-tab.active {
-    background-color: #ffffff;
-    color: var(--xm-header);
-    font-weight: bold;
+    background-color: var(--xm-brand);
+    color: #ffffff;
+    font-weight: 600;
 }
 
 .manager-tab .tab-close {
@@ -175,78 +317,9 @@ html.dark .theme-switch-trigger:hover {
 }
 
 .manager-tab .tab-close:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
-.manager-tab.active .tab-close:hover {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-.manager-main-left {
-    width: 200px;
-    height: calc(100vh - 60px);
-    background-color: var(--xm-sidebar-bg);
-    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-
-.manager-main-right {
-    flex: 1;
-    width: 0;
-    padding: 10px;
-    overflow-y: auto;
-    background-color: var(--xm-bg-page);
-}
-
-.manager-main-right .search {
-    padding: 10px;
-    background-color: var(--xm-bg-card);
-    border-radius: 5px;
-    box-shadow: var(--xm-shadow-card);
-}
-
-.manager-main-right .operation {
-    margin-top: 5px;
-    padding: 10px;
-    background-color: var(--xm-bg-card);
-    border-radius: 5px;
-    box-shadow: var(--xm-shadow-card);
-}
-
-.manager-main-right .table {
-    margin-top: 5px;
-    padding: 15px 10px;
-    background-color: var(--xm-bg-card);
-    border-radius: 5px;
-    box-shadow: var(--xm-shadow-card-lg);
-}
-
-.manager-main-right .table .pagination {
-    margin-top: 10px;
-}
-
-.card {
-    padding: 20px;
-    background-color: var(--xm-bg-card);
-    border-radius: 5px;
-    box-shadow: var(--xm-shadow-card);
-}
-
-/* 滚动条样式 */
-.manager-main-left::-webkit-scrollbar,
-.manager-main-right::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-.manager-main-left::-webkit-scrollbar-thumb,
-.manager-main-right::-webkit-scrollbar-thumb {
-    background: var(--xm-scrollbar-thumb);
-    border-radius: 3px;
-}
-
-.manager-main-left::-webkit-scrollbar-track,
-.manager-main-right::-webkit-scrollbar-track {
-    background: transparent;
+.manager-tab.active .tab-close:hover {
+    background-color: rgba(255, 255, 255, 0.4);
 }

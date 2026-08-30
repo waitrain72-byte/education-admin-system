@@ -35,4 +35,7 @@ public interface OperLogMapper {
             "<foreach collection='ids' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
             "</script>")
     int deleteBatch(@Param("ids") List<Integer> ids);
+
+    @Delete("delete from sys_oper_log where create_time < DATE_SUB(NOW(), INTERVAL #{days} DAY)")
+    int deleteOlderThanDays(int days);
 }
