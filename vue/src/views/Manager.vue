@@ -118,6 +118,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
+import { usePermission } from '@/composables/usePermission'
 import { isDark, setThemeMode } from '@/composables/useTheme'
 import { currentLocale, setLocale } from '@/composables/useLocale'
 import { t } from '@/i18n'
@@ -129,6 +130,7 @@ const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726
 
 // 使用全局用户状态
 const { user, refreshUser, clearUser } = useUser()
+const { pullPermissions } = usePermission()
 
 // 菜单分组配置：顺序即展示顺序（标题为 i18n 键）
 const menuGroupConfig: Record<string, { title: string; icon: string }> = {
@@ -209,6 +211,9 @@ provide('refreshUser', refreshUser)
 onMounted(() => {
   if (!user.value.id) {
     router.push('/login')
+  } else {
+    // 进入主布局时拉取当前用户权限码，保证按钮级权限与后端一致
+    pullPermissions()
   }
 })
 

@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +34,7 @@ public class FileController {
     /**
      * 文件上传
      */
+    @RequirePermission("file:upload")
     @PostMapping("/upload")
     public Result upload(MultipartFile file) {
         if (file == null || StrUtil.isBlank(file.getOriginalFilename())) {
@@ -84,6 +86,7 @@ public class FileController {
     /**
      * 删除文件
      */
+    @RequirePermission("file:delete")
     @DeleteMapping("/{flag}")
     public void delFile(@PathVariable String flag) {
         File targetFile = getSafeFile(flag);

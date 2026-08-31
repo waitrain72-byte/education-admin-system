@@ -29,6 +29,8 @@ export const useUserStore = defineStore('user', {
         isLoggedIn: (state) => !!state.user?.id,
         role: (state) => state.user?.role || '',
         token: (state) => state.user?.token || '',
+        /** 当前用户拥有的权限码集合（RBAC；来自 /permission/my，随 user 持久化） */
+        permissions: (state) => (state.user?.permissions as string[] | undefined) || [],
     },
 
     actions: {
@@ -58,6 +60,12 @@ export const useUserStore = defineStore('user', {
         /** 从 localStorage 重新同步（如 401 后或跨标签页场景） */
         refreshUser() {
             this.user = loadUserFromStorage()
+        },
+
+        /** 登录/进入系统后写入权限码集合，随 user 一并持久化 */
+        setPermissions(permissions: string[]) {
+            this.user = { ...this.user, permissions }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.user))
         },
     },
 })

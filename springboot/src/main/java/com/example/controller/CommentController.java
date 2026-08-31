@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Comment;
 import com.example.service.CommentService;
 import com.example.service.CrudService;
@@ -17,6 +18,7 @@ import javax.annotation.Resource;
  **/
 @RestController
 @RequestMapping("/comment")
+@RequirePermission(module = "comment")
 public class CommentController extends CrudController<Comment> {
 
     @Resource

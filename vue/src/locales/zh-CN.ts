@@ -50,6 +50,7 @@ export default {
         password: '修改密码',
         operlog: '操作日志',
         loginlog: '登录日志',
+        permission: '权限设置',
     },
 
     layout: {
@@ -240,6 +241,14 @@ export default {
             titleChart: '教师职称结构',
             loginTrendChart: '近 7 天登录趋势',
             notices: '教务通知',
+        },
+
+        permission: {
+            title: '权限设置',
+            subtitle: '配置各角色可访问的功能，调整后立即生效。',
+            adminTag: '超级管理员',
+            adminHint: '超级管理员拥有全部权限，固定放行，无需配置，也不支持在此修改。',
+            checkAll: '全选本组',
         },
     },
 }

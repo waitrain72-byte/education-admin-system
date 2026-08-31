@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Admin;
 import com.example.service.AdminService;
 import com.github.pagehelper.PageInfo;
@@ -13,6 +14,7 @@ import java.util.List;
  **/
 @RestController
 @RequestMapping("/admin")
+@RequirePermission(module = "admin")
 public class AdminController {
 
     @Resource
@@ -46,8 +48,9 @@ public class AdminController {
     }
 
     /**
-     * 修改
+     * 修改（本人资料更新）
      */
+    @RequirePermission("admin:self")
     @PutMapping("/update")
     public Result updateById(@RequestBody Admin admin) {
         adminService.updateById(admin);

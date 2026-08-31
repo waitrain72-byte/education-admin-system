@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Attendance;
 import com.example.service.AttendanceService;
 import com.example.service.CrudService;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
  **/
 @RestController
 @RequestMapping("/attendance")
+@RequirePermission(module = "attendance")
 public class AttendanceController extends CrudController<Attendance> {
 
     @Resource

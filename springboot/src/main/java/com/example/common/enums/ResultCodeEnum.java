@@ -19,6 +19,7 @@ public enum ResultCodeEnum {
     COMMENT_ALREADY_ERROR("5008","您已经对该门课的老师评教过了，请勿重复评教"),
     ATTENDANCE_ALREADY_ERROR("5009","该学生当天的考勤已经录入，请勿重复录入"),
     CAPTCHA_ERROR("402", "验证码错误"),
+    PERMISSION_DENIED_ERROR("403", "无权限执行该操作"),
     ;
 
     public String code;

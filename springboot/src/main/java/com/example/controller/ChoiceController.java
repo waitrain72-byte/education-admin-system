@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Choice;
 import com.example.entity.Curriculum;
 import com.example.service.ChoiceService;
@@ -20,6 +21,7 @@ import java.util.List;
  **/
 @RestController
 @RequestMapping("/choice")
+@RequirePermission(module = "choice")
 public class ChoiceController extends CrudController<Choice> {
 
     @Resource

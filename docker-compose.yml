@@ -21,6 +21,8 @@ services:
       - mysql_data:/var/lib/mysql
       # 首次启动自动导入完整数据库备份（全部表结构 + 演示数据）
       - ./sql/xm_educational_manager-full.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      # 再导入 RBAC 权限表（角色/权限点/授权关系），按文件名顺序执行
+      - ./sql/rbac_permission.sql:/docker-entrypoint-initdb.d/02-rbac-permission.sql:ro
 
   backend:
     build: ./springboot

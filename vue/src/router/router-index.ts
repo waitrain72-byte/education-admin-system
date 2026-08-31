@@ -28,6 +28,7 @@ const routes: RouteRecordRaw[] = [
             { path: 'student',     name: 'Student',     meta: { name: 'menu.student', group: 'user', roles: ['ADMIN'] }, component: () => import('@/views/manager/Student.vue') },
             { path: 'operlog',     name: 'OperLog',     meta: { name: 'menu.operlog', group: 'system', roles: ['ADMIN'] }, component: () => import('@/views/manager/OperLog.vue') },
             { path: 'loginlog',    name: 'LoginLog',    meta: { name: 'menu.loginlog', group: 'system', roles: ['ADMIN'] }, component: () => import('@/views/manager/LoginLog.vue') },
+            { path: 'permission',  name: 'Permission',  meta: { name: 'menu.permission', group: 'system', roles: ['ADMIN'] }, component: () => import('@/views/manager/Permission.vue') },
             { path: 'adminPerson',   name: 'AdminPerson',   meta: { name: 'menu.person', roles: ['ADMIN'] }, component: () => import('@/views/manager/AdminPerson.vue') },
             { path: 'teacherPerson', name: 'TeacherPerson', meta: { name: 'menu.person', roles: ['TEACHER'] }, component: () => import('@/views/manager/TeacherPerson.vue') },
             { path: 'studentPerson', name: 'StudentPerson', meta: { name: 'menu.person', roles: ['STUDENT'] }, component: () => import('@/views/manager/StudentPerson.vue') },

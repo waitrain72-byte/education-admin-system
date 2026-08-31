@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Apply;
 import com.example.service.ApplyService;
 import com.example.service.CrudService;
@@ -19,6 +20,7 @@ import javax.annotation.Resource;
  **/
 @RestController
 @RequestMapping("/apply")
+@RequirePermission(module = "apply")
 public class ApplyController extends CrudController<Apply> {
 
     @Resource

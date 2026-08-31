@@ -48,6 +48,7 @@ export default {
         password: 'Change Password',
         operlog: 'Operation Logs',
         loginlog: 'Login Logs',
+        permission: 'Permissions',
     },
 
     layout: {
@@ -237,6 +238,14 @@ export default {
             titleChart: 'Teacher Titles',
             loginTrendChart: 'Login Trend (7 Days)',
             notices: 'Notices',
+        },
+
+        permission: {
+            title: 'Permissions',
+            subtitle: 'Configure which features each role can access. Changes take effect immediately.',
+            adminTag: 'Super Admin',
+            adminHint: 'The Super Admin has all permissions and is always allowed; it needs no configuration and cannot be changed here.',
+            checkAll: 'Check all in group',
         },
     },
 }

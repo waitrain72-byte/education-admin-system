@@ -109,9 +109,20 @@ public abstract class BaseService<T extends Account> {
     }
 
     /**
-     * 修改：密码加密处理 + 头像引用清理
+     * 修改：密码加密处理 + 头像引用清理。
+     * 含行级保护：非管理员只能修改本人资料（对应 teacher:self / student:self / admin:self 权限），
+     * 防止持有"本人资料"权限码的账号越权改动他人。
      */
     public void updateById(T entity) {
+        // 行级数据权限：非管理员仅允许修改自己；管理员不受限（无 ID 说明是新增场景，不拦截）
+        if (entity.getId() != null) {
+            Account currentUser = TokenUtils.getCurrentUser();
+            if (!RoleEnum.ADMIN.name().equals(currentUser.getRole())
+                    && currentUser.getId() != null
+                    && !currentUser.getId().equals(entity.getId())) {
+                throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+            }
+        }
         T oldEntity = entity.getId() == null ? null : getMapper().selectById(entity.getId());
         if (ObjectUtil.isNotEmpty(entity.getPassword()) && !PasswordUtils.isEncrypted(entity.getPassword())) {
             entity.setPassword(PasswordUtils.encrypt(entity.getPassword()));

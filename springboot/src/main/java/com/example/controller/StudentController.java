@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Student;
 import com.example.entity.excel.StudentExcel;
 import com.example.exception.CustomException;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  **/
 @RestController
 @RequestMapping("/student")
+@RequirePermission(module = "student")
 public class StudentController {
 
     @Resource
@@ -54,14 +56,16 @@ public class StudentController {
     }
 
     /**
-     * 修改
+     * 修改（本人资料更新；他人资料由管理员在管理页修改）
      */
+    @RequirePermission("student:self")
     @PutMapping("/update")
     public Result updateById(@RequestBody Student student) {
         studentService.updateById(student);
         return Result.success();
     }
 
+    @RequirePermission("student:resetPwd")
     @PutMapping("/resetPassword/{id}")
     public Result resetPassword(@PathVariable Integer id) {
         studentService.resetPassword(id);
@@ -100,6 +104,7 @@ public class StudentController {
     /**
      * 导出全部学生为 Excel
      */
+    @RequirePermission("student:export")
     @GetMapping("/export")
     public void export(HttpServletResponse response) throws Exception {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -123,6 +128,7 @@ public class StudentController {
     /**
      * 下载导入模板（仅表头 + 一行示例说明）
      */
+    @RequirePermission("student:export")
     @GetMapping("/importTemplate")
     public void importTemplate(HttpServletResponse response) throws Exception {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -141,6 +147,7 @@ public class StudentController {
     /**
      * 批量导入学生（密码重置为系统默认值，账号重复的行跳过并在结果中说明）
      */
+    @RequirePermission("student:export")
     @PostMapping("/import")
     public Result importExcel(@RequestParam("file") MultipartFile file) throws Exception {
         List<StudentExcel> rows = EasyExcel.read(file.getInputStream())

@@ -2,6 +2,7 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Notice;
 import com.example.service.CrudService;
 import com.example.service.NoticeService;
@@ -18,6 +19,7 @@ import javax.annotation.Resource;
  **/
 @RestController
 @RequestMapping("/notice")
+@RequirePermission(module = "notice")
 public class NoticeController extends CrudController<Notice> {
 
     @Resource

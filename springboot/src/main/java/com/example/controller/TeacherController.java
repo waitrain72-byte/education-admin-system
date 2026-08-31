@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Teacher;
 import com.example.service.TeacherService;
 import com.github.pagehelper.PageInfo;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/teacher")
+@RequirePermission(module = "teacher")
 public class TeacherController {
 
     @Resource
@@ -44,8 +46,9 @@ public class TeacherController {
     }
 
     /**
-     * 修改
+     * 修改（本人资料更新；他人资料由管理员在管理页修改）
      */
+    @RequirePermission("teacher:self")
     @PutMapping("/update")
     public Result updateById(@RequestBody Teacher teacher) {
         teacherService.updateById(teacher);

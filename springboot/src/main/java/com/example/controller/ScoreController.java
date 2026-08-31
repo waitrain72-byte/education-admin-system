@@ -3,6 +3,7 @@ package com.example.controller;
 import com.alibaba.excel.EasyExcel;
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Score;
 import com.example.entity.excel.ScoreExcel;
 import com.example.service.CrudService;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
  **/
 @RestController
 @RequestMapping("/score")
+@RequirePermission(module = "score")
 public class ScoreController extends CrudController<Score> {
 
     @Resource

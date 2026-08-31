@@ -163,12 +163,14 @@
 - 应用主包从约 1,225 KB 降至 9.5 KB，并通过 `manualChunks` 将 vue / element-plus / echarts / axios 拆分为独立缓存 chunk，首页首次加载 JS 总量约减少 30%。
 - 修复图表组件重复挂载导致的 resize 监听器累积与实例泄漏，组件卸载时统一移除监听并 `dispose()` 图表。
 
-### 13. RBAC 权限体系
+### 13. RBAC 权限体系（数据库可配置）
 
-- 路由级权限：每个路由通过 `meta.roles` 声明可访问角色，路由守卫统一校验，无权限访问跳转 `/403` 页。
-- 菜单级权限：侧边栏菜单根据当前角色从路由配置动态生成，与路由权限保持单一数据源。
-- 按钮级权限：提供 `v-permission` 指令，按角色控制按钮显隐（如重置密码仅管理员可见）。
-- 个人中心路由按角色隔离（管理员/教师/学生各自只能访问自己的信息页）。
+- **接口级鉴权**：基于 Spring AOP 切面 + 自定义 `@RequirePermission` 注解，为每个控制器声明所需权限码（如 `course:view` / `course:manage`、`student:export`），无权限时返回 `403`，真正做到后端拦截（不再只靠前端藏按钮）。
+- **权限数据落库**：新增 `sys_role` / `sys_permission` / `sys_role_permission` 三张表，43 条权限点按「模块:动作」编码，角色（管理员/教师/学生）与权限的授权关系存储在数据库，可在【系统管理 → 权限设置】页面在线勾选调整，保存后立即生效（服务端失效对应角色缓存）。
+- **管理员兜底**：ADMIN 作为超级管理员在切面中直接放行，权限设置页对其固定禁用，防止误操作把自己锁在系统外。
+- **行级数据保护**：账号类服务在修改资料时校验"非管理员只能改本人"，防止仅持有"本人资料"权限码的账号越权改动他人。
+- **前端联动**：登录/进入主布局时拉取当前用户权限码（`/permission/my`）并持久化；`v-permission` 指令同时支持旧的角色名用法与新的权限码用法，前端按钮显隐与后端鉴权保持一致。
+- 原有能力保留：路由级（`meta.roles` + 路由守卫 → `/403`）、菜单级（按角色动态生成）、个人中心按角色隔离。
 
 ### 14. JWT 签名密钥独立化
 
@@ -251,6 +253,7 @@
 ```text
 manager-vue3
 +-- sql/                          # 完整数据库备份（全部表结构 + 演示账号与演示数据，单一文件导入）
++-- sql/rbac_permission.sql       # RBAC 权限表（角色/权限点/授权关系，幂等，可重复执行）
 +-- vue/                         # 前端项目
 |   +-- public/                  # 静态资源
 |   +-- src/
@@ -311,7 +314,7 @@ manager-vue3
 └─────────────────┘                  └──────────────────┘      └─────────────────┘
 ```
 
-- **mysql**：首次启动自动导入 `sql/xm_educational_manager-full.sql` 完整数据库备份（全部表结构、日志表、主题/语言字段、演示账号与演示业务数据），无需手动导库；
+- **mysql**：首次启动自动导入 `sql/xm_educational_manager-full.sql` 完整数据库备份（全部表结构、日志表、主题/语言字段、演示账号与演示业务数据）以及 `sql/rbac_permission.sql` RBAC 权限表（角色/权限点/授权关系），无需手动导库；
 - **backend**：Maven 编译 Spring Boot 并运行，等待 mysql 容器健康检查通过后自动连接；
 - **frontend**：npm 构建前端静态资源，由 nginx 托管并把 `/api` 请求代理到后端；
 - **数据持久化**：数据库存在 `mysql_data` 卷、上传文件存在 `files_data` 卷，停止/删除容器后重建不丢失。
@@ -485,6 +488,16 @@ sql/xm_educational_manager-full.sql
 ```bash
 mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.sql
 ```
+
+> **RBAC 权限表（角色/权限点/授权关系）** 位于 `sql/rbac_permission.sql`，与上一份备份配套使用。由于该文件是**幂等**的（可重复执行），两者任选其一：
+>
+> - **已有库**：直接在 `xm_educational_manager` 库执行一次即可。
+>
+>   ```bash
+>   mysql -uroot -p123456 xm_educational_manager < sql/rbac_permission.sql
+>   ```
+>
+> - **全新部署（Docker 一键启动）**：`docker-compose.yml` 已把 `sql/rbac_permission.sql` 挂载为 `02-rbac-permission.sql`，首次启动自动导入，无需手动执行。
 
 系统内置账号（初始密码均为 `123456`）：
 

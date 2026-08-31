@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.LoginLog;
 import com.example.entity.OperLog;
 import com.example.service.LogService;
@@ -14,6 +15,7 @@ import java.util.List;
  * 日志查询接口（仅管理员使用，前端页面：操作日志 / 登录日志）
  */
 @RestController
+@RequirePermission(module = "log")
 public class LogController {
 
     @Resource

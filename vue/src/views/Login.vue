@@ -87,6 +87,7 @@ import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { User, Lock, Picture, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
+import { usePermission } from '@/composables/usePermission'
 import { useTheme, pullThemeFromServer } from '@/composables/useTheme'
 import { currentLocale, setLocale, pullLocaleFromServer } from '@/composables/useLocale'
 import { apiMessage, t } from '@/i18n'
@@ -107,6 +108,7 @@ interface LoginResponse {
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const captchaUrl = ref<string>('')
+const { pullPermissions } = usePermission()
 
 // 主题切换：浅色 → 深色 → 跟随系统 循环（登录后管理端有下拉可选）
 const mode = useTheme()
@@ -158,6 +160,8 @@ const login = (): void => {
             if (res.data.code === '200') {
               // 登录态写入 Pinia store（内部负责持久化到 localStorage）
               useUserStore().updateUser(res.data.data as Record<string, any>)
+              // 拉取当前用户权限码并持久化（按钮/接口级 RBAC；顺序在路由跳转前，确保 v-permission 立即可用）
+              pullPermissions()
               router.push('/')
               // 从后端拉取该用户保存的主题与语言偏好，覆盖本地默认，实现多端同步
               pullThemeFromServer()

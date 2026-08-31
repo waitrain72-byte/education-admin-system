@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.common.annotation.RequirePermission;
 import com.example.entity.Speciality;
 import com.example.service.CrudService;
 import com.example.service.SpecialityService;
@@ -13,6 +14,7 @@ import javax.annotation.Resource;
  **/
 @RestController
 @RequestMapping("/speciality")
+@RequirePermission(module = "speciality")
 public class SpecialityController extends CrudController<Speciality> {
 
     @Resource
