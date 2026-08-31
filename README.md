@@ -252,8 +252,8 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 完整数据库备份（全部表结构 + 演示账号与演示数据，单一文件导入）
-+-- sql/rbac_permission.sql       # RBAC 权限表（角色/权限点/授权关系，幂等，可重复执行）
++-- sql/                          # 完整数据库备份（全部表结构 + 完整演示数据 + RBAC 授权，单一文件导入）
++-- sql/rbac_permission.sql       # RBAC 权限表脚本（仅存量旧库单独补齐用；新备份已内置，勿重复执行）
 +-- vue/                         # 前端项目
 |   +-- public/                  # 静态资源
 |   +-- src/
@@ -314,7 +314,7 @@ manager-vue3
 └─────────────────┘                  └──────────────────┘      └─────────────────┘
 ```
 
-- **mysql**：首次启动自动导入 `sql/xm_educational_manager-full.sql` 完整数据库备份（全部表结构、日志表、主题/语言字段、演示账号与演示业务数据）以及 `sql/rbac_permission.sql` RBAC 权限表（角色/权限点/授权关系），无需手动导库；
+- **mysql**：首次启动自动导入 `sql/xm_educational_manager-full.sql` 全量备份（全部表结构、日志表、主题/语言字段、演示账号、完整演示数据以及 RBAC 权限表与角色授权），无需手动导库；
 - **backend**：Maven 编译 Spring Boot 并运行，等待 mysql 容器健康检查通过后自动连接；
 - **frontend**：npm 构建前端静态资源，由 nginx 托管并把 `/api` 请求代理到后端；
 - **数据持久化**：数据库存在 `mysql_data` 卷、上传文件存在 `files_data` 卷，停止/删除容器后重建不丢失。
@@ -483,21 +483,15 @@ springboot/src/main/resources/application.yml
 sql/xm_educational_manager-full.sql
 ```
 
-备份包含全部表结构（含日志表、`theme`/`locale` 字段）、演示账号与演示业务数据，创建数据库后导入这一个文件即可：
+这份备份是**全量**的，包含全部表结构（业务表 + 日志表 + RBAC 权限表）、`theme`/`locale` 字段、演示账号与**完整演示数据**（每个教师的课程/选课/成绩/考勤/作业/评教、RBAC 角色授权都齐全）。创建数据库后导入这一份文件即可直接体验：
 
 ```bash
 mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.sql
 ```
 
-> **RBAC 权限表（角色/权限点/授权关系）** 位于 `sql/rbac_permission.sql`，与上一份备份配套使用。由于该文件是**幂等**的（可重复执行），两者任选其一：
->
-> - **已有库**：直接在 `xm_educational_manager` 库执行一次即可。
->
->   ```bash
->   mysql -uroot -p123456 xm_educational_manager < sql/rbac_permission.sql
->   ```
->
-> - **全新部署（Docker 一键启动）**：`docker-compose.yml` 已把 `sql/rbac_permission.sql` 挂载为 `02-rbac-permission.sql`，首次启动自动导入，无需手动执行。
+> 备份内部已自建数据库（`CREATE DATABASE IF NOT EXISTS`，不会删除已有库），且 `SET NAMES utf8mb4`，中文数据不会乱码；**无需再单独导入 RBAC 脚本**。
+
+> **`sql/rbac_permission.sql` 的用途**：仅供「已导入旧版备份、需单独为老库补齐 RBAC 权限表」的存量环境使用（幂等，可重复执行）。全新导入 `full.sql` 时请勿再执行它，否则会把管理员已自定义的授权重置为默认种子。
 
 系统内置账号（初始密码均为 `123456`）：
 
