@@ -249,6 +249,8 @@ export default {
             adminTag: '超级管理员',
             adminHint: '超级管理员拥有全部权限，固定放行，无需配置，也不支持在此修改。',
             checkAll: '全选本组',
+            resetConfirm: '将恢复为该角色的默认权限（未保存的修改会丢失），确定？',
+            resetDone: '已恢复为默认权限',
         },
     },
 }

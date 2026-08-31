@@ -61,7 +61,7 @@
 defineOptions({ name: 'Permission' })
 
 import { ref, computed, nextTick, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { currentLocale } from '@/composables/useLocale'
@@ -133,6 +133,62 @@ const MODULE_ORDER: string[] = [
   'log', 'permission', 'file',
 ]
 
+/** 各角色的系统默认权限码（与 sql/rbac_permission.sql 的授权矩阵保持一致），用于"恢复默认" */
+const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+  ADMIN: [
+    'dashboard:view',
+    'college:view', 'college:manage',
+    'speciality:view', 'speciality:manage',
+    'classes:view', 'classes:manage',
+    'course:view', 'course:manage',
+    'choice:view', 'choice:manage',
+    'score:view', 'score:manage',
+    'comment:view', 'comment:manage',
+    'apply:view', 'apply:manage',
+    'homework:view', 'homework:manage',
+    'attendance:view', 'attendance:manage',
+    'notice:view', 'notice:manage',
+    'examplan:view', 'examplan:manage',
+    'roomplan:view', 'roomplan:manage',
+    'admin:view', 'admin:manage', 'admin:self',
+    'teacher:view', 'teacher:manage', 'teacher:self',
+    'student:view', 'student:manage', 'student:self', 'student:export', 'student:resetPwd',
+    'log:view', 'log:manage',
+    'file:upload', 'file:delete',
+    'permission:manage',
+  ],
+  TEACHER: [
+    'dashboard:view',
+    'course:view',
+    'choice:view',
+    'score:view', 'score:manage',
+    'comment:view',
+    'apply:view',
+    'homework:view', 'homework:manage',
+    'attendance:view', 'attendance:manage',
+    'notice:view',
+    'examplan:view',
+    'roomplan:view',
+    'teacher:view', 'teacher:self',
+    'file:upload',
+  ],
+  STUDENT: [
+    'dashboard:view',
+    'course:view',
+    'choice:view', 'choice:manage',
+    'score:view',
+    'comment:view', 'comment:manage',
+    'apply:view', 'apply:manage',
+    'homework:view', 'homework:manage',
+    'attendance:view',
+    'notice:view',
+    'examplan:view',
+    'roomplan:view',
+    'student:view', 'student:self',
+    'file:upload',
+  ],
+}
+
 const moduleLabel = (module: string) => {
   // 中文环境用映射标题；英文回退为大写模块名
   if (isZh.value && MODULE_LABELS[module]) return MODULE_LABELS[module]
@@ -196,7 +252,18 @@ const onRoleChange = (tabName?: string | number) => {
   nextTick(() => restoreChecked())
 }
 
-const reset = () => restoreChecked()
+const reset = () => {
+  if (activeRole.value === 'ADMIN') return
+  ElMessageBox.confirm(t('pages.permission.resetConfirm'), t('common.confirmModify'), { type: 'warning' })
+      .then(() => {
+        const defaults = DEFAULT_ROLE_PERMISSIONS[activeRole.value] || []
+        treeRef.value?.setCheckedKeys(defaults.filter((c) => c.includes(':')))
+        ElMessage.success(t('pages.permission.resetDone'))
+      })
+      .catch(() => {
+        // 用户取消，保持当前勾选
+      })
+}
 
 const save = async () => {
   saving.value = true
