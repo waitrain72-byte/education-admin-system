@@ -98,15 +98,20 @@ import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
+import { useOptions } from '@/composables/useOptions'
+import { useDownload } from '@/composables/useDownload'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
 const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:9091'
 const { user, patchUser } = useUser()
 const refreshUser = inject('refreshUser', () => {})
 const username = ref('')
-const collegeData = ref<any[]>([])
-const specialityData = ref<any[]>([])
-const classesData = ref<any[]>([])
+
+const { options: collegeData, load: loadCollege } = useOptions('/college/selectAll')
+const { options: specialityData, load: loadSpeciality } = useOptions('/speciality/selectAll')
+const { options: classesData, load: loadClasses } = useOptions('/classes/selectAll')
+const { download: downloadExcel } = useDownload('/student/export')
+const { download: downloadTemplateFile } = useDownload('/student/importTemplate')
 
 const {
   tableData, pageNum, pageSize, total, loading,
@@ -143,36 +148,6 @@ const columns = computed<CrudColumn[]>(() => [
   { prop: 'score', label: t('pages.student.score') },
 ])
 
-const loadCollege = () => {
-  request.get('/college/selectAll').then((res: any) => {
-    if (res.data.code === '200') {
-      collegeData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
-const loadSpeciality = () => {
-  request.get('/speciality/selectAll').then((res: any) => {
-    if (res.data.code === '200') {
-      specialityData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
-const loadClasses = () => {
-  request.get('/classes/selectAll').then((res: any) => {
-    if (res.data.code === '200') {
-      classesData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
 const resetPassword = (row: any) => {
   ElMessageBox.confirm(t('pages.student.resetConfirm', { username: row.username }), t('common.resetPassword'), { type: 'warning' }).then(() => {
     request.put('/student/resetPassword/' + row.id).then((res: any) => {
@@ -190,27 +165,9 @@ const handleAvatarSuccess = (response: any) => {
 }
 
 // ========== Excel 导入导出 ==========
-const exportExcel = () => {
-  request.get('/student/export', { responseType: 'blob' }).then((res: any) => {
-    const url = URL.createObjectURL(res.data)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '学生列表.xlsx'
-    link.click()
-    URL.revokeObjectURL(url)
-  })
-}
+const exportExcel = () => downloadExcel('学生列表.xlsx')
 
-const downloadTemplate = () => {
-  request.get('/student/importTemplate', { responseType: 'blob' }).then((res: any) => {
-    const url = URL.createObjectURL(res.data)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '学生导入模板.xlsx'
-    link.click()
-    URL.revokeObjectURL(url)
-  })
-}
+const downloadTemplate = () => downloadTemplateFile('学生导入模板.xlsx')
 
 const onImportSuccess = (response: any) => {
   if (response.code === '200') {

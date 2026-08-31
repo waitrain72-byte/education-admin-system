@@ -4,86 +4,36 @@ import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Comment;
 import com.example.service.CommentService;
-import com.github.pagehelper.PageInfo;
-import org.springframework.web.bind.annotation.*;
+import com.example.service.CrudService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
- * 评教信息表前端操作接口
+ * 评教信息表前端操作接口（通用增删改查见 {@link CrudController}）
  **/
 @RestController
 @RequestMapping("/comment")
-public class CommentController {
+public class CommentController extends CrudController<Comment> {
 
     @Resource
     private CommentService commentService;
 
+    @Override
+    protected CrudService<Comment> getService() {
+        return commentService;
+    }
+
     /**
-     * 新增
+     * 新增（防重复提交）
      */
+    @Override
     @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Comment comment) {
-        commentService.add(comment);
-        return Result.success();
+        return super.add(comment);
     }
-
-    /**
-     * 删除
-     */
-    @DeleteMapping("/delete/{id}")
-    public Result deleteById(@PathVariable Integer id) {
-        commentService.deleteById(id);
-        return Result.success();
-    }
-
-    /**
-     * 批量删除
-     */
-    @DeleteMapping("/delete/batch")
-    public Result deleteBatch(@RequestBody List<Integer> ids) {
-        commentService.deleteBatch(ids);
-        return Result.success();
-    }
-
-    /**
-     * 修改
-     */
-    @PutMapping("/update")
-    public Result updateById(@RequestBody Comment comment) {
-        commentService.updateById(comment);
-        return Result.success();
-    }
-
-    /**
-     * 根据ID查询
-     */
-    @GetMapping("/selectById/{id}")
-    public Result selectById(@PathVariable Integer id) {
-        Comment comment = commentService.selectById(id);
-        return Result.success(comment);
-    }
-
-    /**
-     * 查询所有
-     */
-    @GetMapping("/selectAll")
-    public Result selectAll(Comment comment ) {
-        List<Comment> list = commentService.selectAll(comment);
-        return Result.success(list);
-    }
-
-    /**
-     * 分页查询
-     */
-    @GetMapping("/selectPage")
-    public Result selectPage(Comment comment,
-                             @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        PageInfo<Comment> page = commentService.selectPage(comment, pageNum, pageSize);
-        return Result.success(page);
-    }
-
 }

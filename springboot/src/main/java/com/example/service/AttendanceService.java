@@ -7,28 +7,32 @@ import com.example.entity.Account;
 import com.example.entity.Attendance;
 import com.example.exception.CustomException;
 import com.example.mapper.AttendanceMapper;
+import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
- * 考勤信息表业务处理
- **/
+ * 考勤信息表业务处理（通用增删改查见 {@link CrudService}）
+ */
 @Service
-public class AttendanceService {
+public class AttendanceService extends CrudService<Attendance> {
 
     @Resource
     private AttendanceMapper attendanceMapper;
 
+    @Override
+    protected CrudMapper<Attendance> getMapper() {
+        return attendanceMapper;
+    }
+
     /**
-     * 新增
+     * 新增：判断同一个学生同一门课同一天的考勤记录只能是一条
      */
+    @Override
     public void add(Attendance attendance) {
-        // 判断同一个学生同一门课同一天的考勤记录只能是一条
         Attendance dbAttendance = attendanceMapper.selectByStudentIdAndCourseIdAndTime(attendance.getStudentId(), attendance.getCourseId(), attendance.getTime());
         if (ObjectUtil.isNotEmpty(dbAttendance)) {
             throw new CustomException(ResultCodeEnum.ATTENDANCE_ALREADY_ERROR);
@@ -37,45 +41,9 @@ public class AttendanceService {
     }
 
     /**
-     * 删除
+     * 分页查询（教师/学生只能查看自己的考勤）
      */
-    public void deleteById(Integer id) {
-        attendanceMapper.deleteById(id);
-    }
-
-    /**
-     * 批量删除
-     */
-    public void deleteBatch(List<Integer> ids) {
-        for (Integer id : ids) {
-            attendanceMapper.deleteById(id);
-        }
-    }
-
-    /**
-     * 修改
-     */
-    public void updateById(Attendance attendance) {
-        attendanceMapper.updateById(attendance);
-    }
-
-    /**
-     * 根据ID查询
-     */
-    public Attendance selectById(Integer id) {
-        return attendanceMapper.selectById(id);
-    }
-
-    /**
-     * 查询所有
-     */
-    public List<Attendance> selectAll(Attendance attendance) {
-        return attendanceMapper.selectAll(attendance);
-    }
-
-    /**
-     * 分页查询
-     */
+    @Override
     public PageInfo<Attendance> selectPage(Attendance attendance, Integer pageNum, Integer pageSize) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
@@ -84,9 +52,6 @@ public class AttendanceService {
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             attendance.setStudentId(currentUser.getId());
         }
-        PageHelper.startPage(pageNum, pageSize);
-        List<Attendance> list = attendanceMapper.selectAll(attendance);
-        return PageInfo.of(list);
+        return super.selectPage(attendance, pageNum, pageSize);
     }
-
 }

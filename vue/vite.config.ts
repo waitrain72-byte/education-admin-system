@@ -23,6 +23,8 @@ export default defineConfig({
             '/api': {
                 target: 'http://localhost:9091',
                 changeOrigin: true,
+                // WebSocket 也要经此转发，否则 /api/ws/notice/{token} 无法连接（实时通知失效）
+                ws: true,
                 rewrite: (path) => path.replace(/^\/api/, ''),
             },
         },

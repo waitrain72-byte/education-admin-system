@@ -3,27 +3,36 @@ package com.example.controller;
 import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Homework;
+import com.example.service.CrudService;
 import com.example.service.HomeworkService;
 import com.example.websocket.NoticeWebSocketServer;
-import com.github.pagehelper.PageInfo;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
- * 作业前端操作接口
+ * 作业前端操作接口（通用增删改查见 {@link CrudController}）
  **/
 @RestController
 @RequestMapping("/homework")
-public class HomeworkController {
+public class HomeworkController extends CrudController<Homework> {
 
     @Resource
     private HomeworkService homeworkService;
 
+    @Override
+    protected CrudService<Homework> getService() {
+        return homeworkService;
+    }
+
     /**
-     * 新增（提交作业实时通知教师）
+     * 新增（提交作业实时通知教师，防重复提交）
      */
+    @Override
     @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Homework homework) {
@@ -36,26 +45,9 @@ public class HomeworkController {
     }
 
     /**
-     * 删除
+     * 修改（教师批改实时推送学生，防重复提交）
      */
-    @DeleteMapping("/delete/{id}")
-    public Result deleteById(@PathVariable Integer id) {
-        homeworkService.deleteById(id);
-        return Result.success();
-    }
-
-    /**
-     * 批量删除
-     */
-    @DeleteMapping("/delete/batch")
-    public Result deleteBatch(@RequestBody List<Integer> ids) {
-        homeworkService.deleteBatch(ids);
-        return Result.success();
-    }
-
-    /**
-     * 修改（教师批改实时推送学生）
-     */
+    @Override
     @NoRepeatSubmit
     @PutMapping("/update")
     public Result updateById(@RequestBody Homework homework) {
@@ -66,34 +58,4 @@ public class HomeworkController {
         }
         return Result.success();
     }
-
-    /**
-     * 根据ID查询
-     */
-    @GetMapping("/selectById/{id}")
-    public Result selectById(@PathVariable Integer id) {
-        Homework homework = homeworkService.selectById(id);
-        return Result.success(homework);
-    }
-
-    /**
-     * 查询所有
-     */
-    @GetMapping("/selectAll")
-    public Result selectAll(Homework homework ) {
-        List<Homework> list = homeworkService.selectAll(homework);
-        return Result.success(list);
-    }
-
-    /**
-     * 分页查询
-     */
-    @GetMapping("/selectPage")
-    public Result selectPage(Homework homework,
-                             @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        PageInfo<Homework> page = homeworkService.selectPage(homework, pageNum, pageSize);
-        return Result.success(page);
-    }
-
 }

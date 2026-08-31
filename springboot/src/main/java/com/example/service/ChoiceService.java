@@ -11,8 +11,8 @@ import com.example.entity.Curriculum;
 import com.example.exception.CustomException;
 import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
+import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
@@ -23,29 +23,34 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 选课信息表业务处理
- **/
+ * 选课信息表业务处理（通用增删改查见 {@link CrudService}）
+ */
 @Service
-public class ChoiceService {
+public class ChoiceService extends CrudService<Choice> {
 
     @Resource
     private ChoiceMapper choiceMapper;
     @Resource
     private CourseMapper courseMapper;
+
+    @Override
+    protected CrudMapper<Choice> getMapper() {
+        return choiceMapper;
+    }
+
     /**
-     * 新增
+     * 新增（选课）：先判断是否满员，再判断与该学生已选课程是否有上课时间冲突
      */
+    @Override
     public void add(Choice choice) {
         // 当前选的课
-        Course course = courseMapper.selectById(choice.getCourseId());                              /*查询course表里面的所有Id*/
-        // 1. 先判断一下该门课选满了没有
-        // 1) 在选课信息表里面查询该门课被选的次数
+        Course course = courseMapper.selectById(choice.getCourseId());
+        // 1. 判断该门课是否已选满
         List<Choice> list = choiceMapper.selectByCourseId(choice.getCourseId());
         if (course.getNum().equals(list.size())) {
             throw new CustomException(ResultCodeEnum.COURSE_NUM_ERROR);
         }
-
-        // 2. 判断该学生选的这么课的开课时间有没有和他之前选的课有冲突
+        // 2. 判断该学生所选课程与他之前选的课时间是否冲突
         List<Choice> sList = choiceMapper.selectByStudentId(choice.getStudentId());
         for (Choice dbChoice : sList) {
             Course tmpCourse = courseMapper.selectById(dbChoice.getCourseId());
@@ -57,45 +62,9 @@ public class ChoiceService {
     }
 
     /**
-     * 删除
+     * 分页查询（教师/学生只能查看自己的选课）
      */
-    public void deleteById(Integer id) {
-        choiceMapper.deleteById(id);
-    }
-
-    /**
-     * 批量删除
-     */
-    public void deleteBatch(List<Integer> ids) {
-        for (Integer id : ids) {
-            choiceMapper.deleteById(id);
-        }
-    }
-
-    /**
-     * 修改
-     */
-    public void updateById(Choice choice) {
-        choiceMapper.updateById(choice);
-    }
-
-    /**
-     * 根据ID查询
-     */
-    public Choice selectById(Integer id) {
-        return choiceMapper.selectById(id);
-    }
-
-    /**
-     * 查询所有
-     */
-    public List<Choice> selectAll(Choice choice) {
-        return choiceMapper.selectAll(choice);
-    }
-
-    /**
-     * 分页查询（当前登录用户只能查看自己的课程）
-     */
+    @Override
     public PageInfo<Choice> selectPage(Choice choice, Integer pageNum, Integer pageSize) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
@@ -104,56 +73,48 @@ public class ChoiceService {
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             choice.setStudentId(currentUser.getId());
         }
-        PageHelper.startPage(pageNum, pageSize);
-        List<Choice> list = choiceMapper.selectAll(choice);
-        return PageInfo.of(list);
+        return super.selectPage(choice, pageNum, pageSize);
     }
+
     /**
      * 生成对应学生的选课课表
      */
     public List<Curriculum> getCurriculum() {
         Account currentUser = TokenUtils.getCurrentUser();
-        // 查询出该学生所有的选课信息
         Choice choice = new Choice();
         choice.setStudentId(currentUser.getId());
         List<Choice> choiceList = choiceMapper.selectAll(choice);
         List<Curriculum> list = new ArrayList<>();
-        // 按照第几大节和周几来处理数据（总共有5大节，8列数据）
         // 第一大节（08:30 ~ 10:10）
         Curriculum first = new Curriculum();
         first.setSegment(SegmentEnum.FIRST.segment);
         processWeek(first, getWeekChoiceList(choiceList, SegmentEnum.FIRST.segment));
         list.add(first);
-
         // 第二大节（10:30 ~ 12:10）
         Curriculum second = new Curriculum();
         second.setSegment(SegmentEnum.SECOND.segment);
         processWeek(second, getWeekChoiceList(choiceList, SegmentEnum.SECOND.segment));
         list.add(second);
-
         // 第三大节（14:00 ~ 15:40）
         Curriculum third = new Curriculum();
         third.setSegment(SegmentEnum.THIRD.segment);
         processWeek(third, getWeekChoiceList(choiceList, SegmentEnum.THIRD.segment));
         list.add(third);
-
         // 第四大节（16:00 ~ 17:40）
         Curriculum forth = new Curriculum();
         forth.setSegment(SegmentEnum.FORTH.segment);
         processWeek(forth, getWeekChoiceList(choiceList, SegmentEnum.FORTH.segment));
         list.add(forth);
-
         // 第五大节（19:00 ~ 20:40）
         Curriculum fifth = new Curriculum();
         fifth.setSegment(SegmentEnum.FIFTH.segment);
         processWeek(fifth, getWeekChoiceList(choiceList, SegmentEnum.FIFTH.segment));
         list.add(fifth);
-
         return list;
     }
 
     /**
-     * 处理当前第几大节的所有选课信息（周一到周日）
+     * 筛选出当前第几大节的所有选课信息
      */
     private List<Choice> getWeekChoiceList(List<Choice> choiceList, String segment) {
         return choiceList.stream().filter(x -> x.getSegment().equals(segment)).collect(Collectors.toList());
@@ -163,25 +124,18 @@ public class ChoiceService {
      * 处理周一到周日的数据
      */
     private void processWeek(Curriculum curriculum, List<Choice> choiceList) {
-        // 周一
         Optional<Choice> first = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.MONDAY.week)).findFirst();
         first.ifPresent(choice -> curriculum.setMonday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周二
         Optional<Choice> second = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.TUESDAY.week)).findFirst();
         second.ifPresent(choice -> curriculum.setTuesday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周三
         Optional<Choice> third = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.WEDNESDAY.week)).findFirst();
         third.ifPresent(choice -> curriculum.setWednesday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周四
         Optional<Choice> forth = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.THURSDAY.week)).findFirst();
         forth.ifPresent(choice -> curriculum.setThursday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周五
         Optional<Choice> fifth = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.FRIDAY.week)).findFirst();
         fifth.ifPresent(choice -> curriculum.setFriday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周六
         Optional<Choice> sixth = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.SATURDAY.week)).findFirst();
         sixth.ifPresent(choice -> curriculum.setSaturday(choice.getName() + " (" + choice.getTeacherName() + ")"));
-        // 周日
         Optional<Choice> seventh = choiceList.stream().filter(x -> x.getWeek().equals(WeekEnum.SUNDAY.week)).findFirst();
         seventh.ifPresent(choice -> curriculum.setSunday(choice.getName() + " (" + choice.getTeacherName() + ")"));
     }

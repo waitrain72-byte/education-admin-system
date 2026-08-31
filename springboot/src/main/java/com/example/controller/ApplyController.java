@@ -4,54 +4,45 @@ import com.example.common.Result;
 import com.example.common.annotation.NoRepeatSubmit;
 import com.example.entity.Apply;
 import com.example.service.ApplyService;
+import com.example.service.CrudService;
 import com.example.websocket.NoticeWebSocketServer;
-import com.github.pagehelper.PageInfo;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.List;
 
 /**
- * 请假信息表前端操作接口
+ * 请假信息表前端操作接口（通用增删改查见 {@link CrudController}）
  **/
 @RestController
 @RequestMapping("/apply")
-public class ApplyController {
+public class ApplyController extends CrudController<Apply> {
 
     @Resource
     private ApplyService applyService;
 
+    @Override
+    protected CrudService<Apply> getService() {
+        return applyService;
+    }
+
     /**
-     * 新增
+     * 新增（防重复提交）
      */
+    @Override
     @NoRepeatSubmit
     @PostMapping("/add")
     public Result add(@RequestBody Apply apply) {
-        applyService.add(apply);
-        return Result.success();
-    }
-
-    /**
-     * 删除
-     */
-    @DeleteMapping("/delete/{id}")
-    public Result deleteById(@PathVariable Integer id) {
-        applyService.deleteById(id);
-        return Result.success();
-    }
-
-    /**
-     * 批量删除
-     */
-    @DeleteMapping("/delete/batch")
-    public Result deleteBatch(@RequestBody List<Integer> ids) {
-        applyService.deleteBatch(ids);
-        return Result.success();
+        return super.add(apply);
     }
 
     /**
      * 修改（学生撤销/重新提交，管理员审核；审核结果实时推送学生）
      */
+    @Override
     @NoRepeatSubmit
     @PutMapping("/update")
     public Result updateById(@RequestBody Apply apply) {
@@ -63,34 +54,4 @@ public class ApplyController {
         }
         return Result.success();
     }
-
-    /**
-     * 根据ID查询
-     */
-    @GetMapping("/selectById/{id}")
-    public Result selectById(@PathVariable Integer id) {
-        Apply apply = applyService.selectById(id);
-        return Result.success(apply);
-    }
-
-    /**
-     * 查询所有
-     */
-    @GetMapping("/selectAll")
-    public Result selectAll(Apply apply ) {
-        List<Apply> list = applyService.selectAll(apply);
-        return Result.success(list);
-    }
-
-    /**
-     * 分页查询
-     */
-    @GetMapping("/selectPage")
-    public Result selectPage(Apply apply,
-                             @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        PageInfo<Apply> page = applyService.selectPage(apply, pageNum, pageSize);
-        return Result.success(page);
-    }
-
 }

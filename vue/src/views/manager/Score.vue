@@ -61,30 +61,24 @@
 defineOptions({ name: 'Score' })
 
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, type FormRules } from 'element-plus'
-import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import type { FormRules } from 'element-plus'
+import { t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
+import { useOptions } from '@/composables/useOptions'
+import { useDownload } from '@/composables/useDownload'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
-
-// 导出全部成绩为 Excel
-const exportExcel = () => {
-  request.get('/score/export', { responseType: 'blob' }).then((res: any) => {
-    const url = URL.createObjectURL(res.data)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = '成绩列表.xlsx'
-    link.click()
-    URL.revokeObjectURL(url)
-  })
-}
 
 const { user } = useUser()
 const courseId = ref('')
-const courseData = ref<any[]>([])
-const studentData = ref<any[]>([])
 const studentId = ref(null)
+
+const { options: courseData, load: loadCourse } = useOptions('/course/selectAll', { params: () => ({ teacherId: user.value.id }) })
+const { options: studentData, load: loadStudent } = useOptions('/choice/selectAll')
+const { download: downloadExport } = useDownload('/score/export')
+
+// 导出全部成绩为 Excel
+const exportExcel = () => downloadExport('成绩列表.xlsx')
 
 const {
   tableData, pageNum, pageSize, total, loading,
@@ -114,25 +108,10 @@ const columns = computed<CrudColumn[]>(() => [
   { prop: 'score', label: t('pages.score.totalScore'), showOverflowTooltip: true },
 ])
 
-const loadCourse = () => {
-  request.get('/course/selectAll', { params: { teacherId: user.value.id } }).then((res: any) => {
-    if (res.data.code === '200') {
-      courseData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
+// 选择课程时加载该课程下的学生
 const getStudent = (cId: any) => {
-  request.get('/choice/selectAll', { params: { courseId: cId } }).then((res: any) => {
-    if (res.data.code === '200') {
-      studentData.value = res.data.data
-      studentId.value = null
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
+  loadStudent({ courseId: cId })
+  studentId.value = null
 }
 
 const handleAdd = () => {

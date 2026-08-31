@@ -12,6 +12,8 @@ export const useUser = () => {
     const { user } = storeToRefs(store)
     return {
         user: readonly(user), // 只读，防止外部直接修改
+        /** 判断当前角色是否命中给定角色列表之一（替代散落的 user.role === 'xxx' 判断） */
+        hasRole: (...roles: string[]) => roles.includes(store.role),
         updateUser: store.updateUser,
         patchUser: store.patchUser,
         clearUser: store.clearUser,

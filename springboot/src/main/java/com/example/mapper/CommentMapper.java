@@ -4,38 +4,11 @@ import com.example.entity.Comment;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import java.util.List;
-
 /**
- * 操作comment相关数据接口
-*/
-public interface CommentMapper {
+ * 操作 comment 相关数据接口（通用增删改查见 {@link CrudMapper}）
+ */
+public interface CommentMapper extends CrudMapper<Comment> {
 
-    /**
-      * 新增
-    */
-    int insert(Comment comment);
-
-    /**
-      * 删除
-    */
-    int deleteById(Integer id);
-
-    /**
-      * 修改
-    */
-    int updateById(Comment comment);
-
-    /**
-      * 根据ID查询
-    */
-    Comment selectById(Integer id);
-
-    /**
-      * 查询所有
-    */
-    List<Comment> selectAll(Comment comment);
     @Select("select * from comment where teacher = #{teacher} and name = #{name} and student = #{student}")
     Comment selectByTeacherAndCourseAndStudent(@Param("teacher") String teacher, @Param("name") String name, @Param("student") String student);
-
 }
