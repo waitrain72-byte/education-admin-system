@@ -34,31 +34,18 @@
           style="margin: 12px 0"
       />
 
-      <!-- 权限点分组勾选 -->
-      <el-checkbox-group v-model="selectedCodes" :disabled="activeRole === 'ADMIN'">
-        <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
-          <div class="perm-group-title">
-            <span class="perm-module">{{ group.module.toUpperCase() }}</span>
-            <el-button
-                v-if="activeRole !== 'ADMIN'"
-                link
-                type="primary"
-                size="small"
-                @click="toggleGroup(group.module)"
-            >{{ $t('pages.permission.checkAll') }}</el-button>
-          </div>
-          <el-checkbox
-              v-for="p in group.items"
-              :key="p.code"
-              :label="p.code"
-              :disabled="activeRole === 'ADMIN'"
-              class="perm-item"
-          >
-            <span class="perm-name">{{ p.name }}</span>
-            <span class="perm-code">{{ p.code }}</span>
-          </el-checkbox>
-        </div>
-      </el-checkbox-group>
+      <!-- 树形权限分配：模块 -> 权限点，父子联动 -->
+      <el-tree
+          v-loading="loading"
+          ref="treeRef"
+          :data="treeData"
+          :props="{ label: 'label', children: 'children' }"
+          node-key="id"
+          show-checkbox
+          default-expand-all
+          :expand-on-click-node="false"
+          class="perm-tree"
+      />
 
       <div class="perm-footer">
         <el-button type="primary" :disabled="activeRole === 'ADMIN'" :loading="saving" @click="save">
@@ -73,10 +60,11 @@
 <script setup lang="ts">
 defineOptions({ name: 'Permission' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
+import { currentLocale } from '@/composables/useLocale'
 
 interface Permission {
   id: number
@@ -95,55 +83,130 @@ interface Role {
   permissions: string[]
 }
 
+interface TreeNode {
+  id: string
+  label: string
+  disabled?: boolean
+  children?: TreeNode[]
+}
+
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
 const activeRole = ref<string>('')
-const selectedCodes = ref<string[]>([])
 const saving = ref(false)
+const loading = ref(false)
+const treeRef = ref<any>()
+const isZh = computed(() => currentLocale() === 'zh-CN')
 
-/** 按模块分组（保持后端的 module/sort 顺序） */
-const groupedPermissions = computed(() => {
-  const map: Record<string, Permission[]> = {}
+/** 模块 -> 中文标题（树的一级节点） */
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: '数据大屏',
+  notice: '教务通知',
+  examplan: '考试安排',
+  roomplan: '教室安排',
+  college: '学院信息',
+  speciality: '专业信息',
+  classes: '班级信息',
+  course: '课程信息',
+  choice: '我的选课',
+  score: '成绩管理',
+  comment: '评教管理',
+  apply: '请假管理',
+  homework: '作业管理',
+  attendance: '考勤管理',
+  admin: '管理员',
+  teacher: '教师',
+  student: '学生',
+  log: '系统日志',
+  permission: '权限设置',
+  file: '文件管理',
+}
+
+/** 模块的业务展示顺序（数据大屏 → 信息公告 → 行政管理 → 教学 → 教务 → 用户 → 系统） */
+const MODULE_ORDER: string[] = [
+  'dashboard',
+  'notice', 'examplan', 'roomplan',
+  'college', 'speciality', 'classes',
+  'course', 'choice', 'score', 'comment',
+  'apply', 'homework', 'attendance',
+  'admin', 'teacher', 'student',
+  'log', 'permission', 'file',
+]
+
+const moduleLabel = (module: string) => {
+  // 中文环境用映射标题；英文回退为大写模块名
+  if (isZh.value && MODULE_LABELS[module]) return MODULE_LABELS[module]
+  return module.toUpperCase()
+}
+
+/** 树节点：一级=模块，二级=权限点（node-key 用 code，含 ":" 便于过滤） */
+const treeData = computed<TreeNode[]>(() => {
+  const disabled = activeRole.value === 'ADMIN'
+  const map: Record<string, TreeNode> = {}
   for (const p of permissions.value) {
-    ;(map[p.module] || (map[p.module] = [])).push(p)
+    if (!map[p.module]) {
+      map[p.module] = {
+        id: p.module,
+        label: moduleLabel(p.module),
+        disabled,
+        children: [],
+      }
+    }
+    map[p.module].children!.push({
+      id: p.code,
+      label: isZh.value ? `${p.name}` : `${p.name} (${p.code})`,
+      disabled,
+    })
   }
-  return Object.entries(map).map(([module, items]) => ({ module, items }))
+  // 按业务顺序重排一级模块；不在清单内的模块追加到末尾，避免新模块丢失
+  const orderOf = (m: string) => {
+    const idx = MODULE_ORDER.indexOf(m)
+    return idx === -1 ? MODULE_ORDER.length : idx
+  }
+  const modules = [...new Set(permissions.value.map((p) => p.module))].sort((a, b) => orderOf(a) - orderOf(b))
+  return modules.map((m) => map[m])
 })
 
 const load = async () => {
-  const res: any = await request.get('/permission/selectAll')
-  const data = res.data?.data
-  roles.value = data?.roles || []
-  permissions.value = data?.permissions || []
-  if (!activeRole.value && roles.value.length) {
-    activeRole.value = roles.value[0].code
+  loading.value = true
+  try {
+    const res: any = await request.get('/permission/selectAll')
+    const data = res.data?.data
+    roles.value = data?.roles || []
+    permissions.value = data?.permissions || []
+    if (!activeRole.value && roles.value.length) {
+      activeRole.value = roles.value[0].code
+    }
+    await nextTick()
+    restoreChecked()
+  } finally {
+    loading.value = false
   }
-  onRoleChange(activeRole.value)
+}
+
+/** 把当前角色的权限码回显到树（仅勾选叶子节点，父节点联动显示全选/半选） */
+const restoreChecked = () => {
+  const role = roles.value.find((r) => r.code === activeRole.value)
+  const codes = role ? role.permissions.filter((c) => c.includes(':')) : []
+  treeRef.value?.setCheckedKeys(codes)
 }
 
 const onRoleChange = (tabName?: string | number) => {
   if (tabName) activeRole.value = String(tabName)
-  const role = roles.value.find((r) => r.code === activeRole.value)
-  selectedCodes.value = role ? [...role.permissions] : []
+  nextTick(() => restoreChecked())
 }
 
-/** 全选 / 反选当前模块 */
-const toggleGroup = (module: string) => {
-  const moduleCodes = groupedPermissions.value
-      .find((g) => g.module === module)?.items.map((p) => p.code) || []
-  const allSelected = moduleCodes.every((c) => selectedCodes.value.includes(c))
-  const rest = selectedCodes.value.filter((c) => !moduleCodes.includes(c))
-  selectedCodes.value = allSelected ? rest : [...rest, ...moduleCodes]
-}
-
-const reset = () => onRoleChange()
+const reset = () => restoreChecked()
 
 const save = async () => {
   saving.value = true
   try {
+    // 只取叶子权限码（node-key 中含 ":"），父节点(模块)仅作分组不入库
+    const checkedKeys = (treeRef.value?.getCheckedKeys() || []) as string[]
+    const permissionCodes = checkedKeys.filter((k) => k.includes(':'))
     const res: any = await request.put('/permission/updateRolePermissions', {
       roleCode: activeRole.value,
-      permissionCodes: selectedCodes.value,
+      permissionCodes,
     })
     if (res.data.code === '200') {
       ElMessage.success(t('common.saveSuccess'))
@@ -169,33 +232,15 @@ onMounted(load)
   font-size: 12px;
   color: var(--xm-text-secondary);
 }
-.perm-group {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--xm-border);
+.perm-tree {
+  margin-top: 4px;
 }
-.perm-group:last-child {
-  border-bottom: none;
+/* 让树节点更宽松、便于阅读 */
+.perm-tree :deep(.el-tree-node__label) {
+  font-size: 13px;
 }
-.perm-group-title {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.perm-module {
-  font-weight: 600;
-  color: var(--xm-text-primary);
-  margin-right: 12px;
-}
-.perm-item {
-  margin-right: 24px;
-  margin-bottom: 6px;
-}
-.perm-name {
-  margin-right: 6px;
-}
-.perm-code {
-  font-size: 12px;
-  color: var(--xm-text-secondary);
+.perm-tree :deep(.el-tree-node__content) {
+  height: 30px;
 }
 .perm-footer {
   margin-top: 20px;
