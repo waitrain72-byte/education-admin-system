@@ -3,10 +3,14 @@ package com.example.service;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.example.common.enums.ResultCodeEnum;
+import com.example.common.enums.RoleEnum;
+import com.example.entity.Account;
 import com.example.entity.Comment;
 import com.example.exception.CustomException;
 import com.example.mapper.CommentMapper;
 import com.example.mapper.CrudMapper;
+import com.example.utils.TokenUtils;
+import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -36,5 +40,20 @@ public class CommentService extends CrudService<Comment> {
         }
         comment.setTime(DateUtil.now());
         commentMapper.insert(comment);
+    }
+
+    /**
+     * 分页查询（教师只能看到发给自己课程的评教；学生只能看到自己发起的评教；管理员可看全部）
+     */
+    @Override
+    public PageInfo<Comment> selectPage(Comment comment, Integer pageNum, Integer pageSize) {
+        Account currentUser = TokenUtils.getCurrentUser();
+        if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
+            comment.setTeacher(currentUser.getName());
+        }
+        if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
+            comment.setStudent(currentUser.getName());
+        }
+        return super.selectPage(comment, pageNum, pageSize);
     }
 }

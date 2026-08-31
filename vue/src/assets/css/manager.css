@@ -323,3 +323,20 @@ html.dark .theme-switch {
 .manager-tab.active .tab-close:hover {
     background-color: rgba(255, 255, 255, 0.4);
 }
+
+/* ===== 路由切换过渡动画（manager-main-right 内容区） ===== */
+/* mode="out-in"：先淡出旧页再淡入新页，配合 keep-alive 缓存实现平滑切换 */
+.route-fade-enter-active,
+.route-fade-leave-active {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.route-fade-enter-from {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.route-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
+}

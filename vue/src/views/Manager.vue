@@ -103,9 +103,12 @@
       <!--  数据表格（keep-alive 缓存已打开标签页对应的页面，关闭标签即释放缓存）  -->
       <div class="manager-main-right">
         <router-view v-slot="{ Component }">
-          <keep-alive :include="cachedViews">
-            <component :is="Component" @update:user="refreshUser" />
-          </keep-alive>
+          <!-- 路由切换过渡：淡入淡出 + 轻微上移；keep-alive 缓存保留每页已加载数据，避免重复请求 -->
+          <transition name="route-fade" mode="out-in">
+            <keep-alive :include="cachedViews">
+              <component :is="Component" @update:user="refreshUser" />
+            </keep-alive>
+          </transition>
         </router-view>
       </div>
     </div>

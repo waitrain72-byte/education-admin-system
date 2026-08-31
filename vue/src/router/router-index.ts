@@ -37,7 +37,7 @@ const routes: RouteRecordRaw[] = [
     },
     { path: '/login',    name: 'Login',    component: () => import('@/views/Login.vue') },
     { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
-    { path: '/dashboard', name: 'Dashboard', component: () => import('@/views/Dashboard.vue') },
+    { path: '/dashboard', name: 'Dashboard', meta: { permission: 'dashboard:view' }, component: () => import('@/views/Dashboard.vue') },
     { path: '/403',      name: 'Forbidden', component: () => import('@/views/manager/403.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/404.vue') },
 ]
@@ -73,6 +73,13 @@ router.beforeEach((to, _from, next) => {
     // 路由级权限校验：meta.roles 存在时，当前角色必须在允许列表内
     const roles = to.meta?.roles as string[] | undefined
     if (roles && roles.length && !roles.includes(userStore.role)) {
+        next('/403')
+        return
+    }
+
+    // 权限码校验：meta.permission（如 dashboard:view）存在时，当前用户必须拥有该权限码（ADMIN 放行）
+    const perm = to.meta?.permission as string | undefined
+    if (perm && userStore.role !== 'ADMIN' && !userStore.permissions.includes(perm)) {
         next('/403')
         return
     }

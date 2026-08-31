@@ -24,6 +24,7 @@ export default {
         pleaseSelectData: '请选择数据',
         backHome: '返回首页',
         page: '页面',
+        empty: '暂无信息',
     },
 
     // 路由 meta.name 的菜单/面包屑文案（单一数据源）

@@ -23,6 +23,7 @@ export default {
         pleaseSelectData: 'Please select records first',
         backHome: 'Back to Home',
         page: 'Page',
+        empty: 'No data',
     },
 
     menu: {

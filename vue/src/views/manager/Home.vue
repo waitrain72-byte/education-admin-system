@@ -2,7 +2,7 @@
   <div>
     <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between">
       <span>{{ $t('home.welcome', { name: user && user.name }) }}</span>
-      <el-button type="primary" size="small" @click="router.push('/dashboard')">{{ $t('pages.dashboard.entry') }}</el-button>
+      <el-button v-permission="'dashboard:view'" type="primary" size="small" @click="router.push('/dashboard')">{{ $t('pages.dashboard.entry') }}</el-button>
     </div>
 
 
