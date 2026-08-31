@@ -6,14 +6,17 @@
     </div>
     <el-table v-else v-loading="loading && !!data.length" :data="data" stripe @selection-change="$emit('selection-change', $event)">
       <el-table-column v-if="selectable" type="selection" width="55" align="center" />
+      <!-- 主键 id 列统一渲染为"当前页行号"（跨页连续），避免显示全局自增的大数值 -->
       <el-table-column
           v-for="col in columns"
           :key="col.prop || col.label"
-          :prop="col.prop"
+          :prop="col.prop === 'id' ? undefined : col.prop"
+          :type="col.prop === 'id' ? 'index' : undefined"
+          :index="col.prop === 'id' ? indexMethod : undefined"
           :label="col.label"
           :width="col.width"
           :align="col.align"
-          :sortable="col.sortable"
+          :sortable="col.prop === 'id' ? false : col.sortable"
           :show-overflow-tooltip="col.showOverflowTooltip"
       >
         <!-- 自定义列：页面提供 <template #file="{ row }"> 时渲染该插槽，否则按 prop 渲染 -->
@@ -54,7 +57,7 @@ export interface CrudColumn {
   showOverflowTooltip?: boolean
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
     data: any[]
     columns: CrudColumn[]
     pageNum: number
@@ -71,6 +74,13 @@ withDefaults(defineProps<{
     showActions: true,
     actionsWidth: 180,
 })
+
+/** 计算当前页行号：第 n 页的第 index 行 → (pageNum-1)*pageSize + index + 1（跨页连续） */
+const indexMethod = (index: number) => {
+    const pageNum = props.pageNum || 1
+    const pageSize = props.pageSize || 10
+    return (pageNum - 1) * pageSize + index + 1
+}
 
 defineEmits<{
   (e: 'selection-change', rows: any[]): void
