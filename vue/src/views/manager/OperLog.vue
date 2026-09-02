@@ -50,7 +50,7 @@ const {
 })
 
 const columns = computed<CrudColumn[]>(() => [
-  { prop: 'id', label: 'ID', width: 70, align: 'center' },
+  { prop: 'id', label: t('pages.operlog.id'), width: 70, align: 'center' },
   { prop: 'username', label: t('pages.operlog.username') },
   { prop: 'module', label: t('pages.operlog.module') },
   { prop: 'type', label: t('pages.operlog.type'), width: 90, align: 'center' },

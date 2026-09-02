@@ -132,6 +132,7 @@ export default {
         welcome: '您好，{name}！欢迎使用本系统',
         notice: '教务通知',
         examplan: '考试安排',
+        viewAll: '查看全部',
     },
 
     notFound: {
@@ -205,6 +206,7 @@ export default {
         },
 
         operlog: {
+            id: '序号',
             username: '操作人',
             module: '操作模块',
             type: '请求方式',
@@ -215,6 +217,7 @@ export default {
         },
 
         loginlog: {
+            id: '序号',
             username: '账号',
             status: '状态',
             statusSuccess: '成功',

@@ -57,7 +57,7 @@ const {
 })
 
 const columns = computed<CrudColumn[]>(() => [
-  { prop: 'id', label: 'ID', width: 70, align: 'center' },
+  { prop: 'id', label: t('pages.loginlog.id'), width: 70, align: 'center' },
   { prop: 'username', label: t('pages.loginlog.username') },
   { prop: 'ip', label: 'IP', width: 140, align: 'center' },
   { prop: 'status', label: t('pages.loginlog.status'), width: 100, align: 'center' },

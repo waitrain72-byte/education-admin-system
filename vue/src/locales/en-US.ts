@@ -130,6 +130,7 @@ export default {
         welcome: 'Hi {name}, welcome to the system',
         notice: 'Academic Notices',
         examplan: 'Exam Schedule',
+        viewAll: 'View All',
     },
 
     notFound: {
@@ -202,6 +203,7 @@ export default {
         },
 
         operlog: {
+            id: 'No.',
             username: 'Operator',
             module: 'Operation',
             type: 'Method',
@@ -212,6 +214,7 @@ export default {
         },
 
         loginlog: {
+            id: 'No.',
             username: 'Account',
             status: 'Status',
             statusSuccess: 'Success',
