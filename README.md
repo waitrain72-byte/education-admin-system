@@ -13,6 +13,16 @@
 
 前后端分离的教务管理系统：Web 端基于 Vue 3 + Vite + TypeScript + Element Plus，后端基于 Spring Boot + MyBatis + MySQL，另提供基于 uni-app（Vue 3）的微信小程序端（连接同一后端）。系统包含管理员、教师、学生三类角色，覆盖学院、专业、班级、课程、选课、课表、成绩、考试安排、教室安排、请假、作业、考勤、通知、评教等教务管理功能。
 
+## 我该怎么用这个项目？（先看我）
+
+根据你的目的选择路径，每一节都是手把手步骤，照着做即可：
+
+| 你的目的 | 看哪一节 | 难度 |
+|---|---|---|
+| 只想在自己电脑上把它跑起来看看效果 | [Web 端部署 → 方式一：Docker 一键部署](#部署说明--web-端) | ⭐ 最简单，只需装一个 Docker |
+| 想在代码上二次开发、改功能 | [Web 端部署 → 方式二：手动部署](#方式二手动部署适合二次开发) | ⭐⭐ 需要装 Node/JDK/Maven/MySQL |
+| 想要手机端（微信小程序） | [App 端部署（微信小程序）](#部署说明--app-端微信小程序) | ⭐⭐ 需要微信开发者工具 |
+
 ## 仓库分支说明
 
 | 分支 | 内容 |
@@ -101,37 +111,92 @@ manager-vue3
 +-- .github/workflows/ci.yml      # CI（本地保留，未随仓库分发）
 ```
 
-小程序端（`BISHE-mobile`，独立目录 / mobile 分支）结构与构建方式见下文 App 端部署。
+小程序端（`BISHE-mobile`，独立目录 / `mobile` 分支）结构与构建方式见下文 App 端部署。
 
 ## 部署说明 · Web 端
 
-### 方式一：Docker 一键部署（推荐）
+### 方式一：Docker 一键部署（推荐新手，全程只需 3 条命令）
+
+这条路不需要你安装 Node.js、JDK、MySQL——它们全部在 Docker 容器里自动搭好。
+
+#### 第 1 步：安装 Docker
+
+Docker 可以理解为"一键把整个运行环境打包带走"的工具。
+
+- **Windows 10/11**：到 [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) 下载 **Docker Desktop**，双击安装（一路默认即可），安装完启动它，等左下角状态变成绿色 **Running**；
+  - 如果启动报错提示 WSL2，按提示安装 WSL2 即可（或到"启用或关闭 Windows 功能"里勾选"适用于 Linux 的 Windows 子系统"后重启）；
+- **macOS**：同一个页面下载 Mac 版安装即可；
+- **Linux 服务器**（Ubuntu/CentOS/Debian）执行：
+
+```bash
+curl -fsSL https://get.docker.com | sh
+systemctl enable --now docker
+```
+
+装好后打开命令行（Windows 按 `Win+R` 输入 `cmd` 回车），输入下面两条命令，**能显示版本号就说明装好了**：
+
+```bash
+docker -v
+docker compose version
+```
+
+#### 第 2 步：下载代码（克隆仓库）
+
+如果没装过 Git：到 [git-scm.com](https://git-scm.com/downloads) 下载安装（一路下一步）。装好后，**选一个你方便找的文件夹**（比如 `D:\`），在它的地址栏输入 `cmd` 回车，执行：
 
 ```bash
 git clone -b cn-en https://github.com/waitrain72-byte/education-admin-system.git
 cd education-admin-system
-docker compose up -d --build      # 首次构建约 5~10 分钟，之后秒级
 ```
 
-启动三个容器：`frontend`（nginx 托管前端，8080）→ `/api` 反代 → `backend`（Spring Boot，9091）→ `mysql`（3306，首次启动自动导入全量备份，含 healthcheck 等待）。数据分别存于 `mysql_data`、`files_data` 卷，重建容器不丢失。
+执行完你会发现多了一个 `education-admin-system` 文件夹，代码就在里面。
+
+#### 第 3 步：一条命令启动
+
+在 `education-admin-system` 文件夹里继续执行：
+
+```bash
+docker compose up -d --build
+```
+
+- **首次运行约 5~10 分钟**，会滚动大量英文日志——这是在下载依赖和构建镜像，属于正常现象，耐心等它结束；
+- 之后再启动就是秒级；
+- 结束后执行 `docker compose ps`，看到 mysql / backend / frontend 三行状态都是 `Up` 就说明成功了（backend 短暂 Restart 后自愈属正常，它在等数据库就绪）。
+
+这一条命令自动完成了：创建数据库 → 导入全部表结构和演示数据 → 启动后端 → 启动前端。**你不需要手动建库导库。**
+
+#### 第 4 步：打开系统
+
+用浏览器（推荐 Chrome/Edge）打开：
 
 | 地址 | 说明 |
 |---|---|
-| `http://localhost:8080` | 系统入口（服务器部署用 `http://服务器IP:8080`） |
-| `http://localhost:9091/` | 后端健康检查 |
-| `http://localhost:9091/doc.html` | Knife4j 接口文档 |
+| `http://localhost:8080` | **系统入口**（部署在服务器上则用 `http://服务器IP:8080`） |
+| `http://localhost:9091/doc.html` | 接口文档（可选看） |
 
-日常管理：
+登录页输入账号密码和图片验证码（**验证码不区分大小写**），选好角色点登录：
 
-```bash
-docker compose ps                  # 查看容器状态
-docker compose logs -f backend     # 实时后端日志
-docker compose restart backend     # 重启单个服务
-docker compose down                # 停止并删除容器（数据卷保留）
-docker compose down -v             # ⚠️ 连数据卷一起删（彻底重来才用）
+```text
+管理员：admin      密码 123456
+教师：t01          密码 123456（t01~t20 任选）
+学生：2024001      密码 123456（2024001~2024050 任选）
 ```
 
-**环境变量**（不改文件覆盖配置）：
+三个账号各登录一次，体验不同角色的菜单与数据。**正式使用前请到右上角头像 → 修改密码改掉默认密码。**
+
+#### 第 5 步：日常停止 / 再启动
+
+```bash
+docker compose ps                  # 查看三个容器是否在运行
+docker compose logs -f backend     # 出问题时看后端日志（按 Ctrl+C 退出查看）
+docker compose restart backend     # 重启某个服务（backend/mysql/frontend）
+docker compose stop                # 停止（数据保留，下次 start 即可）
+docker compose down                # 停止并删除容器（数据卷仍保留，不丢数据）
+docker compose down -v             # ⚠️ 连数据一起清空（想彻底重来才用，之后重新 up 会重新导库）
+docker compose up -d --build       # 改了代码后重新构建启动
+```
+
+#### 环境变量（不改文件改配置）
 
 | 变量 | 作用 | 默认值 |
 |---|---|---|
@@ -139,44 +204,76 @@ docker compose down -v             # ⚠️ 连数据卷一起删（彻底重来
 | `SPRING_DATASOURCE_PASSWORD` | 数据库密码 | `123456` |
 | `CORS_ALLOWED_ORIGINS` | 允许跨域的前端来源 | `http://localhost:8080` |
 
-**公网服务器部署注意**：数据库端口不要暴露公网（删除 mysql 的 `ports` 或改绑 `127.0.0.1`）；改 `JWT_SECRET` 与数据库密码；改默认管理员密码；安全组只放行 8080；需要 HTTPS 时前面加一层 nginx/Caddy 反代。
+用法示例（Windows PowerShell）：
 
-### 方式二：手动部署
+```powershell
+$env:JWT_SECRET="一串只有你知道的随机长字符串"; docker compose up -d --build
+```
 
-环境要求：Node.js 18+、JDK 8、Maven 3.6+、MySQL 5.7/8.x。
+**部署到云服务器给别人访问时**：① 编辑 `docker-compose.yml` 把 mysql 的 `"3306:3306"` 端口映射删掉或改成 `"127.0.0.1:3306:3306"`（数据库绝不暴露公网）；② 改 `JWT_SECRET` 和数据库密码；③ 登录后改掉管理员默认密码；④ 云安全组只需放行 **8080**；⑤ 要 HTTPS 就在前面加一层 nginx/Caddy 反代。
 
-**1. 数据库**：创建库并导入全量备份（内部已 `CREATE DATABASE IF NOT EXISTS` + `SET NAMES utf8mb4`，中文不乱码）：
+### 方式二：手动部署（适合二次开发）
+
+这条路要真实安装开发环境，好处是改代码能即时看到效果。
+
+#### 1. 安装基础环境（四样）
+
+| 工具 | 下载地址 | 验证命令 |
+|---|---|---|
+| Node.js 18+ | [nodejs.org](https://nodejs.org/) 选 LTS 版 | `node -v`、`npm -v` |
+| JDK 8 | 搜索 "JDK 8 下载"（Oracle 或 Adoptium） | `java -version` |
+| Maven 3.6+ | [maven.apache.org](https://maven.apache.org/download.cgi)（解压后把 bin 目录加入 PATH） | `mvn -v` |
+| MySQL 5.7 / 8.x | [dev.mysql.com/downloads](https://dev.mysql.com/downloads/)（安装时记住你设置的 root 密码） | `mysql --version` |
+
+每装一个就开一个新命令行窗口执行验证命令，**都报出版本号再继续**。如果提示"不是内部或外部命令"，说明该工具的 bin 目录没加入系统 PATH 环境变量——把安装目录下的 bin 路径追加到"系统属性 → 环境变量 → Path"后重开命令行。
+
+#### 2. 创建数据库并导入演示数据
+
+打开命令行，进入 MySQL 安装目录的 bin 文件夹（或已配置 PATH 则直接执行）：
 
 ```bash
 mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS xm_educational_manager DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.sql
 ```
 
-> `sql/rbac_permission.sql` 仅供导入过旧版备份的存量库单独补 RBAC 表用（幂等）；全新导入 `full.sql` 后**不要再执行**，否则会把自定义授权重置为默认。
+- 第一条：创建数据库（`-p123456` 换成你自己的 root 密码）；
+- 第二条：导入全量备份（表结构 + 演示数据 + RBAC 权限表一次到位），没有任何输出就是成功；
+- 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`；
+- `sql/rbac_permission.sql` 只给"导入过旧版备份的老库"补 RBAC 表用，**新导入 full.sql 的不要重复执行**。
 
-数据库连接配置在 `springboot/src/main/resources/application.yml`（默认 `root/123456@localhost:3306`），按需修改。
-
-**2. 后端**：
+#### 3. 启动后端
 
 ```bash
 cd springboot
-mvn spring-boot:run        # 启动后访问 http://localhost:9091/ 验证
+mvn spring-boot:run
 ```
 
-**3. 前端**：
+看到日志出现 `Started SpringbootApplication` 即成功。浏览器打开 `http://localhost:9091/`，返回一段 JSON 就说明后端正常。接口可视化文档在 `http://localhost:9091/doc.html`。
+
+也可以用 IntelliJ IDEA 打开 `springboot` 文件夹，等 Maven 依赖下载完，直接运行 `SpringbootApplication` 类。
+
+#### 4. 启动前端
+
+**新开一个命令行窗口**（后端那个别关）：
 
 ```bash
 cd vue
-npm install
-npm run dev                # http://localhost:8080（开发代理 /api → 9091）
+npm install        # 首次执行，下载依赖约 2~5 分钟
+npm run dev
 ```
 
-> 注意：若 8080 被占用 Vite 会顺延到 8081，而后端 CORS 白名单只放行 8080，会出现跨域错误——结束残留 node 进程后重启即可。
+看到 `Local: http://localhost:8080/` 后浏览器打开即可登录（账号同上）。
 
-### 打包与发布
+> 如果 8080 被占用，Vite 会自动改用 8081——而后端跨域白名单只放行 8080，会出现请求失败。结束旧的 node 进程后重启 `npm run dev` 即可（见常见问题 5）。
+
+#### 5. 改代码怎么看效果
+
+前端改 `.vue`/`.ts` 文件保存后浏览器自动热更新；后端改 Java 文件需重启 `mvn spring-boot:run`。改完前端执行 `npm run lint`（格式检查）和 `npm run test`（16 个单元测试）保持代码规范。
+
+### Web 端打包发布
 
 ```bash
-cd vue && npm run build            # 前端产物 vue/dist/（生产走 /api，由 nginx 反代到 9091）
+cd vue && npm run build            # 前端产物在 vue/dist/（生产环境接口走 /api，由 nginx 反代到 9091）
 cd springboot && mvn clean package # 后端 jar 在 springboot/target/
 java -jar target/springboot-0.0.1-SNAPSHOT.jar
 ```
@@ -185,40 +282,58 @@ CI（`.github/workflows/ci.yml`，本地保留未随仓库分发）：前端 lin
 
 ## 部署说明 · App 端（微信小程序）
 
-小程序与 Web 端功能对齐（23 个页面、三角色、中英文、深浅色主题与偏好同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端。交互按移动端习惯适配：表格 → 卡片列表 + 底部弹层表单、分页 → 触底加载、批量删除 → "管理"模式勾选、ECharts → 纯 CSS 统计条；含底部 TabBar（首页 / 我的）、管理页面分包加载、请假状态快捷筛选、退出登录。
+小程序与 Web 端功能对齐（23 个页面、三角色、中英文、深浅色主题与偏好同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端。交互按移动端习惯适配：底部 TabBar（首页 / 我的）、卡片列表 + 底部弹层表单、触底加载、请假状态筛选、退出登录；管理页面放在分包里按需加载。
 
-环境要求：Node.js 18+、微信开发者工具（最新稳定版）。
+### 第 1 步：准备两样东西
 
-**复用者必改三处**：
+1. **微信开发者工具**：到 [developers.weixin.qq.com/miniprogram/dev/devtools/download.html](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html) 下载 **稳定版**，安装；
+2. **小程序 AppID**：到 [mp.weixin.qq.com](https://mp.weixin.qq.com) → 立即注册 → 选"小程序" → 用一个没注册过公众平台的邮箱完成注册 → 登录后左侧"开发管理 → 开发设置"里能看到 AppID（形如 `wx1234567890abcdef`）。个人主体免费，够学习演示用。
+   - 只想先跑起来、暂时不想注册：微信开发者工具导入项目时可选"测试号"，但无法真机预览。
 
-| 位置 | 改什么 |
-|---|---|
-| `src/manifest.json` → `mp-weixin.appid` | 换成自己的小程序 AppID（[mp.weixin.qq.com](https://mp.weixin.qq.com) 注册，个人主体免费） |
-| `src/utils/config.js` → `baseUrl` | 后端地址：模拟器用 `http://localhost:9091`，真机用电脑局域网 IP（`ipconfig` 查看） |
-| 数据库 | 确认已导入全量备份（Web 端部分已覆盖） |
-
-**构建与导入**：
+### 第 2 步：获取小程序代码
 
 ```bash
+git clone -b mobile https://github.com/waitrain72-byte/education-admin-system.git BISHE-mobile
 cd BISHE-mobile
 npm install
-npm run dev:mp-weixin     # 开发模式（热更新），产物 dist/dev/mp-weixin
-npm run build:mp-weixin   # 生产构建，产物 dist/build/mp-weixin
 ```
 
-微信开发者工具：**导入项目 → 选择 `dist/build/mp-weixin`（编译产物目录，不是源码根目录）→ 后端服务选"不使用云服务"**。
+### 第 3 步：改两处配置（必改）
 
-**真机调试检查清单**：
+| 文件 | 改什么 |
+|---|---|
+| `src/manifest.json` | 找到 `"mp-weixin"` 里的 `"appid"`，把值换成你自己的 AppID |
+| `src/utils/config.js` | 第 4 行 `baseUrl`：**开发者工具模拟器**用 `http://localhost:9091`；**真机预览**用电脑局域网 IP（命令行执行 `ipconfig`，找"IPv4 地址"，如 `http://192.168.1.10:9091`） |
 
-1. 开发者工具 详情 → 本地设置 → 勾选"不校验合法域名"；
-2. 手机与电脑连同一个 Wi-Fi；
-3. Windows 防火墙放行 9091：`New-NetFirewallRule -DisplayName 'edu-manager-9091' -Direction Inbound -Protocol TCP -LocalPort 9091 -Action Allow`；
-4. `baseUrl` 用电脑当前有效的局域网 IP，改完需重新构建；
-5. 工具若报 `ECONNREFUSED 127.0.0.1:xxxx`，在 设置 → 代理设置 改为"不使用任何代理"。
+### 第 4 步：构建并导入开发者工具
 
-**发布上线**（仅演示可跳过）：需要已备案的 HTTPS 域名部署后端；在公众平台"服务器域名"填入 request / uploadFile 合法域名；开发者工具上传 → 提交审核 → 发布。
+```bash
+npm run dev:mp-weixin     # 开发模式（改代码实时热更新），产物在 dist/dev/mp-weixin
+# 或
+npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
+```
+
+打开微信开发者工具 → **导入项目** → 目录选择 `dist/dev/mp-weixin`（或 `dist/build/mp-weixin`，**注意选的是编译产物目录，不是源码根目录**）→ AppID 填你自己的 → 后端服务选"不使用云服务"→ 导入。
+
+模拟器里立即能看到登录页。**后端要先启动**（Web 端部署的第 3/4 步任选一种方式，保持 9091 在运行）。
+
+### 第 5 步：真机预览（手机上看）
+
+1. 工具栏点**"预览"**按钮，生成二维码，用手机微信扫码；
+2. 手机和电脑必须连**同一个 Wi-Fi**；
+3. `baseUrl` 必须是电脑的局域网 IP（不是 localhost）；
+4. Windows 防火墙放行 9091 端口（管理员 PowerShell 执行）：
+   ```powershell
+   New-NetFirewallRule -DisplayName 'edu-manager-9091' -Direction Inbound -Protocol TCP -LocalPort 9091 -Action Allow
+   ```
+5. 若手机上一直加载失败，检查开发者工具 **详情 → 本地设置 → 勾选"不校验合法域名"**；
+6. 工具报 `ECONNREFUSED 127.0.0.1:xxxx`：设置 → 代理设置 → 选"不使用任何代理"。
 
 > 权限说明：Web 端【权限设置】页调整角色授权后，App 端用户**重新登录**即同步菜单显隐（登录时拉取 `/permission/my`），无需重新打包小程序。
+
+### 发布上线（仅演示可跳过）
+
+正式发布要求：① 一个**已备案的 HTTPS 域名**部署后端（localhost/局域网 IP 不行）；② 公众平台"开发管理 → 服务器域名"把域名填入 request / uploadFile 合法域名；③ 开发者工具点"上传"→ 公众平台提交审核 → 审核通过后发布。
 
 ## 配置速查
 
@@ -245,29 +360,32 @@ npm run build:mp-weixin   # 生产构建，产物 dist/build/mp-weixin
 
 ## 常见问题
 
-**1. 前端页面能打开，但接口请求失败**
-检查后端是否启动、端口是否 9091、`vue/.env.development` 的 `VITE_BASE_URL`、浏览器控制台是否跨域/网络错误。
+**1. 提示 `'npm' / 'mvn' / 'mysql' 不是内部或外部命令`**
+对应工具没装或没加 PATH。重开一个命令行窗口再试（装完必须开新窗口才生效）；仍不行就检查环境变量 Path 里是否包含该工具的 bin 目录。
 
-**2. 后端启动失败，提示数据库连接失败**
-检查 MySQL 是否启动、库 `xm_educational_manager` 是否存在（未导入备份则导入 `sql/xm_educational_manager-full.sql`）、`application.yml` 账号密码端口是否正确。
+**2. 前端页面能打开，但接口请求失败**
+依次检查：后端是否启动（开 `http://localhost:9091/` 看有没有 JSON）；`vue/.env.development` 的 `VITE_BASE_URL`；浏览器 F12 控制台是否报跨域（跨域 = 前端没跑在 8080，见问题 5）。
 
-**3. 忘记密码**
-BCrypt 无法反推原密码。由管理员在用户管理页"重置密码"为 `123456`，登录后立即修改。管理员忘记自己的密码需直接改库（重置为 BCrypt 哈希）。
+**3. 后端启动失败，提示数据库连接失败**
+MySQL 没启动、库没建、备份没导入、账号密码不对——按手动部署第 2 步重来一遍。日志页/主题语言接口报错同理（缺表缺字段就重新导入全量备份）。
 
-**4. 启动后端报 `Port 9091 was already in use`**
-旧实例占用：`netstat -ano | findstr 9091` 找 PID，`taskkill /PID <PID> /F` 结束。
+**4. 忘记密码**
+BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码"为 `123456`，登录后立即修改。管理员自己忘了密码只能直接改数据库。
 
 **5. 前端端口变成 8081 且接口报跨域错误**
-8080 被残留 dev 服务占用，Vite 顺延端口而 CORS 只放行 8080。结束多余 node 进程后重启 `npm run dev`。
+8080 被残留的旧 dev 服务占用。`netstat -ano | findstr 8080` 找 PID，`taskkill /PID <PID> /F` 结束，再重启 `npm run dev`。后端 9091 被占用同理。
 
 **6. 登录提示"账号已锁定"**
-连续失败 5 次触发登录保护，等 10 分钟自动解锁或重启后端（锁在内存中）。
+连续失败 5 次触发保护，等 10 分钟自动解锁或重启后端（锁定状态在内存中）。
 
-**7. 操作/登录日志页面报 500 或主题/语言接口报错**
-数据库备份未导入或版本过旧（缺日志表、`theme`/`locale` 字段），重新导入全量备份后重启后端。
+**7. Docker Desktop 启动失败 / 提示 WSL 2**
+按报错指引安装 WSL2：管理员 PowerShell 执行 `wsl --install` 后重启电脑再启动 Docker Desktop。
 
-**8. 小程序验证码不显示 / 真机连不上后端**
-见上文 App 端部署的"真机调试检查清单"（baseUrl、同网段、防火墙、不校验合法域名、代理设置）。
+**8. `git clone` 速度很慢或失败**
+多试几次；或使用镜像加速（把克隆地址中的 `github.com` 换成 `gitclone.com/github.com` 等加速前缀）；网络允许时配代理最快。
+
+**9. 小程序验证码不显示 / 真机连不上后端**
+按 App 端部署"第 5 步真机预览"的 6 条逐项检查（baseUrl、同一 Wi-Fi、防火墙、不校验合法域名、代理设置）。
 
 ## 维护约定（两端必读）
 
