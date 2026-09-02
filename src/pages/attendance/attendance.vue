@@ -98,7 +98,7 @@
         <view class="xm-label field">{{ $t('pages.attendance.teacherName') }}: {{ row.teacherName }}</view>
         <view class="xm-label field">{{ $t('pages.attendance.studentName') }}: {{ row.studentName }}</view>
         <view class="xm-label field">{{ $t('pages.attendance.timeLabel') }}: {{ row.time }}</view>
-        <view class="xm-label field">ID: {{ row.id }}</view>
+        <view class="xm-label field">{{ $t('pages.attendance.id') }}: {{ row._index }}</view>
       </view>
 
       <view
@@ -120,13 +120,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 添加/编辑考勤表单（底部弹层，教师） -->
     <view

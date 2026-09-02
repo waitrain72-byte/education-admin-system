@@ -38,6 +38,10 @@ export function useCrud(options) {
       if (res.data && res.data.code === '200') {
         const rows = (res.data.data && res.data.data.list) || []
         const count = (res.data.data && res.data.data.total) || 0
+        // 注入当前分页连续行号（跨页累计），供列表展示"序号"用，避免直接显示全局自增 id
+        rows.forEach((r, i) => {
+          r._index = (pageNum.value - 1) * pageSize + i + 1
+        })
         if (reset) {
           list.value = rows
         } else {

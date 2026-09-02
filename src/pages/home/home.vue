@@ -44,7 +44,7 @@
       </view>
     </view>
 
-    <!-- 教务通知 / 考试安排 -->
+    <!-- 教务通知 / 考试安排（首页仅展示最新 3 条，避免数据多时页面过长） -->
     <view class="xm-card">
       <view class="xm-card-title">{{ $t('home.notice') }}</view>
       <view
@@ -53,13 +53,19 @@
         >{{ $t('common.empty') }}</view
       >
       <view
-        v-for="item in notices"
+        v-for="item in noticeList"
         :key="item.id"
         class="notice-item"
       >
         <view class="xm-value">{{ item.title }}</view>
         <view class="xm-label">{{ item.time }}</view>
       </view>
+      <view
+        v-if="notices.length"
+        class="xm-label card-more"
+        @click="go('/pages/notice/notice')"
+        >{{ $t('home.viewAll') }}</view
+      >
     </view>
 
     <view class="xm-card">
@@ -70,7 +76,7 @@
         >{{ $t('common.empty') }}</view
       >
       <view
-        v-for="item in examplans"
+        v-for="item in examplanList"
         :key="item.id"
         class="notice-item"
       >
@@ -81,6 +87,12 @@
           >{{ item.time }}</view
         >
       </view>
+      <view
+        v-if="examplans.length"
+        class="xm-label card-more"
+        @click="go('/pages/examplan/examplan')"
+        >{{ $t('home.viewAll') }}</view
+      >
     </view>
 
     <!-- 考勤统计（数据来自 /attendance/getPie，以占比条形式呈现） -->
@@ -137,46 +149,60 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { usePermission } from '@/composables/usePermission'
 import { get } from '@/utils/request'
 import { t, apiMessage } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass } from '@/composables/useTheme'
 
 const userStore = useUserStore()
+const { pullPermissions } = usePermission()
 const userName = computed(() => userStore.user.name || userStore.user.username || t('layout.guest'))
 
-// 功能入口：与 Web 端路由 meta.roles 保持一致
+// 功能入口：与 Web 端路由 meta.roles / meta.permission 保持一致
+// perm 为 RBAC 权限码：权限已拉取时按码过滤；未拉取到（空）时退化为仅按 roles 过滤
+// 管理类页面位于 pages-admin 分包；个人中心/修改密码入口移至「我的」Tab
 const allMenus = [
-  { path: '/pages/notice/notice', name: 'menu.notice', icon: '📢', roles: null },
-  { path: '/pages/examplan/examplan', name: 'menu.examplan', icon: '📝', roles: null },
-  { path: '/pages/roomplan/roomplan', name: 'menu.roomplan', icon: '🏫', roles: null },
-  { path: '/pages/college/college', name: 'menu.college', icon: '🏛', roles: ['ADMIN'] },
-  { path: '/pages/speciality/speciality', name: 'menu.speciality', icon: '📚', roles: ['ADMIN'] },
-  { path: '/pages/classes/classes', name: 'menu.classes', icon: '👨‍👩‍👧', roles: ['ADMIN'] },
-  { path: '/pages/course/course', name: 'menu.course', icon: '📖', roles: null },
-  { path: '/pages/choice/choice', name: 'menu.choice', icon: '🧾', roles: null },
-  { path: '/pages/curriculum/curriculum', name: 'menu.curriculum', icon: '🗓', roles: ['STUDENT'] },
-  { path: '/pages/score/score', name: 'menu.score', icon: '💯', roles: null },
-  { path: '/pages/comment/comment', name: 'menu.comment', icon: '⭐', roles: null },
-  { path: '/pages/apply/apply', name: 'menu.apply', icon: '📮', roles: null },
-  { path: '/pages/homework/homework', name: 'menu.homework', icon: '📒', roles: null },
-  { path: '/pages/attendance/attendance', name: 'menu.attendance', icon: '🕐', roles: null },
-  { path: '/pages/admin/admin', name: 'menu.admin', icon: '👤', roles: ['ADMIN'] },
-  { path: '/pages/teacher/teacher', name: 'menu.teacher', icon: '👨‍🏫', roles: ['ADMIN'] },
-  { path: '/pages/student/student', name: 'menu.student', icon: '🎓', roles: ['ADMIN'] },
-  { path: '/pages/person/person', name: 'menu.person', icon: '🧑', roles: null },
-  { path: '/pages/password/password', name: 'menu.password', icon: '🔑', roles: null },
+  { path: '/pages/notice/notice', name: 'menu.notice', icon: '📢', perm: 'notice:view' },
+  { path: '/pages/examplan/examplan', name: 'menu.examplan', icon: '📝', perm: 'examplan:view' },
+  { path: '/pages/roomplan/roomplan', name: 'menu.roomplan', icon: '🏫', perm: 'roomplan:view' },
+  { path: '/pages-admin/college/college', name: 'menu.college', icon: '🏛', roles: ['ADMIN'], perm: 'college:view' },
+  { path: '/pages-admin/speciality/speciality', name: 'menu.speciality', icon: '📚', roles: ['ADMIN'], perm: 'speciality:view' },
+  { path: '/pages-admin/classes/classes', name: 'menu.classes', icon: '👨‍👩‍👧', roles: ['ADMIN'], perm: 'classes:view' },
+  { path: '/pages/course/course', name: 'menu.course', icon: '📖', perm: 'course:view' },
+  { path: '/pages/choice/choice', name: 'menu.choice', icon: '🧾', perm: 'choice:view' },
+  { path: '/pages/curriculum/curriculum', name: 'menu.curriculum', icon: '🗓', roles: ['STUDENT'], perm: 'curriculum:view' },
+  { path: '/pages/score/score', name: 'menu.score', icon: '💯', perm: 'score:view' },
+  { path: '/pages/comment/comment', name: 'menu.comment', icon: '⭐', perm: 'comment:view' },
+  { path: '/pages/apply/apply', name: 'menu.apply', icon: '📮', perm: 'apply:view' },
+  { path: '/pages/homework/homework', name: 'menu.homework', icon: '📒', perm: 'homework:view' },
+  { path: '/pages/attendance/attendance', name: 'menu.attendance', icon: '🕐', perm: 'attendance:view' },
+  { path: '/pages-admin/admin/admin', name: 'menu.admin', icon: '👤', roles: ['ADMIN'], perm: 'admin:view' },
+  { path: '/pages-admin/teacher/teacher', name: 'menu.teacher', icon: '👨‍🏫', roles: ['ADMIN'], perm: 'teacher:view' },
+  { path: '/pages-admin/student/student', name: 'menu.student', icon: '🎓', roles: ['ADMIN'], perm: 'student:view' },
 ]
 
 const menuItems = computed(() => {
   const role = userStore.role
-  return allMenus.filter((m) => !m.roles || m.roles.includes(role))
+  const perms = userStore.permissions
+  const isAdmin = role === 'ADMIN'
+  return allMenus.filter((m) => {
+    if (m.roles && !m.roles.includes(role)) return false
+    // RBAC：权限码已拉取且非管理员时，隐藏无权限的入口（ADMIN 固定放行）
+    if (m.perm && !isAdmin && perms.length && !perms.includes(m.perm)) return false
+    return true
+  })
 })
 
 const go = (path) => uni.navigateTo({ url: path })
 
 const notices = ref([])
 const examplans = ref([])
+
+// 首页仅展示最新 3 条，完整列表在对应页面分页浏览
+const HOME_LIST_LIMIT = 3
+const noticeList = computed(() => notices.value.slice(0, HOME_LIST_LIMIT))
+const examplanList = computed(() => examplans.value.slice(0, HOME_LIST_LIMIT))
 
 // 考勤统计
 const attendanceStats = ref({ late: 0, absent: 0, earlyLeave: 0, normal: 0 })
@@ -219,6 +245,11 @@ onShow(() => {
   }
   // 动态设置导航栏标题，跟随语言切换
   uni.setNavigationBarTitle({ title: t('menu.home') })
+
+  // 权限码缺失（如旧版本登录留下的缓存）时补拉，保证菜单过滤与 Web 端授权一致
+  if (userStore.role !== 'ADMIN' && !userStore.permissions.length) {
+    pullPermissions()
+  }
 
   get('/notice/selectAll').then((res) => {
     notices.value = (res.data && res.data.data) || []
@@ -268,6 +299,13 @@ onShow(() => {
 
 .notice-item:last-child {
   border-bottom: none;
+}
+
+/* 「查看全部」入口：右对齐，主题色 */
+.card-more {
+  text-align: right;
+  padding-top: 12rpx;
+  color: var(--xm-brand);
 }
 
 .stat-row {

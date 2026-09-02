@@ -64,7 +64,7 @@
             >{{ row.score }}</view
           >
         </view>
-        <view class="xm-label">ID: {{ row.id }}</view>
+        <view class="xm-label">{{ $t('pages.homework.id') }}: {{ row._index }}</view>
       </view>
       <view
         class="xm-row"
@@ -137,13 +137,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 作业提交/编辑表单（底部弹层，学生） -->
     <view

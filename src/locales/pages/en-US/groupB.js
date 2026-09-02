@@ -1,8 +1,16 @@
 /**
- * Group B locale pack (English): notice/examplan/roomplan/speciality/classes.
+ * Group B locale pack (English): college/notice/examplan/roomplan/speciality/classes.
  */
 export default {
   pages: {
+    college: {
+      id: 'No.',
+      nameLabel: 'College Name',
+      namePlaceholder: 'Enter college name',
+      dialogTitle: 'College Info',
+      ruleNameRequired: 'Please enter the college name',
+    },
+
     notice: {
       id: 'No.',
       searchPlaceholder: 'Enter title to search',

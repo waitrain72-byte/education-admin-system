@@ -31,7 +31,7 @@
         class="xm-row"
         style="flex-wrap: wrap; margin-top: 12rpx"
       >
-        <view class="xm-label field">{{ $t('pages.choice.id') }}: {{ row.id }}</view>
+        <view class="xm-label field">{{ $t('pages.choice.id') }}: {{ row._index }}</view>
         <view class="xm-label field">{{ $t('pages.choice.courseType') }}: {{ row.type }}</view>
         <view class="xm-label field">{{ $t('pages.choice.teacherName') }}: {{ row.teacherName }}</view>
         <view class="xm-label field">{{ $t('pages.choice.credit') }}: {{ row.score }}</view>
@@ -64,13 +64,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 评教表单（底部弹层） -->
     <view

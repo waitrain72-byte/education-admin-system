@@ -79,7 +79,7 @@
             >{{ item.title }}</view
           >
         </view>
-        <view class="xm-label">ID: {{ item.id }}</view>
+        <view class="xm-label">{{ $t('pages.notice.id') }}: {{ item._index }}</view>
       </view>
       <view
         class="xm-row"
@@ -117,13 +117,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view

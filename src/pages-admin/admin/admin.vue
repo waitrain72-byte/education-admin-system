@@ -9,7 +9,7 @@
         class="xm-input"
         style="flex: 1"
         v-model="keyword"
-        :placeholder="$t('pages.student.searchPlaceholder')"
+        :placeholder="$t('pages.admin.searchPlaceholder')"
       />
       <button
         class="xm-btn xm-btn-primary"
@@ -81,34 +81,30 @@
             >{{ item.username }}</view
           >
         </view>
-        <view class="xm-label">ID: {{ item.id }}</view>
+        <view class="xm-label">{{ $t('pages.admin.id') }}: {{ item._index }}</view>
       </view>
-      <view class="xm-label">{{ $t('pages.student.name') }}: {{ item.name }}</view>
-      <view class="xm-label">{{ $t('pages.student.role') }}: {{ item.role }}</view>
-      <view class="xm-label">{{ $t('pages.student.college') }}: {{ item.collegeName }}</view>
-      <view class="xm-label">{{ $t('pages.student.speciality') }}: {{ item.specialityName }}</view>
-      <view class="xm-label">{{ $t('pages.student.classes') }}: {{ item.className }}</view>
-      <view class="xm-label">{{ $t('pages.student.score') }}: {{ item.score }}</view>
+      <view class="xm-label">{{ $t('pages.admin.name') }}: {{ item.name }}</view>
+      <view class="xm-label">{{ $t('pages.admin.phone') }}: {{ item.phone }}</view>
+      <view class="xm-label">{{ $t('pages.admin.email') }}: {{ item.email }}</view>
+      <view class="xm-label">{{ $t('pages.admin.role') }}: {{ item.role }}</view>
       <view
         class="xm-actions"
         v-if="!manageMode"
       >
         <button
-          v-if="isAdminOrTeacher"
           class="xm-btn xm-btn-plain"
           @click="onEdit(item)"
         >
           {{ $t('common.edit') }}
         </button>
         <button
-          v-if="isAdmin"
           class="xm-btn xm-btn-plain"
+          :disabled="item.id === userStore.user.id"
           @click="resetPassword(item)"
         >
           {{ $t('common.resetPassword') }}
         </button>
         <button
-          v-if="isAdminOrTeacher"
           class="xm-btn xm-btn-danger"
           @click="del(item.id)"
         >
@@ -117,13 +113,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -137,10 +127,42 @@
       class="xm-popup"
     >
       <view class="xm-popup-title"
-        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.student.dialogTitle') }}</view
+        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.admin.dialogTitle') }}</view
       >
       <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.avatar') }}</view>
+        <view class="xm-form-label">{{ $t('pages.admin.username') }}</view>
+        <input
+          class="xm-input"
+          v-model="form.username"
+          :placeholder="$t('pages.admin.username')"
+        />
+      </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.admin.name') }}</view>
+        <input
+          class="xm-input"
+          v-model="form.name"
+          :placeholder="$t('pages.admin.name')"
+        />
+      </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.admin.phone') }}</view>
+        <input
+          class="xm-input"
+          v-model="form.phone"
+          :placeholder="$t('pages.admin.phone')"
+        />
+      </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.admin.email') }}</view>
+        <input
+          class="xm-input"
+          v-model="form.email"
+          :placeholder="$t('pages.admin.email')"
+        />
+      </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.admin.avatar') }}</view>
         <view
           class="xm-row"
           v-if="form.avatar"
@@ -155,68 +177,8 @@
           class="xm-btn xm-btn-primary"
           @click="uploadAvatar"
         >
-          {{ $t('pages.student.uploadAvatar') }}
+          {{ $t('pages.admin.uploadAvatar') }}
         </button>
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.username') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.username"
-          :placeholder="$t('pages.student.username')"
-        />
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.name') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.name"
-          :placeholder="$t('pages.student.name')"
-        />
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.college') }}</view>
-        <picker
-          :range="collegeLabels"
-          @change="onCollegeChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.collegeId == null }"
-          >
-            {{ form.collegeId != null ? collegeLabels[collegeIndex] : $t('pages.student.collegePlaceholder') }}
-          </view>
-        </picker>
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.speciality') }}</view>
-        <picker
-          :range="specialityLabels"
-          @change="onSpecialityChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.specialityId == null }"
-          >
-            {{
-              form.specialityId != null ? specialityLabels[specialityIndex] : $t('pages.student.specialityPlaceholder')
-            }}
-          </view>
-        </picker>
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.student.classes') }}</view>
-        <picker
-          :range="classesLabels"
-          @change="onClassesChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.classId == null }"
-          >
-            {{ form.classId != null ? classesLabels[classesIndex] : $t('pages.student.classesPlaceholder') }}
-          </view>
-        </picker>
       </view>
       <view
         class="xm-row"
@@ -242,24 +204,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { get, put } from '@/utils/request'
+import { put } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 
 const userStore = useUserStore()
 const keyword = ref('')
 const manageMode = ref(false)
-const collegeData = ref([])
-const specialityData = ref([])
-const classesData = ref([])
-
-const isAdmin = computed(() => userStore.role === 'ADMIN')
-// Web 端 Student.vue 的编辑/删除按钮为 v-permission="['ADMIN', 'TEACHER']"
-const isAdminOrTeacher = computed(() => userStore.role === 'ADMIN' || userStore.role === 'TEACHER')
 
 const {
   list,
@@ -279,18 +234,20 @@ const {
   del,
   delBatch,
 } = useCrud({
-  url: '/student',
+  url: '/admin',
   getParams: () => ({ username: keyword.value }),
   validate: (f) => {
-    if (!f.username) return t('pages.student.ruleUsernameRequired')
+    if (!f.username) return t('pages.admin.ruleUsernameRequired')
     return ''
   },
   afterSave: (formData) => {
-    // 如果修改的是当前登录学生自己的信息，同步全局状态
+    // 如果修改的是当前登录用户自己的信息，同步全局状态
     if (formData.id === userStore.user.id) {
       userStore.patchUser({
         avatar: formData.avatar,
         name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
       })
     }
   },
@@ -314,69 +271,17 @@ const onReset = () => {
   search()
 }
 
-// 学院/专业/班级下拉数据
-const loadCollege = () => {
-  get('/college/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      collegeData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
-}
-
-const loadSpeciality = () => {
-  get('/speciality/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      specialityData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
-}
-
-const loadClasses = () => {
-  get('/classes/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      classesData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
-}
-
-const collegeLabels = computed(() => collegeData.value.map((i) => i.name))
-const collegeIndex = computed(() => collegeData.value.findIndex((i) => i.id === form.value.collegeId))
-const onCollegeChange = (e) => {
-  const item = collegeData.value[Number(e.detail.value)]
-  if (item) form.value.collegeId = item.id
-}
-
-const specialityLabels = computed(() => specialityData.value.map((i) => i.name))
-const specialityIndex = computed(() => specialityData.value.findIndex((i) => i.id === form.value.specialityId))
-const onSpecialityChange = (e) => {
-  const item = specialityData.value[Number(e.detail.value)]
-  if (item) form.value.specialityId = item.id
-}
-
-const classesLabels = computed(() => classesData.value.map((i) => i.name))
-const classesIndex = computed(() => classesData.value.findIndex((i) => i.id === form.value.classId))
-const onClassesChange = (e) => {
-  const item = classesData.value[Number(e.detail.value)]
-  if (item) form.value.classId = item.id
-}
-
-// 重置密码为 123456
+// 重置密码为 123456（自己不可重置，与 Web 端一致）
 const resetPassword = (row) => {
   uni.showModal({
     title: t('common.resetPassword'),
-    content: t('pages.student.resetConfirm', { username: row.username }),
+    content: t('pages.admin.resetConfirm', { username: row.username }),
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await put('/student/resetPassword/' + row.id)
+        const r = await put('/admin/resetPassword/' + row.id)
         if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('pages.student.resetSuccess'), icon: 'none' })
+          uni.showToast({ title: t('pages.admin.resetSuccess'), icon: 'none' })
         } else {
           uni.showToast({ title: apiMessage(r.data), icon: 'none' })
         }
@@ -419,7 +324,7 @@ const uploadAvatar = () => {
 
 // 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
 onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.student') })
+  uni.setNavigationBarTitle({ title: t('menu.admin') })
   if (!userStore.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/login' })
     return
@@ -430,9 +335,6 @@ onShow(() => {
     return
   }
   load(true)
-  loadCollege()
-  loadSpeciality()
-  loadClasses()
 })
 
 onReachBottom(() => loadNext())
@@ -445,15 +347,5 @@ onReachBottom(() => loadNext())
   border-radius: 50%;
   background: var(--xm-bg-input);
   flex-shrink: 0;
-}
-
-.picker-text {
-  display: flex;
-  align-items: center;
-  line-height: 76rpx;
-}
-
-.picker-placeholder {
-  color: var(--xm-text-2);
 }
 </style>

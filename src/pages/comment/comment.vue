@@ -55,7 +55,7 @@
           style="font-weight: bold"
           >{{ row.name }}</view
         >
-        <view class="xm-label">ID: {{ row.id }}</view>
+        <view class="xm-label">{{ $t('pages.comment.id') }}: {{ row._index }}</view>
       </view>
       <view
         class="xm-row"
@@ -87,13 +87,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
   </view>
 </template>
 

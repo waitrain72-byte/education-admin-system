@@ -1,9 +1,17 @@
 /**
- * 分组 B 语言包：教务通知/考试安排/教室安排/专业/班级。
- * 键命名空间：pages.notice / pages.examplan / pages.roomplan / pages.speciality / pages.classes
+ * 分组 B 语言包：学院信息/教务通知/考试安排/教室安排/专业/班级。
+ * 键命名空间：pages.college / pages.notice / pages.examplan / pages.roomplan / pages.speciality / pages.classes
  */
 export default {
   pages: {
+    college: {
+      id: '序号',
+      nameLabel: '学院名称',
+      namePlaceholder: '请输入学院名称',
+      dialogTitle: '学院信息',
+      ruleNameRequired: '请输入学院名称',
+    },
+
     notice: {
       id: '序号',
       searchPlaceholder: '请输入标题查询',

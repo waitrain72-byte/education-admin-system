@@ -23,6 +23,8 @@ export const useUserStore = defineStore('user', {
     isLoggedIn: (state) => !!state.user.id,
     role: (state) => state.user.role || '',
     token: (state) => state.user.token || '',
+    /** RBAC 权限码集合（登录后从 /permission/my 拉取，随 user 持久化） */
+    permissions: (state) => state.user.permissions || [],
   },
   actions: {
     updateUser(newUser) {
@@ -31,6 +33,11 @@ export const useUserStore = defineStore('user', {
         return
       }
       this.user = { ...newUser }
+      uni.setStorageSync(STORAGE_KEY, this.user)
+    },
+    /** 登录/进入首页后写入权限码集合，随 user 一并持久化 */
+    setPermissions(permissions) {
+      this.user = { ...this.user, permissions: permissions || [] }
       uni.setStorageSync(STORAGE_KEY, this.user)
     },
     patchUser(data) {

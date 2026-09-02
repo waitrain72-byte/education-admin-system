@@ -8,8 +8,8 @@
       <input
         class="xm-input"
         style="flex: 1"
-        v-model="name"
-        :placeholder="$t('pages.speciality.searchPlaceholder')"
+        v-model="keyword"
+        :placeholder="$t('pages.college.namePlaceholder')"
       />
       <button
         class="xm-btn xm-btn-primary"
@@ -25,7 +25,7 @@
       </button>
     </view>
 
-    <!-- 操作区 -->
+    <!-- 操作区：新增 / 批量管理 -->
     <view class="xm-card xm-row">
       <button
         class="xm-btn xm-btn-primary"
@@ -75,19 +75,7 @@
             >{{ item.name }}</view
           >
         </view>
-        <view class="xm-label">ID: {{ item.id }}</view>
-      </view>
-      <view
-        class="xm-label"
-        style="margin-top: 8rpx"
-        >{{ $t('pages.speciality.content') }}: {{ item.content }}</view
-      >
-      <view
-        class="xm-row"
-        style="margin-top: 8rpx"
-      >
-        <view class="xm-label">{{ $t('pages.speciality.college') }}: {{ item.collegeName }}</view>
-        <view class="xm-label">{{ $t('pages.speciality.score') }}: {{ item.score }}</view>
+        <view class="xm-label">{{ $t('pages.college.id') }}: {{ item._index }}</view>
       </view>
       <view
         class="xm-actions"
@@ -108,13 +96,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -128,40 +110,14 @@
       class="xm-popup"
     >
       <view class="xm-popup-title"
-        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.speciality.dialogTitle') }}</view
+        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.college.dialogTitle') }}</view
       >
       <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.speciality.name') }}</view>
+        <view class="xm-form-label">{{ $t('pages.college.nameLabel') }}</view>
         <input
           class="xm-input"
           v-model="form.name"
-          :placeholder="$t('pages.speciality.ruleNameRequired')"
-        />
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.speciality.content') }}</view>
-        <textarea
-          class="xm-textarea"
-          v-model="form.content"
-          :placeholder="$t('pages.speciality.content')"
-        />
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.speciality.college') }}</view>
-        <picker
-          :range="collegeLabels"
-          :value="collegeIndex"
-          @change="onCollegeChange"
-        >
-          <view class="xm-input">{{ collegeName(form.collegeId) || $t('pages.speciality.collegePlaceholder') }}</view>
-        </picker>
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.speciality.score') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.score"
-          :placeholder="$t('pages.speciality.score')"
+          :placeholder="$t('pages.college.namePlaceholder')"
         />
       </view>
       <view
@@ -188,17 +144,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { get } from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
-const name = ref('')
+const keyword = ref('')
 const manageMode = ref(false)
-const collegeData = ref([])
 
 const {
   list,
@@ -218,41 +172,13 @@ const {
   del,
   delBatch,
 } = useCrud({
-  url: '/speciality',
-  getParams: () => ({ name: name.value }),
+  url: '/college',
+  getParams: () => ({ name: keyword.value }),
   validate: (f) => {
-    if (!f.name) return t('pages.speciality.ruleNameRequired')
+    if (!f.name) return t('pages.college.ruleNameRequired')
     return ''
   },
 })
-
-// 级联下拉：上级学院列表（接口与 Web 端一致），表单打开时加载
-const loadCollege = async () => {
-  try {
-    const res = await get('/college/selectAll')
-    if (res.data && res.data.code === '200') {
-      collegeData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  } catch {
-    // 请求层已统一提示
-  }
-}
-
-const collegeLabels = computed(() => collegeData.value.map((item) => item.name))
-const collegeIndex = computed(() => {
-  const idx = collegeData.value.findIndex((item) => item.id === form.value.collegeId)
-  return idx >= 0 ? idx : 0
-})
-const collegeName = (id) => {
-  const item = collegeData.value.find((c) => c.id === id)
-  return item ? item.name : ''
-}
-const onCollegeChange = (e) => {
-  const item = collegeData.value[Number(e.detail.value)]
-  if (item) form.value.collegeId = item.id
-}
 
 const toggleManage = () => {
   manageMode.value = !manageMode.value
@@ -265,28 +191,22 @@ const toggleSelect = (id) => {
   else selectedIds.value.push(id)
 }
 
-const onAdd = () => {
-  loadCollege()
-  handleAdd({})
-}
-const onEdit = (row) => {
-  loadCollege()
-  handleEdit(row)
-}
+const onAdd = () => handleAdd({})
+const onEdit = (row) => handleEdit(row)
 const onReset = () => {
-  name.value = ''
+  keyword.value = ''
   search()
 }
 
 // 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
 onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.speciality') })
+  uni.setNavigationBarTitle({ title: t('menu.college') })
   if (!userStore.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/login' })
     return
   }
   if (!['ADMIN'].includes(userStore.role)) {
-    uni.showToast({ title: t('errors.403'), icon: 'none' })
+    uni.showToast({ title: t('forbidden.message'), icon: 'none' })
     setTimeout(() => uni.navigateBack(), 800)
     return
   }

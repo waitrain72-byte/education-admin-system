@@ -102,8 +102,10 @@ import { t, apiMessage } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass, pullThemeFromServer } from '@/composables/useTheme'
 import { pullLocaleFromServer } from '@/composables/useLocale'
+import { usePermission } from '@/composables/usePermission'
 
 const userStore = useUserStore()
+const { pullPermissions } = usePermission()
 const captchaUrl = ref('')
 const form = ref({ username: '', password: '', captcha: '', role: '' })
 
@@ -143,6 +145,8 @@ const login = () => {
     .then((res) => {
       if (res.data.code === '200') {
         userStore.updateUser(res.data.data)
+        // 拉取当前用户 RBAC 权限码（与 Web 端一致，供首页菜单按权限过滤）
+        pullPermissions()
         pullThemeFromServer()
         pullLocaleFromServer()
         uni.reLaunch({ url: '/pages/home/home' })
@@ -168,7 +172,8 @@ refreshCaptcha()
 .login-page {
   min-height: 100vh;
   background: linear-gradient(180deg, var(--xm-header) 0%, var(--xm-bg-page) 45%);
-  padding: 120rpx 40rpx 40rpx;
+  /* 自定义导航页：顶部间距 = 状态栏实际高度 + 50rpx，适配刘海屏/胶囊按钮区域 */
+  padding: calc(var(--status-bar-height, 25px) + 50rpx) 40rpx 40rpx;
   box-sizing: border-box;
 }
 

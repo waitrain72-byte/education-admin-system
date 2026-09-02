@@ -28,6 +28,8 @@ export default {
     loadMore: 'Load more',
     noMore: 'No more data',
     empty: 'No data yet',
+    loading: 'Loading…',
+    all: 'All',
     manageMode: 'Batch manage',
   },
 
@@ -50,9 +52,10 @@ export default {
     admin: 'Administrators',
     teacher: 'Teachers',
     student: 'Students',
-    person: 'Profile',
-    password: 'Change Password',
-  },
+        person: 'Profile',
+        password: 'Change Password',
+        mine: 'Mine',
+    },
 
   layout: {
     title: 'Educational Management System',
@@ -62,6 +65,7 @@ export default {
     changePassword: 'Change Password',
     logout: 'Sign Out',
     loggedOut: 'Signed out',
+    logoutConfirm: 'Are you sure you want to sign out?',
     groupInfo: 'Information',
     groupAdmin: 'Administration',
     groupTeach: 'Teaching',
@@ -133,6 +137,7 @@ export default {
     welcome: 'Hi {name}, welcome to the system',
     notice: 'Academic Notices',
     examplan: 'Exam Schedule',
+    viewAll: 'View All',
     attendanceStats: 'Attendance Stats',
     scoreStats: 'Score Stats',
     quickEntry: 'Quick Entry',

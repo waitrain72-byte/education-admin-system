@@ -29,6 +29,8 @@ export default {
     loadMore: '加载更多',
     noMore: '没有更多了',
     empty: '暂无数据',
+    loading: '加载中…',
+    all: '全部',
     manageMode: '批量管理',
   },
 
@@ -53,6 +55,7 @@ export default {
     student: '学生信息',
     person: '个人信息',
     password: '修改密码',
+    mine: '我的',
   },
 
   layout: {
@@ -63,6 +66,7 @@ export default {
     changePassword: '修改密码',
     logout: '退出登录',
     loggedOut: '已退出登录',
+    logoutConfirm: '确定要退出登录吗？',
     groupInfo: '信息公告',
     groupAdmin: '行政管理',
     groupTeach: '教学管理',
@@ -134,6 +138,7 @@ export default {
     welcome: '您好，{name}！欢迎使用本系统',
     notice: '教务通知',
     examplan: '考试安排',
+    viewAll: '查看全部',
     attendanceStats: '考勤统计',
     scoreStats: '成绩统计',
     quickEntry: '功能入口',

@@ -16,31 +16,33 @@
         />
       </view>
       <view class="xm-row">
-        <picker
-          style="flex: 1"
-          :range="statusLabels"
-          :value="searchStatusIndex"
-          @change="onSearchStatusChange"
-        >
-          <view
-            class="xm-input picker-display"
-            :class="{ 'picker-placeholder': !status }"
-          >
-            {{ status ? statusLabelOf(status) : $t('pages.apply.statusPlaceholder') }}
-          </view>
-        </picker>
         <button
           class="xm-btn xm-btn-primary"
+          style="flex: 1"
           @click="search"
         >
           {{ $t('common.search') }}
         </button>
         <button
           class="xm-btn xm-btn-plain"
+          style="flex: 1; margin-left: 16rpx"
           @click="onReset"
         >
           {{ $t('common.reset') }}
         </button>
+      </view>
+    </view>
+
+    <!-- 状态快捷筛选 Tab：全部/待审核/审核通过/审核不通过（点击即筛选） -->
+    <view class="xm-card status-tabs">
+      <view
+        v-for="tab in statusTabs"
+        :key="tab.value"
+        class="status-tab"
+        :class="{ active: status === tab.value }"
+        @click="onTabChange(tab.value)"
+      >
+        {{ tab.label }}
       </view>
     </view>
 
@@ -82,7 +84,7 @@
             >{{ statusLabelOf(row.status) }}</view
           >
         </view>
-        <view class="xm-label">ID: {{ row.id }}</view>
+        <view class="xm-label">{{ $t('pages.apply.id') }}: {{ row._index }}</view>
       </view>
       <view
         class="xm-row"
@@ -136,13 +138,7 @@
       </view>
     </view>
 
-    <view
-      v-if="list.length"
-      class="xm-empty"
-      @click="loadNext"
-    >
-      {{ finished() ? $t('common.noMore') : $t('common.loadMore') }}
-    </view>
+    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
 
     <!-- 请假申请/编辑表单（底部弹层，学生） -->
     <view
@@ -302,9 +298,12 @@ const statusTagClass = (value) => {
 const searchStatusIndex = computed(() => statusOptions.value.findIndex((o) => o.value === status.value))
 const checkStatusIndex = computed(() => statusOptions.value.findIndex((o) => o.value === form.value.status))
 
-const onSearchStatusChange = (e) => {
-  const opt = statusOptions.value[e.detail.value]
-  status.value = opt ? opt.value : ''
+// 顶部状态筛选 Tab：'' = 全部（useCrud 会剔除空参数，后端不加 status 条件）
+const statusTabs = computed(() => [{ label: t('common.all'), value: '' }, ...statusOptions.value])
+const onTabChange = (value) => {
+  if (status.value === value) return
+  status.value = value
+  search()
 }
 
 const onCheckStatusChange = (e) => {
@@ -396,5 +395,28 @@ onReachBottom(() => loadNext())
 
 .picker-placeholder {
   color: var(--xm-text-2);
+}
+
+/* 顶部状态筛选 Tab */
+.status-tabs {
+  display: flex;
+  gap: 12rpx;
+  padding: 16rpx 20rpx;
+}
+
+.status-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  border-radius: 10rpx;
+  font-size: 26rpx;
+  color: var(--xm-text-2);
+  background: var(--xm-bg-hover);
+}
+
+.status-tab.active {
+  background: var(--xm-brand);
+  color: #ffffff;
+  font-weight: 600;
 }
 </style>
