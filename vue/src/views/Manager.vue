@@ -1,7 +1,11 @@
 <template>
-  <div class="manager-container">
+  <div class="manager-container" :class="{ 'sidebar-open': sidebarOpen }">
     <!--  头部  -->
     <div class="manager-header">
+      <!-- 窄屏侧边栏开关（桌面端由 CSS 隐藏） -->
+      <button class="sidebar-toggle" type="button" @click="sidebarOpen = !sidebarOpen">
+        <el-icon><Fold /></el-icon>
+      </button>
       <div class="manager-header-left">
         <img src="@/assets/imgs/教务系统.png" />
         <!-- 英文标题较长，切换小字号避免撑破 60px 头部 -->
@@ -75,7 +79,7 @@
 
     <!--  主体  -->
     <div class="manager-main">
-      <!--  侧边栏  -->
+      <!--  侧边栏（窄屏下由 CSS 变为抽屉，sidebar-open 控制展开）  -->
       <div class="manager-main-left">
         <el-menu
             :default-openeds="openeds"
@@ -100,6 +104,9 @@
         </el-menu>
       </div>
 
+      <!-- 抽屉遮罩：仅窄屏出现 -->
+      <div class="sidebar-mask" @click="sidebarOpen = false"></div>
+
       <!--  数据表格（keep-alive 缓存已打开标签页对应的页面，关闭标签即释放缓存）  -->
       <div class="manager-main-right">
         <router-view v-slot="{ Component }">
@@ -119,7 +126,7 @@
 import { ref, computed, watch, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Sunny, Moon } from '@element-plus/icons-vue'
+import { Sunny, Moon, Fold } from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
 import { usePermission } from '@/composables/usePermission'
 import { isDark, setThemeMode } from '@/composables/useTheme'
@@ -134,6 +141,17 @@ const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726
 // 使用全局用户状态
 const { user, refreshUser, clearUser } = useUser()
 const { pullPermissions } = usePermission()
+
+// 窄屏侧边栏抽屉开关（≤1024px 生效，桌面端由 CSS 忽略）
+const sidebarOpen = ref(false)
+
+// 路由切换后自动收起抽屉（窄屏点击菜单跳转后回到内容区）
+watch(
+    () => route.path,
+    () => {
+      sidebarOpen.value = false
+    },
+)
 
 // 菜单分组配置：顺序即展示顺序（标题为 i18n 键）
 const menuGroupConfig: Record<string, { title: string; icon: string }> = {

@@ -340,3 +340,97 @@ html.dark .theme-switch {
     opacity: 0;
     transform: translateY(-8px);
 }
+
+/* ===== 响应式适配（平板 / 手机浏览器） ===== */
+/* 汉堡按钮与遮罩：桌面端不渲染效果 */
+.sidebar-toggle {
+    display: none;
+}
+
+.sidebar-mask {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    /* 侧边栏变为抽屉：默认收起，点击汉堡按钮展开 */
+    .sidebar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        margin: 0 6px 0 10px;
+        padding: 0;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--xm-header-text, #fff);
+        font-size: 20px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .sidebar-toggle:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .manager-main-left {
+        position: fixed;
+        top: 60px;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        width: 220px;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .sidebar-open .manager-main-left {
+        transform: translateX(0);
+    }
+
+    .sidebar-mask {
+        display: block;
+        position: fixed;
+        top: 60px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 99;
+        background: rgba(0, 0, 0, 0.35);
+    }
+
+    /* 中等宽度：头部中间区允许收缩，多标签可横向滚动 */
+    .manager-header-center {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .manager-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    /* 手机：隐藏面包屑与多标签（信息密度过高），只保留 logo + 关键操作 */
+    .manager-header-center {
+        display: none;
+    }
+
+    /* 头像旁的用户名隐藏，只留头像 */
+    .manager-header-right .avatar > div {
+        display: none;
+    }
+
+    .manager-main-right {
+        padding: 10px;
+    }
+
+    /* 弹窗在小屏接近全宽（max-width 约束优先于内联 width，无需改各页面） */
+    .el-dialog {
+        max-width: 92%;
+    }
+}
+
