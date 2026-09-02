@@ -302,11 +302,11 @@ const renderLine = () => {
       trigger: 'axis',
       // appendToBody：提示框挂到 body，避免被卡片/画布裁剪导致悬停看不到
       appendToBody: true,
-      confine: true,
-      axisPointer: { type: 'cross', crossStyle: { color: ct.splitLineColor } },
+      // 单竖线指针：不用 cross（其 Y 轴标签会随鼠标显示插值小数，人数轴必须是整数）
+      axisPointer: { type: 'line', lineStyle: { color: ct.splitLineColor, type: 'dashed' } },
       formatter: (params: any) => {
         const p = Array.isArray(params) ? params[0] : params
-        return `${lineX.value[p.dataIndex] ?? p.name}：${p.value} 人`
+        return `${lineX.value[p.dataIndex] ?? p.name}：${Math.round(p.value)} 人`
       },
     },
     // containLabel：网格自动容纳轴标签，边缘文字不再被裁剪；
