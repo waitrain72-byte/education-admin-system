@@ -55,7 +55,7 @@
       <div class="card chart-card">
         <div class="card-title">
           <span>{{ chartLineTitle }}</span>
-          <span v-if="chartLineSub" class="chart-sub">{{ chartLineSub }}</span>
+          <span class="chart-sub">{{ lineSubText }}</span>
         </div>
         <div v-loading="lineLoading" class="chart-body">
           <div ref="lineEl" v-show="!lineEmpty" class="chart"></div>
@@ -77,6 +77,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
+import { t } from '@/i18n'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -110,6 +111,10 @@ const chartPieTitle = ref('')
 const chartPieSub = ref('')
 const chartLineTitle = ref('')
 const chartLineSub = ref('')
+/** 折线卡片副标题：后端统计维度说明 + Y 轴含义（避免轴名画进画布被裁剪） */
+const lineSubText = computed(() =>
+    [chartLineSub.value, t('home.axisYNote')].filter(Boolean).join(' · '),
+)
 
 // 图表配色随主题切换（浅色/深色文字、网格线 + 品牌色序列）
 const mode = useTheme()
@@ -135,9 +140,22 @@ const themed = (opts: any) => {
     textStyle: { color: t.textColor },
     color: palette,
     tooltip: { ...opts.tooltip, backgroundColor: t.tooltipBg, borderColor: t.tooltipBorder, textStyle: { color: t.textColor } },
+    // 合并而非替换：保留各图自定义的 axisLabel 配置（interval/hideOverlap 等）
     legend: opts.legend ? { ...opts.legend, textStyle: { color: t.textColor } } : undefined,
-    xAxis: opts.xAxis ? { ...opts.xAxis, axisLabel: { color: t.textColor }, axisLine: { lineStyle: { color: t.axisLineColor } } } : undefined,
-    yAxis: opts.yAxis ? { ...opts.yAxis, axisLabel: { color: t.textColor }, splitLine: { lineStyle: { color: t.splitLineColor } } } : undefined,
+    xAxis: opts.xAxis
+        ? {
+            ...opts.xAxis,
+            axisLabel: { ...opts.xAxis.axisLabel, color: t.textColor },
+            axisLine: { ...opts.xAxis.axisLine, lineStyle: { ...opts.xAxis.axisLine?.lineStyle, color: t.axisLineColor } },
+          }
+        : undefined,
+    yAxis: opts.yAxis
+        ? {
+            ...opts.yAxis,
+            axisLabel: { ...opts.yAxis.axisLabel, color: t.textColor },
+            splitLine: { ...opts.yAxis.splitLine, lineStyle: { ...opts.yAxis.splitLine?.lineStyle, color: t.splitLineColor } },
+          }
+        : undefined,
   }
 }
 
@@ -276,18 +294,34 @@ const renderLine = () => {
   const el = lineEl.value
   if (!el || !lineY.value.length) return
   lineChart.value = lineChart.value || echarts.init(el)
-  const t = chartTheme.value
+  const ct = chartTheme.value
+  // X 轴原始文案较长（如「优（90分-100分）」），轴上仅显示段名避免遮挡，完整分数区间放入悬停提示
+  const xShort = lineX.value.map((s: string) => s.split('（')[0])
   lineChart.value.setOption(themed({
     tooltip: {
       trigger: 'axis',
       // appendToBody：提示框挂到 body，避免被卡片/画布裁剪导致悬停看不到
       appendToBody: true,
       confine: true,
-      axisPointer: { type: 'cross', crossStyle: { color: t.splitLineColor } },
+      axisPointer: { type: 'cross', crossStyle: { color: ct.splitLineColor } },
+      formatter: (params: any) => {
+        const p = Array.isArray(params) ? params[0] : params
+        return `${lineX.value[p.dataIndex] ?? p.name}：${p.value} 人`
+      },
     },
-    grid: { left: 44, right: 24, top: 40, bottom: 30 },
-    xAxis: { type: 'category', boundaryGap: false, data: lineX.value },
-    yAxis: { type: 'value', minInterval: 1 },
+    // containLabel：网格自动容纳轴标签，边缘文字不再被裁剪；
+    // 轴含义（X=成绩段 / Y=人数）在卡片标题栏副标题说明，画布内不放轴名避免挤压
+    grid: { left: 8, right: 24, top: 32, bottom: 8, containLabel: true },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: xShort,
+      axisLabel: { interval: 0, hideOverlap: false },
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+    },
     series: [{
       data: lineY.value,
       type: 'line',
@@ -299,7 +333,8 @@ const renderLine = () => {
       label: {
         show: true,
         position: 'top',
-        color: t.textColor,
+        formatter: (p: any) => `${p.value}`,
+        color: ct.textColor,
         fontSize: 14,
         fontWeight: 600,
         distance: 8,

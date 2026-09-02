@@ -133,6 +133,7 @@ export default {
         notice: '教务通知',
         examplan: '考试安排',
         viewAll: '查看全部',
+        axisYNote: 'Y 轴：人数',
     },
 
     notFound: {

@@ -131,6 +131,7 @@ export default {
         notice: 'Academic Notices',
         examplan: 'Exam Schedule',
         viewAll: 'View All',
+        axisYNote: 'Y-Axis: Count',
     },
 
     notFound: {
