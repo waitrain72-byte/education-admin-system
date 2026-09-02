@@ -1,40 +1,67 @@
 <template>
   <div>
-    <div class="card" style="padding: 15px; display: flex; align-items: center; justify-content: space-between">
+    <!-- 欢迎条 -->
+    <div class="card home-hello">
       <span>{{ $t('home.welcome', { name: user && user.name }) }}</span>
-      <el-button v-permission="'dashboard:view'" type="primary" size="small" @click="router.push('/dashboard')">{{ $t('pages.dashboard.entry') }}</el-button>
+      <el-button type="primary" size="small" @click="router.push('/dashboard')">{{ $t('pages.dashboard.entry') }}</el-button>
     </div>
 
-
-    <!-- ========== 通知和考试安排 ========== -->
-    <div style="display: flex; margin: 10px 0">
-      <div style="width: 50%;" class="card">
-        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">{{ $t('home.notice') }}</div>
-        <el-timeline reverse>
-          <el-timeline-item v-for="item in notices" :key="item.id" :timestamp="item.time">
+    <!-- ========== 通知和考试安排（最多各 5 条，右上角可查看全部） ========== -->
+    <div class="home-cols">
+      <div class="card">
+        <div class="card-title">
+          <span>{{ $t('home.notice') }}</span>
+          <router-link class="card-more" to="/notice">{{ $t('home.viewAll') }} ›</router-link>
+        </div>
+        <el-timeline v-if="notices.length" reverse>
+          <el-timeline-item v-for="item in notices.slice(0, 5)" :key="item.id" :timestamp="item.time">
             <el-popover placement="right" width="200" trigger="hover" :content="item.content">
-              <template #reference><span>{{ item.title }}</span></template>
+              <template #reference><span class="tl-item">{{ item.title }}</span></template>
             </el-popover>
           </el-timeline-item>
         </el-timeline>
+        <el-empty v-else :image-size="60" :description="$t('common.empty')" />
       </div>
 
-      <div style="width: 50%;" class="card">
-        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">{{ $t('home.examplan') }}</div>
-        <el-timeline reverse>
-          <el-timeline-item v-for="item in examplans" :key="item.id" :timestamp="item.time">
+      <div class="card">
+        <div class="card-title">
+          <span>{{ $t('home.examplan') }}</span>
+          <router-link class="card-more" to="/examplan">{{ $t('home.viewAll') }} ›</router-link>
+        </div>
+        <el-timeline v-if="examplans.length" reverse>
+          <el-timeline-item v-for="item in examplans.slice(0, 5)" :key="item.id" :timestamp="item.time">
             <el-popover placement="right" width="200" trigger="hover" :content="item.content">
-              <template #reference><span>{{ item.name }}</span></template>
+              <template #reference><span class="tl-item">{{ item.name }}</span></template>
             </el-popover>
           </el-timeline-item>
         </el-timeline>
+        <el-empty v-else :image-size="60" :description="$t('common.empty')" />
       </div>
     </div>
 
-    <!-- ========== 图表 ========== -->
-    <div style="display: flex">
-      <div id="pie" class="card" style="height: 400px; width: 50%"></div>
-      <div id="line" class="card" style="height: 400px; width: 50%"></div>
+    <!-- ========== 图表（考勤饼图 / 成绩折线） ========== -->
+    <div class="home-cols">
+      <div class="card chart-card">
+        <div class="card-title">
+          <span>{{ chartPieTitle }}</span>
+          <span v-if="chartPieSub" class="chart-sub">{{ chartPieSub }}</span>
+        </div>
+        <div v-loading="pieLoading" class="chart-body">
+          <div ref="pieEl" v-show="!pieEmpty" class="chart"></div>
+          <el-empty v-if="pieEmpty" :image-size="80" :description="$t('common.empty')" />
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-title">
+          <span>{{ chartLineTitle }}</span>
+          <span v-if="chartLineSub" class="chart-sub">{{ chartLineSub }}</span>
+        </div>
+        <div v-loading="lineLoading" class="chart-body">
+          <div ref="lineEl" v-show="!lineEmpty" class="chart"></div>
+          <el-empty v-if="lineEmpty" :image-size="80" :description="$t('common.empty')" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -42,8 +69,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'Home' })
 
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, watch, onMounted, onBeforeUnmount, onActivated, nextTick } from 'vue'
 import * as echarts from 'echarts/core'
 import { PieChart, LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
@@ -51,7 +77,6 @@ import { CanvasRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
-import { apiMessage } from '@/i18n'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -70,146 +95,233 @@ echarts.use([
 const { user } = useUser()
 const notices = ref<any[]>([])
 const examplans = ref<any[]>([])
+const pieLoading = ref(false)
+const lineLoading = ref(false)
+const pieEmpty = ref(false)
+const lineEmpty = ref(false)
+
+const pieEl = ref<HTMLDivElement>()
+const lineEl = ref<HTMLDivElement>()
 const pieChart = ref<ReturnType<typeof echarts.init>>()
 const lineChart = ref<ReturnType<typeof echarts.init>>()
 
-// 考勤统计数据
-const attendanceStats = reactive({
-  late: 0,
-  absent: 0,
-  earlyLeave: 0,
-  normal: 0
+// 图表卡片标题（原接口返回的 text/subtext，改为显示在卡片标题栏而非图内，排版更清爽）
+const chartPieTitle = ref('')
+const chartPieSub = ref('')
+const chartLineTitle = ref('')
+const chartLineSub = ref('')
+
+// 图表配色随主题切换（浅色/深色文字、网格线 + 品牌色序列）
+const mode = useTheme()
+const dark = computed(() => mode.value === 'dark')
+const chartTheme = computed(() => {
+  const d = dark.value
+  return {
+    textColor: d ? '#cfd3dc' : '#303133',
+    subTextColor: d ? '#a3a6ad' : '#909399',
+    axisLineColor: d ? '#363b44' : '#e4e7ed',
+    splitLineColor: d ? '#2a2f37' : '#e4e7ed',
+    tooltipBg: d ? '#2a2f37' : '#ffffff',
+    tooltipBorder: d ? '#363b44' : '#e4e7ed',
+  }
+})
+// 品牌色系：蓝紫主色 + 语义色（正常/迟到/早退/缺勤）
+const palette = ['#6366f1', '#67c23a', '#e6a23c', '#409eff', '#f56c6c', '#0ea5e9']
+
+const themed = (opts: any) => {
+  const t = chartTheme.value
+  return {
+    ...opts,
+    textStyle: { color: t.textColor },
+    color: palette,
+    tooltip: { ...opts.tooltip, backgroundColor: t.tooltipBg, borderColor: t.tooltipBorder, textStyle: { color: t.textColor } },
+    legend: opts.legend ? { ...opts.legend, textStyle: { color: t.textColor } } : undefined,
+    xAxis: opts.xAxis ? { ...opts.xAxis, axisLabel: { color: t.textColor }, axisLine: { lineStyle: { color: t.axisLineColor } } } : undefined,
+    yAxis: opts.yAxis ? { ...opts.yAxis, axisLabel: { color: t.textColor }, splitLine: { lineStyle: { color: t.splitLineColor } } } : undefined,
+  }
+}
+
+// ---------- 数据加载（home 在多标签页 keep-alive 中缓存，onActivated 每次切回刷新） ----------
+let firstActivate = true
+onActivated(async () => {
+  // 首次挂载由 onMounted 负责；后续每次切回首页都刷新数据并校正图表尺寸
+  if (firstActivate) {
+    firstActivate = false
+    return
+  }
+  loadAll()
+  await nextTick()
+  pieChart.value?.resize()
+  lineChart.value?.resize()
 })
 
-// 成绩统计数据
-const scoreStats = reactive({
-  excellent: 0,
-  good: 0,
-  fail: 0
-})
-
-// 从饼图接口获取考勤统计
-const getAttendanceStats = () => {
-  request.get('/attendance/getPie').then((res: any) => {
-    if (res.data.code === '200') {
-      const data = res.data.data.data || []
-      data.forEach((item: any) => {
-        if (item.name === '迟到') attendanceStats.late = item.value || 0
-        else if (item.name === '缺勤') attendanceStats.absent = item.value || 0
-        else if (item.name === '早退') attendanceStats.earlyLeave = item.value || 0
-        else if (item.name === '正常') attendanceStats.normal = item.value || 0
-      })
-    }
+const loadNotices = () => {
+  request.get('/notice/selectAll').then((res: any) => {
+    notices.value = res.data?.data || []
   })
 }
 
-// 从折线图接口获取成绩统计
-const getScoreStats = () => {
-  request.get('/score/getLine').then((res: any) => {
+const loadExamplans = () => {
+  request.get('/examplan/selectAll').then((res: any) => {
+    examplans.value = res.data?.data || []
+  })
+}
+
+const loadAll = () => {
+  loadNotices()
+  loadExamplans()
+  loadPie()
+  loadLine()
+}
+
+// 最近一次图表数据缓存：主题切换时据此按新主题重建图表
+const pieRows = ref<any[]>([])
+const lineX = ref<string[]>([])
+const lineY = ref<number[]>([])
+
+/** 考勤饼图：同一接口只请求一次（原实现中 getAttendanceStats 与 getPie 重复请求同接口） */
+const loadPie = async () => {
+  pieLoading.value = true
+  try {
+    const res: any = await request.get('/attendance/getPie')
     if (res.data.code === '200') {
-      const yAxisData = res.data.data.yAxis || []
-      if (yAxisData.length >= 5) {
-        scoreStats.excellent = yAxisData[0] || 0
-        scoreStats.good = yAxisData[1] || 0
-        scoreStats.fail = yAxisData[yAxisData.length - 1] || 0
+      const data = res.data.data
+      chartPieTitle.value = data?.text || ''
+      chartPieSub.value = data?.subtext || ''
+      const rows: any[] = data?.data || []
+      pieEmpty.value = !rows.length
+      pieRows.value = rows
+      if (rows.length) {
+        // 容器可能刚从 v-show 隐藏态转为显示，等 DOM 更新后再初始化图表，避免 0 尺寸
+        await nextTick()
+        renderPie()
       }
     }
-  })
-}
-
-const pieOptions: any = {
-  title: { text: '', subtext: '', left: 'center' },
-  tooltip: { trigger: 'item', formatter: '{a} <br/>{b} : {c} ({d}%)' },
-  legend: { orient: 'vertical', left: 'left' },
-  series: [{ name: '', type: 'pie', radius: '50%', center: ['50%', '60%'], data: [] }]
-}
-
-const lineOptions: any = {
-  title: { text: '', subtext: '', left: 'center' },
-  xAxis: { type: 'category', data: [] },
-  yAxis: { type: 'value' },
-  tooltip: { trigger: 'item' },
-  series: [{ data: [], type: 'line' }]
-}
-
-// 图表配色跟随主题：echarts 画布不感知 CSS 变量，需在暗色下显式替换文字与网格线颜色
-const mode = useTheme()
-const chartTheme = computed(() => {
-  const dark = mode.value === 'dark'
-  return {
-    textColor: dark ? '#cfd3dc' : '#303133',
-    subTextColor: dark ? '#a3a6ad' : '#909399',
-    axisLineColor: dark ? '#363b44' : '#e4e7ed',
-    splitLineColor: dark ? '#2a2f37' : '#e4e7ed',
+  } catch {
+    // 请求层已统一提示
+  } finally {
+    pieLoading.value = false
   }
-})
+}
 
-const themeOptions = (opts: any): any => {
+/** 成绩折线：同上，合并原 getScoreStats/getLine 两次重复请求 */
+const loadLine = async () => {
+  lineLoading.value = true
+  try {
+    const res: any = await request.get('/score/getLine')
+    if (res.data.code === '200') {
+      const data = res.data.data
+      chartLineTitle.value = data?.text || ''
+      chartLineSub.value = data?.subtext || ''
+      const x: string[] = data?.xAxis || []
+      const y: number[] = data?.yAxis || []
+      lineEmpty.value = !y.length
+      lineX.value = x
+      lineY.value = y
+      if (y.length) {
+        await nextTick()
+        renderLine()
+      }
+    }
+  } catch {
+    // 请求层已统一提示
+  } finally {
+    lineLoading.value = false
+  }
+}
+
+const renderPie = () => {
+  const el = pieEl.value
+  if (!el || !pieRows.value.length) return
+  pieChart.value = pieChart.value || echarts.init(el)
   const t = chartTheme.value
-  const themed: any = { ...opts, textStyle: { color: t.textColor } }
-  if (themed.title) {
-    themed.title = { ...themed.title, textStyle: { color: t.textColor }, subtextStyle: { color: t.subTextColor } }
-  }
-  if (themed.legend) {
-    themed.legend = { ...themed.legend, textStyle: { color: t.textColor } }
-  }
-  if (themed.xAxis) {
-    themed.xAxis = {
-      ...themed.xAxis,
-      axisLabel: { ...themed.xAxis.axisLabel, color: t.textColor },
-      axisLine: { ...themed.xAxis.axisLine, lineStyle: { ...themed.xAxis.axisLine?.lineStyle, color: t.axisLineColor } },
-    }
-  }
-  if (themed.yAxis) {
-    themed.yAxis = {
-      ...themed.yAxis,
-      axisLabel: { ...themed.yAxis.axisLabel, color: t.textColor },
-      splitLine: { ...themed.yAxis.splitLine, lineStyle: { ...themed.yAxis.splitLine?.lineStyle, color: t.splitLineColor } },
-    }
-  }
-  return themed
+  pieChart.value.setOption(themed({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}：{c} 人次（{d}%）',
+      // appendToBody：提示框挂到 body，避免被卡片/画布裁剪导致悬停看不到
+      appendToBody: true,
+      confine: true,
+    },
+    legend: { orient: 'horizontal', bottom: 0, icon: 'circle', itemWidth: 10, itemHeight: 10 },
+    series: [{
+      name: '',
+      type: 'pie',
+      radius: ['38%', '58%'],          // 环形图
+      center: ['50%', '45%'],
+      // 数值常驻显示：每个扇区外拉引导线直接标注「名称 + 人次」，不悬停也能看见
+      avoidLabelOverlap: false,
+      label: {
+        show: true,
+        position: 'outer',
+        formatter: (p: any) => `${p.name}\n${p.value} 人次`,
+        lineHeight: 18,
+        color: t.textColor,
+        fontSize: 13,
+      },
+      labelLine: { show: true, length: 14, length2: 10, lineStyle: { width: 1 } },
+      labelLayout: { hideOverlap: false },
+      itemStyle: { borderRadius: 6, borderColor: t.tooltipBg, borderWidth: 2 },
+      emphasis: {
+        scaleSize: 6,
+        label: { show: true, fontWeight: 'bold' },
+        itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.25)' },
+      },
+      data: pieRows.value,
+    }],
+  }), true)
 }
 
-// 主题切换时重绘两块图表
+const renderLine = () => {
+  const el = lineEl.value
+  if (!el || !lineY.value.length) return
+  lineChart.value = lineChart.value || echarts.init(el)
+  const t = chartTheme.value
+  lineChart.value.setOption(themed({
+    tooltip: {
+      trigger: 'axis',
+      // appendToBody：提示框挂到 body，避免被卡片/画布裁剪导致悬停看不到
+      appendToBody: true,
+      confine: true,
+      axisPointer: { type: 'cross', crossStyle: { color: t.splitLineColor } },
+    },
+    grid: { left: 44, right: 24, top: 40, bottom: 30 },
+    xAxis: { type: 'category', boundaryGap: false, data: lineX.value },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [{
+      data: lineY.value,
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 8,
+      lineStyle: { width: 3 },
+      // 数值常驻显示：每个数据点正上方直接标注人数，不悬停也能看见
+      label: {
+        show: true,
+        position: 'top',
+        color: t.textColor,
+        fontSize: 14,
+        fontWeight: 600,
+        distance: 8,
+      },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: dark.value ? 'rgba(99,102,241,0.35)' : 'rgba(99,102,241,0.25)' },
+            { offset: 1, color: 'rgba(99,102,241,0.02)' },
+          ],
+        },
+      },
+    }],
+  }), true)
+}
+
+// 主题切换：按最新缓存数据 + 新主题色重建图表（不能直接回设旧 option，颜色已被烘焙进去）
 watch(mode, () => {
-  pieChart.value?.setOption(themeOptions(pieOptions))
-  lineChart.value?.setOption(themeOptions(lineOptions))
+  renderPie()
+  renderLine()
 })
-
-const getPie = () => {
-  request.get('/attendance/getPie').then((res: any) => {
-    if (res.data.code === '200') {
-      const chartDom = document.getElementById('pie')
-      if (!chartDom) return
-      // 同一 DOM 只初始化一次，避免重复 init 告警
-      pieChart.value = pieChart.value || echarts.init(chartDom)
-      pieOptions.title.text = res.data.data.text
-      pieOptions.title.subtext = res.data.data.subtext
-      pieOptions.series[0].name = res.data.data.name
-      pieOptions.series[0].data = res.data.data.data
-      pieChart.value.setOption(themeOptions(pieOptions))
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
-const getLine = () => {
-  request.get('/score/getLine').then((res: any) => {
-    if (res.data.code === '200') {
-      const chartDom = document.getElementById('line')
-      if (!chartDom) return
-      lineChart.value = lineChart.value || echarts.init(chartDom)
-      lineOptions.title.text = res.data.data.text
-      lineOptions.title.subtext = res.data.data.subtext
-      lineOptions.xAxis.data = res.data.data.xAxis
-      lineOptions.series[0].data = res.data.data.yAxis
-      lineChart.value.setOption(themeOptions(lineOptions))
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
 
 const handleResize = () => {
   pieChart.value?.resize()
@@ -217,23 +329,11 @@ const handleResize = () => {
 }
 
 onMounted(() => {
-  request.get('/notice/selectAll').then((res: any) => {
-    notices.value = res.data?.data || []
-  })
-  request.get('/examplan/selectAll').then((res: any) => {
-    examplans.value = res.data?.data || []
-  })
-
-  getAttendanceStats()
-  getScoreStats()
-  getPie()
-  getLine()
-
+  loadAll()
   window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
-  // 组件卸载时移除监听并销毁图表实例，避免内存泄漏
   window.removeEventListener('resize', handleResize)
   pieChart.value?.dispose()
   lineChart.value?.dispose()
@@ -246,5 +346,65 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   padding: 20px;
+}
+
+.home-hello {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* 双栏排版：窄屏自动折行成单栏 */
+.home-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.home-cols > .card {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.card-more {
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--xm-brand, #409eff);
+  text-decoration: none;
+}
+
+.card-more:hover {
+  text-decoration: underline;
+}
+
+.tl-item {
+  cursor: default;
+}
+
+.chart-sub {
+  font-size: 12px;
+  font-weight: normal;
+  color: var(--xm-text-secondary);
+}
+
+.chart-body {
+  position: relative;
+  height: 330px;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
 }
 </style>
