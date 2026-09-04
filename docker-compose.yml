@@ -19,8 +19,8 @@ services:
       start_period: 30s
     volumes:
       - mysql_data:/var/lib/mysql
-      # 首次启动自动导入完整数据库备份：全部表结构 + 完整演示数据（含 RBAC 权限表、每教师的
-      # 课程/选课/成绩/考勤/作业/评教）。备份已是全量，无需再单独导入 rbac_permission.sql。
+      # 首次启动自动导入种子：表结构 + 索引 + 精简演示数据 + RBAC 授权（日志表仅结构），
+      # 备份自带 RBAC 与索引，无需再执行其它脚本
       - ./sql/xm_educational_manager-full.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
 
   backend:
@@ -37,7 +37,9 @@ services:
       mysql:
         condition: service_healthy
     volumes:
-      - files_data:/app/files
+      # 绑定宿主机 files 目录：种子引用的 5 个演示头像随仓库分发，部署后头像即可显示；
+      # 运行期上传的文件也落在仓库目录，便于备份
+      - ./files:/app/files
 
   frontend:
     build: ./vue
@@ -49,4 +51,3 @@ services:
 
 volumes:
   mysql_data:
-  files_data:
