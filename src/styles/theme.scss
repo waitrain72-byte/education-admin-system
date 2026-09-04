@@ -1,38 +1,62 @@
-/* ================= 主题变量体系（与 Web 端 theme.css 同源） ================= */
+/* ================= 主题变量体系（与 Web 端 theme.css 同源） =================
+ * 设计规范对齐 GitHub 高星 uni-app 项目（unibest / uview-plus / mall-app-web / wot-design-uni）：
+ * - 全站唯一主色（靛蓝系），导航栏 / tabBar / 按钮 / 链接全部同源（theme.json 同步原生层）
+ * - 圆角分级：卡片 24rpx、输入框 16rpx、标签 999rpx 胶囊
+ * - 字阶：22 / 24 / 26 / 28 / 32 / 40rpx 六级
+ * - 软色标签：浅色底 + 深色字（替代描边式），暗黑模式用 rgba 底保证对比度
+ */
 page {
-  background: #f3f6fe;
+  background: #f4f6fb;
 }
 
 .theme-light {
-  --xm-bg-page: #f3f6fe;
+  --xm-bg-page: #f4f6fb;
   --xm-bg-card: #ffffff;
-  --xm-bg-input: #f5f7fa;
-  --xm-bg-hover: #eef0f3;
-  --xm-text: #303133;
-  --xm-text-2: #909399;
-  --xm-border: #e4e7ed;
-  --xm-brand: #7684ff;
-  --xm-header: #006eff;
+  --xm-bg-input: #f4f6fb;
+  --xm-bg-hover: #eef1f6;
+  --xm-text: #2a2f38;
+  --xm-text-2: #8a90a0;
+  --xm-border: #e8ebf2;
+  --xm-brand: #5b6cff;
+  --xm-brand-grad: linear-gradient(135deg, #5b6cff 0%, #8b5cf6 100%);
+  --xm-brand-soft: #edf0ff;
+  --xm-header: #4f6cff;
   --xm-header-text: #ffffff;
-  --xm-danger: #f56c6c;
-  --xm-warning: #e6a23c;
-  --xm-success: #67c23a;
+  --xm-danger: #f0555f;
+  --xm-danger-soft: #fdedee;
+  --xm-warning: #f59e0b;
+  --xm-warning-soft: #fdf3e3;
+  --xm-success: #22b866;
+  --xm-success-soft: #e6f7ee;
+  --xm-info: #3b82f6;
+  --xm-info-soft: #e8f1fe;
+  --xm-shadow: 0 6rpx 24rpx rgba(42, 63, 127, 0.06);
+  --xm-shadow-brand: 0 10rpx 28rpx rgba(91, 108, 255, 0.32);
 }
 
 .theme-dark {
-  --xm-bg-page: #101418;
-  --xm-bg-card: #1b1f26;
-  --xm-bg-input: #1b1f26;
-  --xm-bg-hover: #242a33;
-  --xm-text: #e5eaf3;
-  --xm-text-2: #a3a6ad;
-  --xm-border: #363b44;
-  --xm-brand: #8b97ff;
-  --xm-header: #1a2634;
-  --xm-header-text: #e5eaf3;
-  --xm-danger: #f56c6c;
-  --xm-warning: #e6a23c;
-  --xm-success: #67c23a;
+  --xm-bg-page: #0f1319;
+  --xm-bg-card: #1a1f29;
+  --xm-bg-input: #242b38;
+  --xm-bg-hover: #242b38;
+  --xm-text: #e6eaf2;
+  --xm-text-2: #99a0af;
+  --xm-border: #2b3342;
+  --xm-brand: #7d89ff;
+  --xm-brand-grad: linear-gradient(135deg, #5b6cff 0%, #8b5cf6 100%);
+  --xm-brand-soft: rgba(125, 137, 255, 0.16);
+  --xm-header: #232b3d;
+  --xm-header-text: #e6eaf2;
+  --xm-danger: #f56a72;
+  --xm-danger-soft: rgba(245, 106, 114, 0.16);
+  --xm-warning: #f5a623;
+  --xm-warning-soft: rgba(245, 166, 35, 0.14);
+  --xm-success: #34c97b;
+  --xm-success-soft: rgba(52, 201, 123, 0.14);
+  --xm-info: #5a9bff;
+  --xm-info-soft: rgba(90, 155, 255, 0.14);
+  --xm-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.28);
+  --xm-shadow-brand: 0 10rpx 28rpx rgba(0, 0, 0, 0.28);
 }
 
 /* 页面根容器：由每个页面的根 view 绑定 themeClass（全局混入） */
@@ -40,23 +64,28 @@ page {
   min-height: 100vh;
   background: var(--xm-bg-page);
   color: var(--xm-text);
-  padding: 20rpx;
+  padding: 24rpx;
   box-sizing: border-box;
 }
 
 /* ================= 通用组件类 ================= */
 .xm-card {
   background: var(--xm-bg-card);
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  border-radius: 24rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--xm-shadow);
 }
 
+/* 区块标题：左侧主色竖条，与高星项目 Card 头部一致 */
 .xm-card-title {
   font-size: 30rpx;
   font-weight: bold;
   margin-bottom: 20rpx;
+  padding-left: 18rpx;
+  border-left: 8rpx solid var(--xm-brand);
+  border-radius: 4rpx;
+  line-height: 1.3;
 }
 
 .xm-row {
@@ -69,10 +98,19 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16rpx;
+}
+
+/* 单行溢出省略：配合 flex 子项的 min-width: 0 使用，防止长文本把右侧内容挤出去 */
+.xm-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .xm-label {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: var(--xm-text-2);
 }
 
@@ -82,11 +120,20 @@ page {
   word-break: break-all;
 }
 
+/* 空状态：emoji 图标 + 文案（z-paging / uview 空态样式），全站自动生效 */
 .xm-empty {
   text-align: center;
   color: var(--xm-text-2);
   font-size: 26rpx;
-  padding: 60rpx 0;
+  padding: 80rpx 0;
+}
+
+.xm-empty::before {
+  content: '📭';
+  display: block;
+  font-size: 80rpx;
+  margin-bottom: 16rpx;
+  opacity: 0.6;
 }
 
 /* 按钮：覆盖小程序原生 button 样式 */
@@ -94,22 +141,28 @@ page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 26rpx;
-  padding: 0 28rpx;
-  height: 64rpx;
-  line-height: 64rpx;
-  border-radius: 10rpx;
+  font-size: 28rpx;
+  padding: 0 30rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  border-radius: 14rpx;
   margin: 0;
   border: 1rpx solid transparent;
+  transition: opacity 0.15s;
 }
 
 .xm-btn::after {
   border: none;
 }
 
+.xm-btn:active {
+  opacity: 0.82;
+}
+
 .xm-btn-primary {
-  background: var(--xm-brand);
+  background: var(--xm-brand-grad);
   color: #ffffff;
+  box-shadow: var(--xm-shadow-brand);
 }
 
 .xm-btn-plain {
@@ -145,12 +198,13 @@ page {
   display: block;
 }
 
+/* 填充式输入框（高星项目主流：浅底 + 细边，暗黑下用底色差区分层级） */
 .xm-input {
   background: var(--xm-bg-input);
   border: 1rpx solid var(--xm-border);
-  border-radius: 10rpx;
-  height: 76rpx;
-  padding: 0 20rpx;
+  border-radius: 16rpx;
+  height: 80rpx;
+  padding: 0 24rpx;
   font-size: 28rpx;
   color: var(--xm-text);
   width: 100%;
@@ -160,8 +214,8 @@ page {
 .xm-textarea {
   background: var(--xm-bg-input);
   border: 1rpx solid var(--xm-border);
-  border-radius: 10rpx;
-  padding: 16rpx 20rpx;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
   font-size: 28rpx;
   color: var(--xm-text);
   width: 100%;
@@ -169,36 +223,48 @@ page {
   box-sizing: border-box;
 }
 
-/* 标签 */
+/* 软色标签：浅底 + 深字（状态类：审核通过/待审核/成绩档位等） */
 .xm-tag {
   display: inline-block;
   font-size: 22rpx;
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid var(--xm-border);
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  border: none;
+  background: var(--xm-bg-input);
   color: var(--xm-text-2);
+  line-height: 1.5;
 }
 
 .xm-tag-success {
   color: var(--xm-success);
-  border-color: var(--xm-success);
+  background: var(--xm-success-soft);
 }
 
 .xm-tag-warning {
   color: var(--xm-warning);
-  border-color: var(--xm-warning);
+  background: var(--xm-warning-soft);
 }
 
 .xm-tag-danger {
   color: var(--xm-danger);
-  border-color: var(--xm-danger);
+  background: var(--xm-danger-soft);
+}
+
+.xm-tag-info {
+  color: var(--xm-info);
+  background: var(--xm-info-soft);
+}
+
+.xm-tag-brand {
+  color: var(--xm-brand);
+  background: var(--xm-brand-soft);
 }
 
 /* 操作行 */
 .xm-actions {
   display: flex;
   gap: 20rpx;
-  margin-top: 16rpx;
+  margin-top: 20rpx;
 }
 
 .xm-link-btn {
@@ -223,6 +289,42 @@ page {
   color: var(--xm-warning);
 }
 
+/* 单元格行：图标 + 文字 + 右侧内容/箭头（uview Cell 风格，用于「我的」页等功能入口） */
+.xm-cell {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 26rpx 0;
+}
+
+.xm-cell + .xm-cell {
+  border-top: 1rpx solid var(--xm-border);
+}
+
+.xm-cell-icon {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  font-size: 34rpx;
+  border-radius: 18rpx;
+  background: var(--xm-bg-input);
+  flex-shrink: 0;
+}
+
+.xm-cell-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: var(--xm-text);
+}
+
+.xm-cell-arrow {
+  color: var(--xm-text-2);
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
 /* 底部弹层表单 */
 .xm-mask {
   position: fixed;
@@ -240,7 +342,7 @@ page {
   right: 0;
   bottom: 0;
   background: var(--xm-bg-card);
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 32rpx 32rpx 0 0;
   padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   z-index: 100;
   max-height: 80vh;
@@ -254,11 +356,43 @@ page {
   margin-bottom: 24rpx;
 }
 
+/* 渐变头卡：品牌渐变底 + 白字（首页欢迎 / 我的用户卡） */
+.xm-hero {
+  background: var(--xm-brand-grad);
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
+  margin-bottom: 24rpx;
+  color: #ffffff;
+  box-shadow: var(--xm-shadow-brand);
+}
+
+.xm-hero-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.xm-hero-sub {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 8rpx;
+}
+
+/* 头像：白色描边圆（在渐变底上勾勒轮廓） */
+.xm-hero-avatar {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255, 255, 255, 0.6);
+  background: var(--xm-bg-card);
+  flex-shrink: 0;
+}
+
 /* 首页宫格菜单：小屏 3 列，宽屏（平板/横屏）自动加列 */
 .xm-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20rpx;
+  gap: 24rpx;
 }
 
 @media (min-width: 600px) {
@@ -278,32 +412,61 @@ page {
   }
 }
 
+/* 宫格项：透明底融入卡片，emoji 放进软色圆角 chip（四色轮换），文字限宽防溢出 */
 .xm-grid-item {
-  background: var(--xm-bg-card);
-  border-radius: 16rpx;
-  padding: 28rpx 0;
+  background: transparent;
+  border-radius: 20rpx;
+  padding: 8rpx 0;
   text-align: center;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: var(--xm-text);
+  overflow: hidden;
+}
+
+.xm-grid-item:active {
+  background: var(--xm-bg-hover);
 }
 
 .xm-grid-item-emoji {
-  font-size: 40rpx;
-  display: block;
+  display: inline-block;
+  width: 92rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 44rpx;
+  border-radius: 28rpx;
   margin-bottom: 12rpx;
+  background: var(--xm-bg-input);
+}
+
+/* emoji chip 四色轮换：软底色与功能色一一对应 */
+.xm-grid-item:nth-child(4n + 1) .xm-grid-item-emoji {
+  background: var(--xm-brand-soft);
+}
+
+.xm-grid-item:nth-child(4n + 2) .xm-grid-item-emoji {
+  background: var(--xm-success-soft);
+}
+
+.xm-grid-item:nth-child(4n + 3) .xm-grid-item-emoji {
+  background: var(--xm-warning-soft);
+}
+
+.xm-grid-item:nth-child(4n + 4) .xm-grid-item-emoji {
+  background: var(--xm-info-soft);
 }
 
 /* 统计条 */
 .xm-bar-wrap {
   background: var(--xm-bg-input);
-  border-radius: 8rpx;
-  height: 20rpx;
+  border-radius: 999rpx;
+  height: 14rpx;
   overflow: hidden;
   flex: 1;
+  min-width: 0;
 }
 
 .xm-bar {
   height: 100%;
-  border-radius: 8rpx;
-  background: var(--xm-brand);
+  border-radius: 999rpx;
+  background: var(--xm-brand-grad);
 }

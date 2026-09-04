@@ -11,7 +11,7 @@
       >
         <image
           v-if="user.avatar"
-          :src="user.avatar"
+          :src="avatarUrl"
           class="avatar"
           mode="aspectFill"
         />
@@ -107,13 +107,17 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { request } from '@/utils/request'
+import { request, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { useUserStore } from '@/stores/user'
 import { t, apiMessage } from '@/i18n'
 
 const userStore = useUserStore()
 const user = reactive({ ...userStore.user })
+
+// 头像展示地址归一化（老 localhost 绝对地址 / 新 /api 相对路径 → 当前 baseUrl 完整地址）。
+// user.avatar 本身保持后端原始值，保存资料时原样回传，避免把本机 IP 写进数据库
+const avatarUrl = computed(() => resolveFileUrl(user.avatar))
 
 const isStudent = computed(() => user.role === 'STUDENT')
 const isAdminOrTeacher = computed(() => user.role === 'ADMIN' || user.role === 'TEACHER')

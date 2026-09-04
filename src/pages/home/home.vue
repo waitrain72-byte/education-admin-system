@@ -3,23 +3,25 @@
     class="xm-page"
     :class="themeClass"
   >
-    <!-- 欢迎 + 偏好切换 -->
-    <view class="xm-card">
+    <!-- 欢迎 + 偏好切换：品牌渐变头卡 -->
+    <view class="xm-hero">
       <view class="xm-between">
-        <view
-          class="xm-value"
-          style="font-weight: bold"
-          >{{ $t('home.welcome', { name: userName }) }}</view
-        >
-        <view class="xm-row">
+        <view class="xm-row hero-left">
+          <view class="hero-avatar">{{ avatarLetter }}</view>
+          <view class="hero-meta">
+            <view class="xm-hero-title xm-ellipsis">{{ $t('home.welcome', { name: userName }) }}</view>
+            <view class="xm-hero-sub">{{ todayText }} · {{ roleLabel }}</view>
+          </view>
+        </view>
+        <view class="xm-row hero-prefs">
           <button
-            class="xm-btn xm-btn-plain pref-btn"
+            class="hero-btn"
             @click="toggleLocale"
           >
             {{ isZhLocale() ? 'EN' : '中' }}
           </button>
           <button
-            class="xm-btn xm-btn-plain pref-btn"
+            class="hero-btn"
             @click="cycleTheme"
           >
             {{ themeMode === 'light' ? '☀' : themeMode === 'dark' ? '☾' : '◐' }}
@@ -147,10 +149,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onHide } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { usePermission } from '@/composables/usePermission'
 import { get } from '@/utils/request'
+import { resetWsUnread } from '@/utils/websocket'
 import { t, apiMessage } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass } from '@/composables/useTheme'
@@ -158,6 +161,22 @@ import { cycleTheme, themeMode, themeClass } from '@/composables/useTheme'
 const userStore = useUserStore()
 const { pullPermissions } = usePermission()
 const userName = computed(() => userStore.user.name || userStore.user.username || t('layout.guest'))
+
+/** 角色码转展示名（与「我的」页一致） */
+const roleLabel = computed(() => {
+  const map = {
+    ADMIN: t('login.roleAdmin'),
+    TEACHER: t('login.roleTeacher'),
+    STUDENT: t('login.roleStudent'),
+  }
+  return map[userStore.role] || userStore.role || ''
+})
+
+const avatarLetter = computed(() => (userName.value || '?').slice(0, 1))
+const todayText = computed(() => {
+  const d = new Date()
+  return `${d.getMonth() + 1}/${d.getDate()}`
+})
 
 // 功能入口：与 Web 端路由 meta.roles / meta.permission 保持一致
 // perm 为 RBAC 权限码：权限已拉取时按码过滤；未拉取到（空）时退化为仅按 roles 过滤
@@ -167,11 +186,23 @@ const allMenus = [
   { path: '/pages/examplan/examplan', name: 'menu.examplan', icon: '📝', perm: 'examplan:view' },
   { path: '/pages/roomplan/roomplan', name: 'menu.roomplan', icon: '🏫', perm: 'roomplan:view' },
   { path: '/pages-admin/college/college', name: 'menu.college', icon: '🏛', roles: ['ADMIN'], perm: 'college:view' },
-  { path: '/pages-admin/speciality/speciality', name: 'menu.speciality', icon: '📚', roles: ['ADMIN'], perm: 'speciality:view' },
+  {
+    path: '/pages-admin/speciality/speciality',
+    name: 'menu.speciality',
+    icon: '📚',
+    roles: ['ADMIN'],
+    perm: 'speciality:view',
+  },
   { path: '/pages-admin/classes/classes', name: 'menu.classes', icon: '👨‍👩‍👧', roles: ['ADMIN'], perm: 'classes:view' },
   { path: '/pages/course/course', name: 'menu.course', icon: '📖', perm: 'course:view' },
   { path: '/pages/choice/choice', name: 'menu.choice', icon: '🧾', perm: 'choice:view' },
-  { path: '/pages/curriculum/curriculum', name: 'menu.curriculum', icon: '🗓', roles: ['STUDENT'], perm: 'curriculum:view' },
+  {
+    path: '/pages/curriculum/curriculum',
+    name: 'menu.curriculum',
+    icon: '🗓',
+    roles: ['STUDENT'],
+    perm: 'curriculum:view',
+  },
   { path: '/pages/score/score', name: 'menu.score', icon: '💯', perm: 'score:view' },
   { path: '/pages/comment/comment', name: 'menu.comment', icon: '⭐', perm: 'comment:view' },
   { path: '/pages/apply/apply', name: 'menu.apply', icon: '📮', perm: 'apply:view' },
@@ -199,6 +230,14 @@ const go = (path) => uni.navigateTo({ url: path })
 const notices = ref([])
 const examplans = ref([])
 
+// 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用
+const loadNotices = () => {
+  get('/notice/selectAll').then((res) => {
+    notices.value = (res.data && res.data.data) || []
+  })
+}
+const onWsPush = () => loadNotices()
+
 // 首页仅展示最新 3 条，完整列表在对应页面分页浏览
 const HOME_LIST_LIMIT = 3
 const noticeList = computed(() => notices.value.slice(0, HOME_LIST_LIMIT))
@@ -221,10 +260,10 @@ const attendanceRows = computed(() => {
     percent: Math.round((value / total) * 100),
   })
   return [
-    mk(t('home.statusNormal'), s.normal, '#67c23a'),
-    mk(t('home.statusLate'), s.late, '#e6a23c'),
-    mk(t('home.statusEarlyLeave'), s.earlyLeave, '#409eff'),
-    mk(t('home.statusAbsent'), s.absent, '#f56c6c'),
+    mk(t('home.statusNormal'), s.normal, '#22b866'),
+    mk(t('home.statusLate'), s.late, '#f59e0b'),
+    mk(t('home.statusEarlyLeave'), s.earlyLeave, '#3b82f6'),
+    mk(t('home.statusAbsent'), s.absent, '#f0555f'),
   ]
 })
 
@@ -246,14 +285,18 @@ onShow(() => {
   // 动态设置导航栏标题，跟随语言切换
   uni.setNavigationBarTitle({ title: t('menu.home') })
 
+  // 回到首页即视为已读：清掉推送未读角标
+  resetWsUnread()
+  // 收到 WebSocket 推送时实时刷新首页通知列表（先解绑再绑定，防止页面反复进出后重复触发）
+  uni.$off('ws:push', onWsPush)
+  uni.$on('ws:push', onWsPush)
+
   // 权限码缺失（如旧版本登录留下的缓存）时补拉，保证菜单过滤与 Web 端授权一致
   if (userStore.role !== 'ADMIN' && !userStore.permissions.length) {
     pullPermissions()
   }
 
-  get('/notice/selectAll').then((res) => {
-    notices.value = (res.data && res.data.data) || []
-  })
+  loadNotices()
   get('/examplan/selectAll').then((res) => {
     examplans.value = (res.data && res.data.data) || []
   })
@@ -282,14 +325,63 @@ onShow(() => {
     }
   })
 })
+
+onHide(() => {
+  uni.$off('ws:push', onWsPush)
+})
 </script>
 
 <style lang="scss" scoped>
-.pref-btn {
-  height: 56rpx;
-  line-height: 56rpx;
+/* 渐变头卡内部：左侧内容可收缩省略，右侧按钮固定不被挤压 */
+.hero-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-avatar {
+  width: 84rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 36rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.hero-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 头卡上的毛玻璃胶囊小按钮（脱离 xm-btn 体系：白字透明底融入渐变） */
+.hero-btn {
+  height: 60rpx;
+  line-height: 60rpx;
   padding: 0 22rpx;
+  margin: 0;
   font-size: 24rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999rpx;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-btn::after {
+  border: none;
+}
+
+.hero-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.hero-prefs {
+  flex-shrink: 0;
 }
 
 .notice-item {
@@ -319,11 +411,17 @@ onShow(() => {
   width: 110rpx;
   font-size: 26rpx;
   color: var(--xm-text-2);
+  /* 英文文案（Early Leave 等）较长：单行省略，防止换行挤压统计条 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .stat-num {
   width: 60rpx;
   text-align: right;
   font-size: 26rpx;
+  flex-shrink: 0;
 }
 </style>

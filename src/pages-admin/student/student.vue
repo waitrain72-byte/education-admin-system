@@ -117,7 +117,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -240,7 +245,7 @@ import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { get, put } from '@/utils/request'
+import { getData, put } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 
@@ -309,34 +314,16 @@ const onReset = () => {
 }
 
 // 学院/专业/班级下拉数据
-const loadCollege = () => {
-  get('/college/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      collegeData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadCollege = async () => {
+  collegeData.value = (await getData('/college/selectAll')) || []
 }
 
-const loadSpeciality = () => {
-  get('/speciality/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      specialityData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadSpeciality = async () => {
+  specialityData.value = (await getData('/speciality/selectAll')) || []
 }
 
-const loadClasses = () => {
-  get('/classes/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      classesData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadClasses = async () => {
+  classesData.value = (await getData('/classes/selectAll')) || []
 }
 
 const collegeLabels = computed(() => collegeData.value.map((i) => i.name))

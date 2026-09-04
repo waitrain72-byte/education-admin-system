@@ -5,6 +5,7 @@
   >
     <!-- 顶部品牌区 -->
     <view class="brand">
+      <view class="brand-logo">🎓</view>
       <view class="brand-title">{{ $t('login.systemName') }}</view>
       <view class="brand-sub">{{ $t('login.systemSub') }}</view>
       <view class="brand-slogan">{{ $t('login.slogan') }}</view>
@@ -98,6 +99,7 @@ import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { request, saveCookie, clearCookie } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
+import { connectWs } from '@/utils/websocket'
 import { t, apiMessage } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass, pullThemeFromServer } from '@/composables/useTheme'
@@ -149,6 +151,8 @@ const login = () => {
         pullPermissions()
         pullThemeFromServer()
         pullLocaleFromServer()
+        // 登录成功后建立实时通知连接（成绩发布/作业批改/请假审批/教务通知推送）
+        connectWs()
         uni.reLaunch({ url: '/pages/home/home' })
       } else {
         uni.showToast({ title: apiMessage(res.data), icon: 'none' })
@@ -181,6 +185,19 @@ refreshCaptcha()
   text-align: center;
   color: #ffffff;
   margin-bottom: 60rpx;
+}
+
+/* 品牌 logo：毛玻璃圆角块，在渐变底上勾勒出层次 */
+.brand-logo {
+  width: 128rpx;
+  height: 128rpx;
+  line-height: 128rpx;
+  margin: 0 auto 24rpx;
+  font-size: 64rpx;
+  text-align: center;
+  border-radius: 36rpx;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1rpx solid rgba(255, 255, 255, 0.25);
 }
 
 .brand-title {
@@ -216,6 +233,11 @@ refreshCaptcha()
   color: var(--xm-text);
 }
 
+/* 登录卡片：悬浮于渐变底之上，投影加重突出主体 */
+.login-card {
+  box-shadow: 0 20rpx 60rpx rgba(31, 45, 90, 0.14);
+}
+
 .login-title {
   font-size: 40rpx;
   font-weight: bold;
@@ -240,8 +262,8 @@ refreshCaptcha()
 
 .captcha-img {
   width: 200rpx;
-  height: 76rpx;
-  border-radius: 10rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
   border: 1rpx solid var(--xm-border);
   background: #ffffff;
 }
@@ -249,15 +271,20 @@ refreshCaptcha()
 .picker-text {
   display: flex;
   align-items: center;
-  line-height: 76rpx;
+  line-height: 78rpx;
 }
 
 .picker-placeholder {
   color: var(--xm-text-2);
 }
 
+/* 登录按钮：胶囊大按钮 + 主色投影，与高星项目表单收尾一致 */
 .login-btn {
-  margin-top: 12rpx;
+  margin-top: 16rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 999rpx;
+  font-size: 32rpx;
 }
 
 .to-register {

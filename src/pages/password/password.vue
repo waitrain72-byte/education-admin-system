@@ -46,6 +46,7 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { put } from '@/utils/request'
+import { closeWs } from '@/utils/websocket'
 import { useUserStore } from '@/stores/user'
 import { t, apiMessage } from '@/i18n'
 
@@ -66,6 +67,8 @@ const update = () => {
 
   put('/updatePassword', form.value).then((res) => {
     if (res.data.code === '200') {
+      // 密码已修改，旧 token 即将失效：断开实时通知连接并重新登录
+      closeWs()
       userStore.clearUser()
       uni.showToast({ title: t('pages.password.success'), icon: 'success' })
       setTimeout(() => uni.reLaunch({ url: '/pages/login/login' }), 800)

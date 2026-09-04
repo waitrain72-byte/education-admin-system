@@ -1,57 +1,57 @@
 {
-    "pages": [
-        { "path": "pages/login/login", "style": { "navigationStyle": "custom" } },
-        { "path": "pages/register/register", "style": { "navigationBarTitleText": "注册" } },
-        { "path": "pages/home/home", "style": { "navigationBarTitleText": "系统首页" } },
-        { "path": "pages/mine/mine", "style": { "navigationBarTitleText": "我的" } },
-        { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人信息" } },
-        { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } },
-        { "path": "pages/notice/notice", "style": { "navigationBarTitleText": "教务通知" } },
-        { "path": "pages/examplan/examplan", "style": { "navigationBarTitleText": "考试安排" } },
-        { "path": "pages/roomplan/roomplan", "style": { "navigationBarTitleText": "教室安排" } },
-        { "path": "pages/course/course", "style": { "navigationBarTitleText": "课程信息" } },
-        { "path": "pages/choice/choice", "style": { "navigationBarTitleText": "我的选课" } },
-        { "path": "pages/curriculum/curriculum", "style": { "navigationBarTitleText": "我的课表" } },
-        { "path": "pages/score/score", "style": { "navigationBarTitleText": "我的成绩" } },
-        { "path": "pages/comment/comment", "style": { "navigationBarTitleText": "网上评教" } },
-        { "path": "pages/apply/apply", "style": { "navigationBarTitleText": "请假申请" } },
-        { "path": "pages/homework/homework", "style": { "navigationBarTitleText": "作业提交" } },
-        { "path": "pages/attendance/attendance", "style": { "navigationBarTitleText": "考勤信息" } }
-    ],
-    "subPackages": [
-        {
-            "root": "pages-admin",
-            "pages": [
-                { "path": "admin/admin", "style": { "navigationBarTitleText": "管理员信息" } },
-                { "path": "teacher/teacher", "style": { "navigationBarTitleText": "教师信息" } },
-                { "path": "student/student", "style": { "navigationBarTitleText": "学生信息" } },
-                { "path": "college/college", "style": { "navigationBarTitleText": "学院信息" } },
-                { "path": "speciality/speciality", "style": { "navigationBarTitleText": "专业信息" } },
-                { "path": "classes/classes", "style": { "navigationBarTitleText": "班级信息" } }
-            ]
-        }
-    ],
-    "preloadRule": {
-        "pages/home/home": {
-            "network": "wifi",
-            "packages": ["pages-admin"]
-        }
-    },
-    "tabBar": {
-        "color": "#8a8f99",
-        "selectedColor": "#6366f1",
-        "backgroundColor": "#ffffff",
-        "borderStyle": "black",
-        "list": [
-            { "pagePath": "pages/home/home", "text": "首页" },
-            { "pagePath": "pages/mine/mine", "text": "我的" }
-        ]
-    },
-    "globalStyle": {
-        "navigationBarTextStyle": "white",
-        "navigationBarTitleText": "教务管理系统",
-        "navigationBarBackgroundColor": "#006eff",
-        "backgroundColor": "#f3f6fe",
-        "enablePullDownRefresh": false
+  "pages": [
+    { "path": "pages/login/login", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/register/register", "style": { "navigationBarTitleText": "注册" } },
+    { "path": "pages/home/home", "style": { "navigationBarTitleText": "系统首页" } },
+    { "path": "pages/mine/mine", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人信息" } },
+    { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } },
+    { "path": "pages/notice/notice", "style": { "navigationBarTitleText": "教务通知" } },
+    { "path": "pages/examplan/examplan", "style": { "navigationBarTitleText": "考试安排" } },
+    { "path": "pages/roomplan/roomplan", "style": { "navigationBarTitleText": "教室安排" } },
+    { "path": "pages/course/course", "style": { "navigationBarTitleText": "课程信息" } },
+    { "path": "pages/choice/choice", "style": { "navigationBarTitleText": "我的选课" } },
+    { "path": "pages/curriculum/curriculum", "style": { "navigationBarTitleText": "我的课表" } },
+    { "path": "pages/score/score", "style": { "navigationBarTitleText": "我的成绩" } },
+    { "path": "pages/comment/comment", "style": { "navigationBarTitleText": "网上评教" } },
+    { "path": "pages/apply/apply", "style": { "navigationBarTitleText": "请假申请" } },
+    { "path": "pages/homework/homework", "style": { "navigationBarTitleText": "作业提交" } },
+    { "path": "pages/attendance/attendance", "style": { "navigationBarTitleText": "考勤信息" } }
+  ],
+  "subPackages": [
+    {
+      "root": "pages-admin",
+      "pages": [
+        { "path": "admin/admin", "style": { "navigationBarTitleText": "管理员信息" } },
+        { "path": "teacher/teacher", "style": { "navigationBarTitleText": "教师信息" } },
+        { "path": "student/student", "style": { "navigationBarTitleText": "学生信息" } },
+        { "path": "college/college", "style": { "navigationBarTitleText": "学院信息" } },
+        { "path": "speciality/speciality", "style": { "navigationBarTitleText": "专业信息" } },
+        { "path": "classes/classes", "style": { "navigationBarTitleText": "班级信息" } }
+      ]
     }
+  ],
+  "preloadRule": {
+    "pages/home/home": {
+      "network": "wifi",
+      "packages": ["pages-admin"]
+    }
+  },
+  "tabBar": {
+    "color": "#8a90a0",
+    "selectedColor": "#5b6cff",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "首页" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "教务管理系统",
+    "navigationBarBackgroundColor": "#4f6cff",
+    "backgroundColor": "#f4f6fb",
+    "enablePullDownRefresh": false
+  }
 }

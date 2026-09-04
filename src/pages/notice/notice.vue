@@ -65,7 +65,7 @@
       @click="toggleExpand(item.id)"
     >
       <view class="xm-between">
-        <view class="xm-row">
+        <view class="xm-row notice-title-row">
           <!-- 批量管理模式下显示勾选框 -->
           <checkbox
             v-if="manageMode"
@@ -73,13 +73,9 @@
             style="transform: scale(0.8)"
             @click.stop="toggleSelect(item.id)"
           />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.title }}</view
-          >
+          <view class="xm-value xm-ellipsis notice-title">{{ item.title }}</view>
         </view>
-        <view class="xm-label">{{ $t('pages.notice.id') }}: {{ item._index }}</view>
+        <view class="xm-tag">{{ $t('pages.notice.id') }} {{ item._index }}</view>
       </view>
       <view
         class="xm-row"
@@ -117,7 +113,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -248,3 +249,15 @@ onShow(() => {
 
 onReachBottom(() => loadNext())
 </script>
+
+<style lang="scss" scoped>
+/* 标题行可收缩省略，防止长标题把右侧编号标签挤出卡片 */
+.notice-title-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-title {
+  font-weight: bold;
+}
+</style>

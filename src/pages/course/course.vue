@@ -117,7 +117,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -424,7 +429,7 @@ onReachBottom(() => loadNext())
 .picker-text {
   display: flex;
   align-items: center;
-  line-height: 76rpx;
+  line-height: 78rpx;
 }
 
 .picker-placeholder {
