@@ -345,7 +345,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 | 文件访问前缀 | 同上 `files.url-prefix` | `/api/files/` |
 | 前端接口地址 | `vue/.env.development`（开发）/ `.env.production`（生产 `/api`） | 见文件 |
 | 前端开发端口 | `vue/vite.config.ts` | `8080` |
-| 上传文件目录 | 后端启动目录 `user.dir` 下的 `files/`（MD5 去重，无人引用的旧头像自动清理） | — |
+| 上传文件目录 | 后端启动目录 `user.dir` 下的 `files/`（MD5 去重；演示头像随仓库 `files/` 目录分发，Docker 部署以绑定挂载方式提供） | — |
 
 ## 安全加固清单（上线前必做）
 
