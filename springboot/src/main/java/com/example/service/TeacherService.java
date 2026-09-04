@@ -26,4 +26,14 @@ public class TeacherService extends BaseService<Teacher> {
     protected RoleEnum getRole() {
         return RoleEnum.TEACHER;
     }
+
+    /**
+     * 字段白名单（本人自助更新）：电话/邮箱为教师本人可编辑资料（基类已放行），
+     * 职称 title 由管理员维护，不允许教师本人通过自助接口修改。
+     */
+    @Override
+    protected void sanitizeSelfUpdate(Teacher teacher) {
+        super.sanitizeSelfUpdate(teacher);
+        teacher.setTitle(null);
+    }
 }

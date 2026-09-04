@@ -10,7 +10,6 @@ import com.example.mapper.CrudMapper;
 import com.example.mapper.HomeworkMapper;
 import com.example.mapper.TeacherMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -45,10 +44,10 @@ public class HomeworkService extends CrudService<Homework> {
     }
 
     /**
-     * 分页查询（学生/教师只能查看自己的作业）
+     * 数据行级隔离：学生/教师只能查看自己的作业（分页与全量接口统一生效）
      */
     @Override
-    public PageInfo<Homework> selectPage(Homework homework, Integer pageNum, Integer pageSize) {
+    protected void applyDataScope(Homework homework) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             homework.setStudentId(currentUser.getId());
@@ -56,6 +55,5 @@ public class HomeworkService extends CrudService<Homework> {
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
             homework.setTeacherId(currentUser.getId());
         }
-        return super.selectPage(homework, pageNum, pageSize);
     }
 }

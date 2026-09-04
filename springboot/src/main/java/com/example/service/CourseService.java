@@ -6,7 +6,6 @@ import com.example.entity.Course;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -26,14 +25,13 @@ public class CourseService extends CrudService<Course> {
     }
 
     /**
-     * 分页查询（教师只能查看自己开设的课程）
+     * 数据行级隔离：教师只能查看自己开设的课程（分页与全量接口统一生效）
      */
     @Override
-    public PageInfo<Course> selectPage(Course course, Integer pageNum, Integer pageSize) {
+    protected void applyDataScope(Course course) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
             course.setTeacherId(currentUser.getId());
         }
-        return super.selectPage(course, pageNum, pageSize);
     }
 }

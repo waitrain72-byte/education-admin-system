@@ -1,5 +1,7 @@
 package com.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -12,7 +14,8 @@ public class Admin extends Account implements Serializable {
     private Integer id;
     /** 用户名 */
     private String username;
-    /** 密码 */
+    /** 密码（同基类：只进不出，防止查询接口泄露哈希） */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     /** 姓名 */
     private String name;

@@ -1,5 +1,6 @@
 package com.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
@@ -12,7 +13,12 @@ public class Account {
     private String username;
     /** 名称 */
     private String name;
-    /** 密码 */
+    /**
+     * 密码：仅允许从请求 JSON 反序列化进来（登录/改密），序列化时永不输出，
+     * 防止 selectPage/selectAll/selectById 等查询接口把 BCrypt 哈希泄露给前端。
+     * 子类若重新声明 password 字段，需同样标注。
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     /** 角色标识 */
     private String role;

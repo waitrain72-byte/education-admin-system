@@ -10,7 +10,6 @@ import com.example.exception.CustomException;
 import com.example.mapper.CommentMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -43,10 +42,11 @@ public class CommentService extends CrudService<Comment> {
     }
 
     /**
-     * 分页查询（教师只能看到发给自己课程的评教；学生只能看到自己发起的评教；管理员可看全部）
+     * 数据行级隔离：教师只能看到发给自己课程的评教；学生只能看到自己发起的评教；管理员可看全部
+     * （分页与全量接口统一生效）
      */
     @Override
-    public PageInfo<Comment> selectPage(Comment comment, Integer pageNum, Integer pageSize) {
+    protected void applyDataScope(Comment comment) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
             comment.setTeacher(currentUser.getName());
@@ -54,6 +54,5 @@ public class CommentService extends CrudService<Comment> {
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             comment.setStudent(currentUser.getName());
         }
-        return super.selectPage(comment, pageNum, pageSize);
     }
 }

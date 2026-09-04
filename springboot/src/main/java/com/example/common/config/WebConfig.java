@@ -24,9 +24,8 @@ public class WebConfig implements  WebMvcConfigurer {
                 // 排除 Knife4j / Swagger 接口文档相关资源
                 .excludePathPatterns("/doc.html")
                 .excludePathPatterns("/webjars/**")
-                .excludePathPatterns("/swagger-resources")
-                .excludePathPatterns("/swagger-resources/**")
-                .excludePathPatterns("/v2/api-docs")
+                // springdoc（knife4j-openapi3）文档数据端点
+                .excludePathPatterns("/v3/api-docs/**")
                 .excludePathPatterns("/favicon.ico");
     }
 }

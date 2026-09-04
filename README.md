@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Vue](https://img.shields.io/badge/Vue-3.4-42B883?logo=vuedotjs&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.5.9-6DB33F?logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.7.18-6DB33F?logo=springboot&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-5.7%20%7C%208.x-4479A1?logo=mysql&logoColor=white)
 ![Element Plus](https://img.shields.io/badge/Element%20Plus-2.x-409EFF?logo=element&logoColor=white)
 ![uni-app](https://img.shields.io/badge/uni--app-小程序端-2B9939)
@@ -33,8 +33,8 @@
 ## 技术栈
 
 - **Web 前端**：Vue 3 + Vite 5 + TypeScript + Element Plus + Pinia + Vue Router + Vue I18n + ECharts + Axios + Vitest + ESLint/Prettier
-- **后端**：Java 8 + Spring Boot 2.5.9 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha
-- **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图
+- **后端**：Java 8 + Spring Boot 2.7.18 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha
+- **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图 + WebSocket 实时通知
 - **部署**：Docker / docker-compose + nginx + GitHub Actions（CI）
 
 ## 功能总览
@@ -69,11 +69,11 @@
 
 ```text
 管理员：admin
-教师：t01 ~ t20（职称各不相同）
-学生：2024001 ~ 2024050（分属 5 个班级）
+教师：luys（路易斯）
+学生：zhangsan（张三）、lisi（李四）、wangwu（王五）
 ```
 
-数据库备份为**全量**文件 `sql/xm_educational_manager-full.sql`（含全部表结构、日志表、RBAC 权限表与授权、完整演示数据：每位教师的课程/选课/成绩/考勤/作业/评教都齐全），导入即得完整可演示环境。
+数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。
 
 ## 核心模块之间的联系（数据怎么流转）
 
@@ -102,12 +102,11 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 全量数据库备份（表结构 + 完整演示数据 + RBAC 授权）
-+-- sql/rbac_permission.sql       # RBAC 脚本（仅存量旧库补齐用；新备份已内置，勿重复执行）
++-- sql/                          # 全量数据库种子（表结构 + 索引 + 演示数据 + RBAC 授权）
 +-- vue/                          # Web 前端（components/composables/locales/stores/views 等）
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
 +-- docker-compose.yml            # 三容器编排
-+-- files/                        # 文件上传目录（含演示头像）
++-- files/                        # 文件上传目录（仅 5 个演示头像）
 +-- .github/workflows/ci.yml      # CI（本地保留，未随仓库分发）
 ```
 
@@ -178,8 +177,8 @@ docker compose up -d --build
 
 ```text
 管理员：admin      密码 123456
-教师：t01          密码 123456（t01~t20 任选）
-学生：2024001      密码 123456（2024001~2024050 任选）
+教师：luys         密码 123456
+学生：zhangsan     密码 123456（lisi、wangwu 同）
 ```
 
 三个账号各登录一次，体验不同角色的菜单与数据。**正式使用前请到右上角头像 → 修改密码改掉默认密码。**
@@ -237,9 +236,8 @@ mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.s
 ```
 
 - 第一条：创建数据库（`-p123456` 换成你自己的 root 密码）；
-- 第二条：导入全量备份（表结构 + 演示数据 + RBAC 权限表一次到位），没有任何输出就是成功；
-- 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`；
-- `sql/rbac_permission.sql` 只给"导入过旧版备份的老库"补 RBAC 表用，**新导入 full.sql 的不要重复执行**。
+- 第二条：导入全量种子（表结构 + 索引 + 演示数据 + RBAC 授权一次到位），没有任何输出就是成功；
+- 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`。
 
 #### 3. 启动后端
 
@@ -282,7 +280,7 @@ CI（`.github/workflows/ci.yml`，本地保留未随仓库分发）：前端 lin
 
 ## 部署说明 · App 端（微信小程序）
 
-小程序与 Web 端功能对齐（23 个页面、三角色、中英文、深浅色主题与偏好同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端。交互按移动端习惯适配：底部 TabBar（首页 / 我的）、卡片列表 + 底部弹层表单、触底加载、请假状态筛选、退出登录；管理页面放在分包里按需加载。
+小程序与 Web 端功能对齐（23 个页面、三角色、中英文、深浅色主题与偏好同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端，并支持 WebSocket 实时通知（成绩发布/作业批改/请假审核/教务通知推送 + 「首页」未读角标）与跨端资料同步（头像等修改后进入相关页面自动拉取，无需重新登录）。交互按移动端习惯适配：底部 TabBar（首页 / 我的）、卡片列表 + 底部弹层表单、触底加载、请假状态筛选、退出登录；管理页面放在分包里按需加载。
 
 ### 第 1 步：准备两样东西
 
@@ -327,7 +325,8 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
    New-NetFirewallRule -DisplayName 'edu-manager-9091' -Direction Inbound -Protocol TCP -LocalPort 9091 -Action Allow
    ```
 5. 若手机上一直加载失败，检查开发者工具 **详情 → 本地设置 → 勾选"不校验合法域名"**；
-6. 工具报 `ECONNREFUSED 127.0.0.1:xxxx`：设置 → 代理设置 → 选"不使用任何代理"。
+6. 工具报 `ECONNREFUSED 127.0.0.1:xxxx`：设置 → 代理设置 → 选"不使用任何代理"；
+7. **改了代码后要重新点「预览」生成新二维码**——预览二维码是生成那一刻代码的快照，之后改的代码不会进入旧二维码（真机调试则关闭重开一次）。
 
 > 权限说明：Web 端【权限设置】页调整角色授权后，App 端用户**重新登录**即同步菜单显隐（登录时拉取 `/permission/my`），无需重新打包小程序。
 

@@ -38,7 +38,18 @@ public abstract class CrudService<T> {
         return getMapper().selectById(id);
     }
 
+    /**
+     * 数据行级隔离钩子：查询前按当前登录角色收窄查询范围。
+     * 默认不过滤（全量）；需要按角色隔离的子类覆盖本方法，
+     * 如成绩/考勤/作业等教师只看本人课程、学生只看本人数据。
+     * selectAll 与 selectPage 统一经由本方法，防止绕过分页接口
+     * （如 /selectAll、导出、统计图）拿到全量数据。
+     */
+    protected void applyDataScope(T entity) {
+    }
+
     public List<T> selectAll(T entity) {
+        applyDataScope(entity);
         return getMapper().selectAll(entity);
     }
 
@@ -46,6 +57,7 @@ public abstract class CrudService<T> {
      * 分页查询：先启动 PageHelper，再查询全量，由 PageHelper 拦截生成 count 与分页 SQL。
      */
     public PageInfo<T> selectPage(T entity, Integer pageNum, Integer pageSize) {
+        applyDataScope(entity);
         PageHelper.startPage(pageNum, pageSize);
         List<T> list = getMapper().selectAll(entity);
         return PageInfo.of(list);

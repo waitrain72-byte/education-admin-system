@@ -13,7 +13,6 @@ import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -62,10 +61,10 @@ public class ChoiceService extends CrudService<Choice> {
     }
 
     /**
-     * 分页查询（教师/学生只能查看自己的选课）
+     * 数据行级隔离：教师/学生只能查看自己的选课（分页与全量接口统一生效）
      */
     @Override
-    public PageInfo<Choice> selectPage(Choice choice, Integer pageNum, Integer pageSize) {
+    protected void applyDataScope(Choice choice) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
             choice.setTeacherId(currentUser.getId());
@@ -73,7 +72,6 @@ public class ChoiceService extends CrudService<Choice> {
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             choice.setStudentId(currentUser.getId());
         }
-        return super.selectPage(choice, pageNum, pageSize);
     }
 
     /**

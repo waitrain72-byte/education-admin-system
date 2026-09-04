@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
+import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
@@ -70,6 +71,15 @@ public class NoticeWebSocketServer {
         if (userKey != null) {
             SESSIONS.remove(userKey);
         }
+    }
+
+    /**
+     * 客户端心跳保活：移动端每 25s 发送一次 "ping"，服务端静默忽略、无需回复。
+     * 没有该处理器时客户端消息无人接收；有了它连接不会因空闲过久被网关/代理断开。
+     */
+    @OnMessage
+    public void onMessage(String message, Session session) {
+        log.debug("WebSocket 心跳：{} -> {}", userKey, message);
     }
 
     /**

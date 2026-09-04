@@ -30,6 +30,20 @@ public class StudentService extends BaseService<Student> {
     }
 
     /**
+     * 字段白名单（本人自助更新）：在基类（姓名/头像/密码/主题/语言）基础上，
+     * 学分 score 由选课与成绩业务累加维护，学院/专业/班级由管理员维护，
+     * 均不允许学生本人通过自助接口修改。
+     */
+    @Override
+    protected void sanitizeSelfUpdate(Student student) {
+        super.sanitizeSelfUpdate(student);
+        student.setScore(null);
+        student.setCollegeId(null);
+        student.setSpecialityId(null);
+        student.setClassId(null);
+    }
+
+    /**
      * 注册（仅学生开放注册）
      */
     public void register(Account account) {

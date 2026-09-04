@@ -6,13 +6,13 @@ import cn.hutool.crypto.SecureUtil;
 import com.example.common.Result;
 import com.example.common.annotation.RequirePermission;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.OutputStream;
-import java.net.URLEncoder;
 
 /**
  * 文件接口
@@ -66,17 +66,19 @@ public class FileController {
      */
     @GetMapping("/{flag}")
     public void avatarPath(@PathVariable String flag, HttpServletResponse response) {
-        OutputStream os;
         try {
             File targetFile = getSafeFile(flag);
             if (targetFile != null && targetFile.exists()) {
-                response.addHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(flag, "UTF-8"));
-                response.setContentType("application/octet-stream");
+                // 必须按真实扩展名返回图片 MIME（image/png 等）：
+                // 微信真机的原生图片组件只渲染 image/*，收到 application/octet-stream 会拒绝显示（空白）；
+                // 开发者工具模拟器是 Chromium 内核会内容嗅探，所以模拟器正常、真机空白——不能以模拟器表现为准。
+                // 同时不能带 Content-Disposition: attachment（附件语义，真机同样不渲染）。
+                MediaType mediaType = MediaTypeFactory.getMediaType(flag).orElse(MediaType.APPLICATION_OCTET_STREAM);
                 byte[] bytes = FileUtil.readBytes(targetFile);
-                os = response.getOutputStream();
-                os.write(bytes);
-                os.flush();
-                os.close();
+                response.setContentType(mediaType.toString());
+                response.setContentLength(bytes.length);
+                response.getOutputStream().write(bytes);
+                response.getOutputStream().flush();
             }
         } catch (Exception e) {
             System.out.println("文件下载失败");

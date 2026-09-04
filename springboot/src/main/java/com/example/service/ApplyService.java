@@ -6,7 +6,6 @@ import com.example.entity.Apply;
 import com.example.mapper.ApplyMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
-import com.github.pagehelper.PageInfo;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -26,14 +25,13 @@ public class ApplyService extends CrudService<Apply> {
     }
 
     /**
-     * 分页查询（用 jwt 解析 token 进行角色判定，学生只能看自己的请假记录）
+     * 数据行级隔离：用 jwt 解析 token 进行角色判定，学生只能看自己的请假记录（分页与全量接口统一生效）
      */
     @Override
-    public PageInfo<Apply> selectPage(Apply apply, Integer pageNum, Integer pageSize) {
+    protected void applyDataScope(Apply apply) {
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.STUDENT.name().equals(currentUser.getRole())) {
             apply.setStudentId(currentUser.getId());
         }
-        return super.selectPage(apply, pageNum, pageSize);
     }
 }

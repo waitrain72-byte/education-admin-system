@@ -112,15 +112,20 @@ public abstract class BaseService<T extends Account> {
      * 修改：密码加密处理 + 头像引用清理。
      * 含行级保护：非管理员只能修改本人资料（对应 teacher:self / student:self / admin:self 权限），
      * 防止持有"本人资料"权限码的账号越权改动他人。
+     * 含字段级保护：非管理员修改本人资料时走 {@link #sanitizeSelfUpdate} 白名单，
+     * 防止通过自助接口篡改 role、学分等敏感字段。
      */
     public void updateById(T entity) {
         // 行级数据权限：非管理员仅允许修改自己；管理员不受限（无 ID 说明是新增场景，不拦截）
         if (entity.getId() != null) {
             Account currentUser = TokenUtils.getCurrentUser();
-            if (!RoleEnum.ADMIN.name().equals(currentUser.getRole())
-                    && currentUser.getId() != null
-                    && !currentUser.getId().equals(entity.getId())) {
+            boolean isAdmin = RoleEnum.ADMIN.name().equals(currentUser.getRole());
+            boolean isSelf = currentUser.getId() != null && currentUser.getId().equals(entity.getId());
+            if (!isAdmin && !isSelf) {
                 throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+            }
+            if (!isAdmin && isSelf) {
+                sanitizeSelfUpdate(entity);
             }
         }
         T oldEntity = entity.getId() == null ? null : getMapper().selectById(entity.getId());
@@ -131,6 +136,17 @@ public abstract class BaseService<T extends Account> {
         if (oldEntity != null && ObjectUtil.isNotEmpty(entity.getAvatar())) {
             fileService.deleteAvatarIfUnused(oldEntity.getAvatar(), entity.getAvatar());
         }
+    }
+
+    /**
+     * 非管理员本人更新资料的字段白名单（字段级防越权）：
+     * 置 null 的字段不会被动态 SQL 更新。默认只放行 姓名/头像/密码/主题/语言，
+     * username（登录账号）与 role（权限标识）一律不允许本人自助修改。
+     * 子类拥有专属字段时覆写本方法：先调用 super，再对不允许自助修改的字段置 null。
+     */
+    protected void sanitizeSelfUpdate(T entity) {
+        entity.setUsername(null);
+        entity.setRole(null);
     }
 
     /**
