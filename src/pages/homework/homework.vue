@@ -137,7 +137,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 作业提交/编辑表单（底部弹层，学生） -->
     <view
@@ -266,7 +271,7 @@ import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { get, put, del as delRequest } from '@/utils/request'
+import { get, put, del as delRequest, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 
@@ -386,7 +391,9 @@ const chooseFile = () => {
 }
 
 // 附件下载查看：图片直接预览，其余走下载后打开
-const down = (url) => {
+const down = (rawUrl) => {
+  // 历史数据存的是老绝对地址：先归一成当前 baseUrl 的完整地址（真机才能访问）
+  const url = resolveFileUrl(rawUrl)
   if (!url) return
   if (/\.(png|jpe?g|gif|webp|bmp)(\?.*)?$/i.test(url)) {
     uni.previewImage({ urls: [url] })

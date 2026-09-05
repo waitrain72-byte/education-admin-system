@@ -16,7 +16,7 @@
 | 模块 | 说明 |
 |---|---|
 | 登录/注册/验证码 | 图形验证码 + Session Cookie 手动维护；学生自助注册 |
-| 首页 | 欢迎、按角色的功能宫格、教务通知、考试安排、考勤统计、成绩统计 |
+| 首页 | 欢迎、按角色的功能宫格、教务通知、考试安排、考勤统计、成绩统计；数据本地缓存秒开（按用户隔离）+ 无缓存时骨架屏 |
 | 信息公告 | 教务通知 / 考试安排 / 教室安排（管理员维护，长文本展开查看） |
 | 行政管理 | 学院 / 专业 / 班级（仅管理员；含学院→专业级联下拉） |
 | 教学管理 | 课程（含学生选课）、我的选课（取消选课/评教）、我的课表、我的成绩（教师录入）、网上评教 |
@@ -42,7 +42,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 1. 启动 Web 端的 Spring Boot 后端（端口 9091）。
 2. 开发者工具中勾选 **详情 → 本地设置 → 不校验合法域名**（`urlCheck` 已在 manifest 中默认关闭）。
-3. 接口地址在 `src/utils/config.js` 的 `baseUrl`：
+3. 接口地址在 `.env.development` / `.env.production` 的 `VITE_API_BASE_URL`（由 `src/utils/config.js` 读取，改环境只改 env 文件）：
    - 开发者工具模拟器：`http://localhost:9091`
    - 真机调试：改为电脑的局域网 IP（如 `http://192.168.x.x:9091`），手机与电脑同一 Wi-Fi。
 4. 数据库使用 Web 端仓库的最新种子 `manager-vue3/sql/xm_educational_manager-full.sql`（已含 `theme`/`locale` 列与 RBAC 授权，无需单独迁移脚本）。

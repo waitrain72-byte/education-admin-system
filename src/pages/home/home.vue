@@ -46,104 +46,117 @@
       </view>
     </view>
 
-    <!-- 教务通知 / 考试安排（首页仅展示最新 3 条，避免数据多时页面过长） -->
-    <view class="xm-card">
-      <view class="xm-card-title">{{ $t('home.notice') }}</view>
-      <view
-        v-if="!notices.length"
-        class="xm-empty"
-        >{{ $t('common.empty') }}</view
-      >
-      <view
-        v-for="item in noticeList"
-        :key="item.id"
-        class="notice-item"
-      >
-        <view class="xm-value">{{ item.title }}</view>
-        <view class="xm-label">{{ item.time }}</view>
-      </view>
-      <view
-        v-if="notices.length"
-        class="xm-label card-more"
-        @click="go('/pages/notice/notice')"
-        >{{ $t('home.viewAll') }}</view
-      >
+    <!-- 骨架屏：无缓存首次加载时的占位（有缓存则秒开，不经过此分支） -->
+    <view
+      v-if="firstLoading"
+      class="xm-card"
+    >
+      <view class="skeleton skeleton-title"></view>
+      <view class="skeleton skeleton-line"></view>
+      <view class="skeleton skeleton-line"></view>
+      <view class="skeleton skeleton-line short"></view>
     </view>
 
-    <view class="xm-card">
-      <view class="xm-card-title">{{ $t('home.examplan') }}</view>
-      <view
-        v-if="!examplans.length"
-        class="xm-empty"
-        >{{ $t('common.empty') }}</view
-      >
-      <view
-        v-for="item in examplanList"
-        :key="item.id"
-        class="notice-item"
-      >
-        <view class="xm-value">{{ item.name }}</view>
+    <template v-else>
+      <!-- 教务通知 / 考试安排（首页仅展示最新 3 条，避免数据多时页面过长） -->
+      <view class="xm-card">
+        <view class="xm-card-title">{{ $t('home.notice') }}</view>
         <view
-          class="xm-label"
-          v-if="item.time"
-          >{{ item.time }}</view
+          v-if="!notices.length"
+          class="xm-empty"
+          >{{ $t('common.empty') }}</view
+        >
+        <view
+          v-for="item in noticeList"
+          :key="item.id"
+          class="notice-item"
+        >
+          <view class="xm-value">{{ item.title }}</view>
+          <view class="xm-label">{{ item.time }}</view>
+        </view>
+        <view
+          v-if="notices.length"
+          class="xm-label card-more"
+          @click="go('/pages/notice/notice')"
+          >{{ $t('home.viewAll') }}</view
         >
       </view>
-      <view
-        v-if="examplans.length"
-        class="xm-label card-more"
-        @click="go('/pages/examplan/examplan')"
-        >{{ $t('home.viewAll') }}</view
-      >
-    </view>
 
-    <!-- 考勤统计（数据来自 /attendance/getPie，以占比条形式呈现） -->
-    <view class="xm-card">
-      <view class="xm-card-title">{{ $t('home.attendanceStats') }}</view>
-      <view
-        v-if="!attendanceTotal"
-        class="xm-empty"
-        >{{ $t('common.empty') }}</view
-      >
-      <view
-        v-for="s in attendanceRows"
-        :key="s.label"
-        class="stat-row"
-      >
-        <text class="stat-label">{{ s.label }}</text>
-        <view class="xm-bar-wrap">
+      <view class="xm-card">
+        <view class="xm-card-title">{{ $t('home.examplan') }}</view>
+        <view
+          v-if="!examplans.length"
+          class="xm-empty"
+          >{{ $t('common.empty') }}</view
+        >
+        <view
+          v-for="item in examplanList"
+          :key="item.id"
+          class="notice-item"
+        >
+          <view class="xm-value">{{ item.name }}</view>
           <view
-            class="xm-bar"
-            :style="{ width: s.percent + '%', background: s.color }"
-          ></view>
+            class="xm-label"
+            v-if="item.time"
+            >{{ item.time }}</view
+          >
         </view>
-        <text class="stat-num">{{ s.value }}</text>
+        <view
+          v-if="examplans.length"
+          class="xm-label card-more"
+          @click="go('/pages/examplan/examplan')"
+          >{{ $t('home.viewAll') }}</view
+        >
       </view>
-    </view>
 
-    <!-- 成绩统计（数据来自 /score/getLine，以条形图形式呈现） -->
-    <view class="xm-card">
-      <view class="xm-card-title">{{ $t('home.scoreStats') }}</view>
-      <view
-        v-if="!scoreRows.length"
-        class="xm-empty"
-        >{{ $t('common.empty') }}</view
-      >
-      <view
-        v-for="s in scoreRows"
-        :key="s.label"
-        class="stat-row"
-      >
-        <text class="stat-label">{{ s.label }}</text>
-        <view class="xm-bar-wrap">
-          <view
-            class="xm-bar"
-            :style="{ width: s.percent + '%' }"
-          ></view>
+      <!-- 考勤统计（数据来自 /attendance/getPie，以占比条形式呈现） -->
+      <view class="xm-card">
+        <view class="xm-card-title">{{ $t('home.attendanceStats') }}</view>
+        <view
+          v-if="!attendanceTotal"
+          class="xm-empty"
+          >{{ $t('common.empty') }}</view
+        >
+        <view
+          v-for="s in attendanceRows"
+          :key="s.label"
+          class="stat-row"
+        >
+          <text class="stat-label">{{ s.label }}</text>
+          <view class="xm-bar-wrap">
+            <view
+              class="xm-bar"
+              :style="{ width: s.percent + '%', background: s.color }"
+            ></view>
+          </view>
+          <text class="stat-num">{{ s.value }}</text>
         </view>
-        <text class="stat-num">{{ s.value }}</text>
       </view>
-    </view>
+
+      <!-- 成绩统计（数据来自 /score/getLine，以条形图形式呈现） -->
+      <view class="xm-card">
+        <view class="xm-card-title">{{ $t('home.scoreStats') }}</view>
+        <view
+          v-if="!scoreRows.length"
+          class="xm-empty"
+          >{{ $t('common.empty') }}</view
+        >
+        <view
+          v-for="s in scoreRows"
+          :key="s.label"
+          class="stat-row"
+        >
+          <text class="stat-label">{{ s.label }}</text>
+          <view class="xm-bar-wrap">
+            <view
+              class="xm-bar"
+              :style="{ width: s.percent + '%' }"
+            ></view>
+          </view>
+          <text class="stat-num">{{ s.value }}</text>
+        </view>
+      </view>
+    </template>
   </view>
 </template>
 
@@ -230,12 +243,11 @@ const go = (path) => uni.navigateTo({ url: path })
 const notices = ref([])
 const examplans = ref([])
 
-// 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用
-const loadNotices = () => {
+// 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用（返回 Promise 供缓存写回时机使用）
+const loadNotices = () =>
   get('/notice/selectAll').then((res) => {
     notices.value = (res.data && res.data.data) || []
   })
-}
 const onWsPush = () => loadNotices()
 
 // 首页仅展示最新 3 条，完整列表在对应页面分页浏览
@@ -277,6 +289,36 @@ const scoreRows = computed(() => {
   return [mk(t('home.bandExcellent'), s.excellent), mk(t('home.bandGood'), s.good), mk(t('home.bandFail'), s.fail)]
 })
 
+// 首页数据本地缓存（按用户 ID 隔离，防止切换账号闪现他人数据）：
+// 进入首页先渲染缓存（秒开不白屏），静默刷新完成后写回；无缓存时显示骨架屏
+const HOME_CACHE_KEY = 'xm-home-cache-'
+const firstLoading = ref(true)
+
+const applyCache = () => {
+  try {
+    const cached = uni.getStorageSync(HOME_CACHE_KEY + userStore.user.id)
+    if (cached && typeof cached === 'object' && Array.isArray(cached.notices)) {
+      notices.value = cached.notices || []
+      examplans.value = cached.examplans || []
+      if (cached.attendanceStats) attendanceStats.value = cached.attendanceStats
+      if (cached.scoreStats) scoreStats.value = cached.scoreStats
+      return true
+    }
+  } catch {}
+  return false
+}
+
+const saveCache = () => {
+  try {
+    uni.setStorageSync(HOME_CACHE_KEY + userStore.user.id, {
+      notices: notices.value,
+      examplans: examplans.value,
+      attendanceStats: attendanceStats.value,
+      scoreStats: scoreStats.value,
+    })
+  } catch {}
+}
+
 onShow(() => {
   if (!userStore.isLoggedIn) {
     uni.reLaunch({ url: '/pages/login/login' })
@@ -296,33 +338,41 @@ onShow(() => {
     pullPermissions()
   }
 
-  loadNotices()
-  get('/examplan/selectAll').then((res) => {
-    examplans.value = (res.data && res.data.data) || []
-  })
-  get('/attendance/getPie').then((res) => {
-    if (res.data.code !== '200') return
-    const data = (res.data.data && res.data.data.data) || []
-    const stats = { late: 0, absent: 0, earlyLeave: 0, normal: 0 }
-    // 后端按中文状态分组统计，这里按中文键匹配（数据库存储值为中文）
-    data.forEach((item) => {
-      if (item.name === '迟到') stats.late = item.value || 0
-      else if (item.name === '缺勤') stats.absent = item.value || 0
-      else if (item.name === '早退') stats.earlyLeave = item.value || 0
-      else if (item.name === '正常') stats.normal = item.value || 0
-    })
-    attendanceStats.value = stats
-  })
-  get('/score/getLine').then((res) => {
-    if (res.data.code !== '200') return
-    const yAxis = (res.data.data && res.data.data.yAxis) || []
-    if (yAxis.length >= 5) {
-      scoreStats.value = {
-        excellent: yAxis[0] || 0,
-        good: yAxis[1] || 0,
-        fail: yAxis[yAxis.length - 1] || 0,
+  // 首页数据：先渲染缓存（秒开），再静默刷新；无缓存时显示骨架屏。
+  // 每个请求单独 catch（网络失败不应打断其它请求），全部结束后写缓存并撤骨架屏
+  firstLoading.value = !applyCache()
+  const tasks = [
+    get('/examplan/selectAll').then((res) => {
+      examplans.value = (res.data && res.data.data) || []
+    }),
+    get('/attendance/getPie').then((res) => {
+      if (res.data.code !== '200') return
+      const data = (res.data.data && res.data.data.data) || []
+      const stats = { late: 0, absent: 0, earlyLeave: 0, normal: 0 }
+      // 后端按中文状态分组统计，这里按中文键匹配（数据库存储值为中文）
+      data.forEach((item) => {
+        if (item.name === '迟到') stats.late = item.value || 0
+        else if (item.name === '缺勤') stats.absent = item.value || 0
+        else if (item.name === '早退') stats.earlyLeave = item.value || 0
+        else if (item.name === '正常') stats.normal = item.value || 0
+      })
+      attendanceStats.value = stats
+    }),
+    get('/score/getLine').then((res) => {
+      if (res.data.code !== '200') return
+      const yAxis = (res.data.data && res.data.data.yAxis) || []
+      if (yAxis.length >= 5) {
+        scoreStats.value = {
+          excellent: yAxis[0] || 0,
+          good: yAxis[1] || 0,
+          fail: yAxis[yAxis.length - 1] || 0,
+        }
       }
-    }
+    }),
+  ]
+  Promise.all([...tasks, loadNotices().catch(() => {})].map((p) => p.catch(() => {}))).then(() => {
+    saveCache()
+    firstLoading.value = false
   })
 })
 
