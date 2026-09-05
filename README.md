@@ -17,18 +17,18 @@
 
 根据你的目的选择路径，每一节都是手把手步骤，照着做即可：
 
-| 你的目的 | 看哪一节 | 难度 |
-|---|---|---|
-| 只想在自己电脑上把它跑起来看看效果 | [Web 端部署 → 方式一：Docker 一键部署](#部署说明--web-端) | ⭐ 最简单，只需装一个 Docker |
-| 想在代码上二次开发、改功能 | [Web 端部署 → 方式二：手动部署](#方式二手动部署适合二次开发) | ⭐⭐ 需要装 Node/JDK/Maven/MySQL |
-| 想要手机端（微信小程序） | [App 端部署（微信小程序）](#部署说明--app-端微信小程序) | ⭐⭐ 需要微信开发者工具 |
+| 你的目的                           | 看哪一节                                                     | 难度                             |
+| ---------------------------------- | ------------------------------------------------------------ | -------------------------------- |
+| 只想在自己电脑上把它跑起来看看效果 | [Web 端部署 → 方式一：Docker 一键部署](#部署说明--web-端)    | ⭐ 最简单，只需装一个 Docker     |
+| 想在代码上二次开发、改功能         | [Web 端部署 → 方式二：手动部署](#方式二手动部署适合二次开发) | ⭐⭐ 需要装 Node/JDK/Maven/MySQL |
+| 想要手机端（微信小程序）           | [App 端部署（微信小程序）](#部署说明--app-端微信小程序)      | ⭐⭐ 需要微信开发者工具          |
 
 ## 仓库分支说明
 
-| 分支 | 内容 |
-|---|---|
-| `cn-en` | **Web 双语版**（最新版本：中英文切换 + 全部功能，本 README 对应此分支） |
-| `mobile` | 微信小程序版（uni-app，与 Web 端共用同一后端，功能对齐） |
+| 分支     | 内容                                                                    |
+| -------- | ----------------------------------------------------------------------- |
+| `cn-en`  | **Web 双语版**（最新版本：中英文切换 + 全部功能，本 README 对应此分支） |
+| `mobile` | 微信小程序版（uni-app，与 Web 端共用同一后端，功能对齐）                |
 
 ## 技术栈
 
@@ -47,25 +47,25 @@
 
 **系统亮点**
 
-| 方面 | 说明 |
-|---|---|
+| 方面                      | 说明                                                                                                                                                                                                                                          |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | RBAC 权限（数据库可配置） | `@RequirePermission` 注解 + AOP 切面做接口级鉴权；`sys_role` / `sys_permission` / `sys_role_permission` 三表存授权，【系统管理→权限设置】页在线勾选即时生效；ADMIN 超管放行；路由级（`meta.roles`）、菜单级、按钮级（`v-permission`）三层联动 |
-| JWT 登录鉴权 | 独立签名密钥（`JWT_SECRET` 可覆盖）、过期时间可配；Axios 拦截器自动带 token，401 统一处理 |
-| 密码安全 | BCrypt 哈希存储（历史明文首次登录自动升级）；管理员可重置密码为 `123456`（库里存哈希），且不能重置自己 |
-| 登录保护 | 图形验证码 + 连续失败 5 次锁定 10 分钟（错误码 4008），成功/失败均写登录日志 |
-| 操作/登录日志 | AOP 自动记录非 GET 请求（密码脱敏、超长截断），每天凌晨 2 点定时清理 90 天前日志 |
-| 数据隔离 | 教师只看自己任课课程的成绩/考勤/作业/评教，学生只看自己的数据，管理员看全部 |
-| 中英文国际化 | vue-i18n 全页面覆盖；语言/主题偏好存数据库，一次设置多端同步 |
-| 深浅色主题 | light / dark / 跟随系统三档，CSS 变量体系 + Element Plus 暗色联动 + ECharts 重绘 |
-| 数据大屏 | `/dashboard` 全屏页：指标卡 + 成绩分布/考勤占比/学院人数/选课热度/职称结构/登录趋势六图 |
-| 智能算法 | 课程推荐：基于物品的协同过滤（选课矩阵 + 余弦相似度），冷启动自动降级热门推荐；学业预警：不及格占比/平均分差距/异常考勤率加权合成风险指数，三级预警并经 WebSocket 实时推送提醒 |
-| WebSocket 实时通知 | 请假审核、成绩发布、作业批改实时推送学生；提交通知教师；发通知全员广播，断线自动重连 |
-| Excel 导入导出 | 学生批量导入（EasyExcel 校验、跳过重复）/ 导出，成绩导出 |
-| 防重复提交与 XSS | `@NoRepeatSubmit` 关键写接口 2 秒防重；Jackson 反序列化中和脚本标签 |
-| 文件上传安全 | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls |
-| 通用 CRUD 框架 | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛；批量删除收敛为单条 IN 语句（Service 层拦截空集合） |
-| 单元测试与规范 | Vitest 16 个用例（Pinia store / useCrud），ESLint + Prettier |
-| Docker 化部署 | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`） |
+| JWT 登录鉴权              | 独立签名密钥（`JWT_SECRET` 可覆盖）、过期时间可配；Axios 拦截器自动带 token，401 统一处理                                                                                                                                                     |
+| 密码安全                  | BCrypt 哈希存储（历史明文首次登录自动升级）；管理员可重置密码为 `123456`（库里存哈希），且不能重置自己                                                                                                                                        |
+| 登录保护                  | 图形验证码 + 连续失败 5 次锁定 10 分钟（错误码 4008），成功/失败均写登录日志                                                                                                                                                                  |
+| 操作/登录日志             | AOP 自动记录非 GET 请求（密码脱敏、超长截断），每天凌晨 2 点定时清理 90 天前日志                                                                                                                                                              |
+| 数据隔离                  | 教师只看自己任课课程的成绩/考勤/作业/评教，学生只看自己的数据，管理员看全部                                                                                                                                                                   |
+| 中英文国际化              | vue-i18n 全页面覆盖；语言/主题偏好存数据库，一次设置多端同步                                                                                                                                                                                  |
+| 深浅色主题                | light / dark / 跟随系统三档，CSS 变量体系 + Element Plus 暗色联动 + ECharts 重绘                                                                                                                                                              |
+| 数据大屏                  | `/dashboard` 全屏页：指标卡 + 成绩分布/考勤占比/学院人数/选课热度/职称结构/登录趋势六图                                                                                                                                                       |
+| 智能算法                  | 课程推荐：基于物品的协同过滤（选课矩阵 + 余弦相似度），冷启动自动降级热门推荐；学业预警：不及格占比/平均分差距/异常考勤率加权合成风险指数，三级预警并经 WebSocket 实时推送提醒                                                                |
+| WebSocket 实时通知        | 请假审核、成绩发布、作业批改实时推送学生；提交通知教师；发通知全员广播，断线自动重连                                                                                                                                                          |
+| Excel 导入导出            | 学生批量导入（EasyExcel 校验、跳过重复）/ 导出，成绩导出                                                                                                                                                                                      |
+| 防重复提交与 XSS          | `@NoRepeatSubmit` 关键写接口 2 秒防重；Jackson 反序列化中和脚本标签                                                                                                                                                                           |
+| 文件上传安全              | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls                                                                                                                                        |
+| 通用 CRUD 框架            | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛；批量删除收敛为单条 IN 语句（Service 层拦截空集合）                                                                                |
+| 单元测试与规范            | Vitest 16 个用例（Pinia store / useCrud），ESLint + Prettier                                                                                                                                                                                  |
+| Docker 化部署             | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`）                                                                                                                                                                      |
 
 **内置账号**（初始密码均为 `123456`，数据库存 BCrypt 哈希，登录后可修改）：
 
@@ -75,7 +75,7 @@
 学生：zhangsan（张三）、lisi（李四）、wangwu（王五）
 ```
 
-数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)。
+数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)；系统流程与全部代码文件说明见 [docs/系统设计与文件说明.md](docs/系统设计与文件说明.md)。
 
 ## 核心模块之间的联系（数据怎么流转）
 
@@ -105,7 +105,7 @@
 ```text
 manager-vue3
 +-- sql/                          # 全量数据库种子（表结构 + 索引 + 演示数据 + RBAC 授权）
-+-- docs/                         # 数据库 ER 图（Mermaid，GitHub 原生渲染）
++-- docs/                         # 数据库 ER 图 + 系统流程与文件说明（Mermaid，GitHub 原生渲染）
 +-- vue/                          # Web 前端（components/composables/locales/stores/views 等）
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
 +-- docker-compose.yml            # 三容器编排
@@ -171,10 +171,10 @@ docker compose up -d --build
 
 用浏览器（推荐 Chrome/Edge）打开：
 
-| 地址 | 说明 |
-|---|---|
-| `http://localhost:8080` | **系统入口**（部署在服务器上则用 `http://服务器IP:8080`） |
-| `http://localhost:9091/doc.html` | 接口文档（可选看） |
+| 地址                             | 说明                                                      |
+| -------------------------------- | --------------------------------------------------------- |
+| `http://localhost:8080`          | **系统入口**（部署在服务器上则用 `http://服务器IP:8080`） |
+| `http://localhost:9091/doc.html` | 接口文档（可选看）                                        |
 
 登录页输入账号密码和图片验证码（**验证码不区分大小写**），选好角色点登录：
 
@@ -200,11 +200,11 @@ docker compose up -d --build       # 改了代码后重新构建启动
 
 #### 环境变量（不改文件改配置）
 
-| 变量 | 作用 | 默认值 |
-|---|---|---|
-| `JWT_SECRET` | 登录令牌签名密钥 | `change-me-in-production`，**公网部署必须改** |
-| `SPRING_DATASOURCE_PASSWORD` | 数据库密码 | `123456` |
-| `CORS_ALLOWED_ORIGINS` | 允许跨域的前端来源 | `http://localhost:8080` |
+| 变量                         | 作用               | 默认值                                        |
+| ---------------------------- | ------------------ | --------------------------------------------- |
+| `JWT_SECRET`                 | 登录令牌签名密钥   | `change-me-in-production`，**公网部署必须改** |
+| `SPRING_DATASOURCE_PASSWORD` | 数据库密码         | `123456`                                      |
+| `CORS_ALLOWED_ORIGINS`       | 允许跨域的前端来源 | `http://localhost:8080`                       |
 
 用法示例（Windows PowerShell）：
 
@@ -220,12 +220,12 @@ $env:JWT_SECRET="一串只有你知道的随机长字符串"; docker compose up 
 
 #### 1. 安装基础环境（四样）
 
-| 工具 | 下载地址 | 验证命令 |
-|---|---|---|
-| Node.js 18+ | [nodejs.org](https://nodejs.org/) 选 LTS 版 | `node -v`、`npm -v` |
-| JDK 8 | 搜索 "JDK 8 下载"（Oracle 或 Adoptium） | `java -version` |
-| Maven 3.6+ | [maven.apache.org](https://maven.apache.org/download.cgi)（解压后把 bin 目录加入 PATH） | `mvn -v` |
-| MySQL 5.7 / 8.x | [dev.mysql.com/downloads](https://dev.mysql.com/downloads/)（安装时记住你设置的 root 密码） | `mysql --version` |
+| 工具            | 下载地址                                                                                    | 验证命令            |
+| --------------- | ------------------------------------------------------------------------------------------- | ------------------- |
+| Node.js 18+     | [nodejs.org](https://nodejs.org/) 选 LTS 版                                                 | `node -v`、`npm -v` |
+| JDK 8           | 搜索 "JDK 8 下载"（Oracle 或 Adoptium）                                                     | `java -version`     |
+| Maven 3.6+      | [maven.apache.org](https://maven.apache.org/download.cgi)（解压后把 bin 目录加入 PATH）     | `mvn -v`            |
+| MySQL 5.7 / 8.x | [dev.mysql.com/downloads](https://dev.mysql.com/downloads/)（安装时记住你设置的 root 密码） | `mysql --version`   |
 
 每装一个就开一个新命令行窗口执行验证命令，**都报出版本号再继续**。如果提示"不是内部或外部命令"，说明该工具的 bin 目录没加入系统 PATH 环境变量——把安装目录下的 bin 路径追加到"系统属性 → 环境变量 → Path"后重开命令行。
 
@@ -301,9 +301,9 @@ npm install
 
 ### 第 3 步：改两处配置（必改）
 
-| 文件 | 改什么 |
-|---|---|
-| `src/manifest.json` | 找到 `"mp-weixin"` 里的 `"appid"`，把值换成你自己的 AppID |
+| 文件                  | 改什么                                                                                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/manifest.json`   | 找到 `"mp-weixin"` 里的 `"appid"`，把值换成你自己的 AppID                                                                                                             |
 | `src/utils/config.js` | 第 4 行 `baseUrl`：**开发者工具模拟器**用 `http://localhost:9091`；**真机预览**用电脑局域网 IP（命令行执行 `ipconfig`，找"IPv4 地址"，如 `http://192.168.1.10:9091`） |
 
 ### 第 4 步：构建并导入开发者工具
@@ -339,16 +339,16 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 ## 配置速查
 
-| 配置 | 文件 | 默认值 |
-|---|---|---|
-| 后端端口 | `springboot/src/main/resources/application.yml` | `9091` |
-| 数据库连接 | 同上（`ip` / `spring.datasource.*`） | `localhost:3306/xm_educational_manager`，`root/123456` |
-| JWT 密钥/过期 | 同上 `jwt.*`（支持环境变量 `JWT_SECRET`） | 内置默认值 / `2` 小时 |
-| CORS 白名单 | 同上 `app.cors.allowed-origins`（环境变量 `CORS_ALLOWED_ORIGINS`） | `http://localhost:8080,http://localhost:5173` |
-| 文件访问前缀 | 同上 `files.url-prefix` | `/api/files/` |
-| 前端接口地址 | `vue/.env.development`（开发）/ `.env.production`（生产 `/api`） | 见文件 |
-| 前端开发端口 | `vue/vite.config.ts` | `8080` |
-| 上传文件目录 | 后端启动目录 `user.dir` 下的 `files/`（MD5 去重；演示头像随仓库 `files/` 目录分发，Docker 部署以绑定挂载方式提供） | — |
+| 配置          | 文件                                                                                                               | 默认值                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| 后端端口      | `springboot/src/main/resources/application.yml`                                                                    | `9091`                                                 |
+| 数据库连接    | 同上（`ip` / `spring.datasource.*`）                                                                               | `localhost:3306/xm_educational_manager`，`root/123456` |
+| JWT 密钥/过期 | 同上 `jwt.*`（支持环境变量 `JWT_SECRET`）                                                                          | 内置默认值 / `2` 小时                                  |
+| CORS 白名单   | 同上 `app.cors.allowed-origins`（环境变量 `CORS_ALLOWED_ORIGINS`）                                                 | `http://localhost:8080,http://localhost:5173`          |
+| 文件访问前缀  | 同上 `files.url-prefix`                                                                                            | `/api/files/`                                          |
+| 前端接口地址  | `vue/.env.development`（开发）/ `.env.production`（生产 `/api`）                                                   | 见文件                                                 |
+| 前端开发端口  | `vue/vite.config.ts`                                                                                               | `8080`                                                 |
+| 上传文件目录  | 后端启动目录 `user.dir` 下的 `files/`（MD5 去重；演示头像随仓库 `files/` 目录分发，Docker 部署以绑定挂载方式提供） | —                                                      |
 
 ## 安全加固清单（上线前必做）
 
@@ -400,9 +400,9 @@ BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码
 
 ## 可个性化调整
 
-| 想改什么 | 位置 |
-|---|---|
-| 系统名称 | Web：`vue/src/locales/zh-CN.ts` 的 `layout.title`；小程序：`BISHE-mobile/src/locales/zh-CN.js` 同名键（中英两个语言包都要改） |
-| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss` |
-| 大屏样式 | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放） |
-| 演示数据 | `sql/` 下备份脚本可按需修改 |
+| 想改什么    | 位置                                                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 系统名称    | Web：`vue/src/locales/zh-CN.ts` 的 `layout.title`；小程序：`BISHE-mobile/src/locales/zh-CN.js` 同名键（中英两个语言包都要改） |
+| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`              |
+| 大屏样式    | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放）                                                                           |
+| 演示数据    | `sql/` 下备份脚本可按需修改                                                                                                   |
