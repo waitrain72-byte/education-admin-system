@@ -71,7 +71,7 @@
           />
           <image
             v-if="item.avatar"
-            :src="item.avatar"
+            :src="resolveFileUrl(item.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -113,7 +113,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -168,7 +173,7 @@
           v-if="form.avatar"
         >
           <image
-            :src="form.avatar"
+            :src="resolveFileUrl(form.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -208,7 +213,7 @@ import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { put } from '@/utils/request'
+import { put, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 

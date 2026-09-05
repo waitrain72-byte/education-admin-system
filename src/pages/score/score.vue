@@ -72,40 +72,32 @@
       class="xm-card"
     >
       <view class="xm-between">
-        <view class="xm-row">
+        <view class="xm-row item-head">
           <checkbox
             v-if="manageMode"
             :checked="selectedIds.includes(row.id)"
             style="transform: scale(0.8)"
             @click.stop="toggleSelect(row.id)"
           />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ row.courseName }}</view
-          >
+          <!-- 主标题：教师视角看学生、学生/管理员视角看课程 -->
+          <view class="xm-value xm-ellipsis item-title">{{
+            userStore.role === 'TEACHER' ? row.studentName : row.courseName
+          }}</view>
         </view>
-        <view class="xm-label">{{ $t('pages.score.id') }}: {{ row._index }}</view>
-      </view>
-      <view
-        class="xm-row"
-        style="flex-wrap: wrap; margin-top: 12rpx"
-      >
-        <view class="xm-label field">{{ $t('pages.score.studentName') }}: {{ row.studentName }}</view>
-        <view class="xm-label field">{{ $t('pages.score.teacherName') }}: {{ row.teacherName }}</view>
-        <view class="xm-label field">{{ $t('pages.score.ordinaryScore') }}: {{ row.ordinaryScore }}</view>
-        <view class="xm-label field">{{ $t('pages.score.examScore') }}: {{ row.examScore }}</view>
-      </view>
-      <view
-        class="xm-between"
-        style="margin-top: 8rpx"
-      >
+        <!-- 总分大字右置：不及格红色警示 -->
         <view
-          class="xm-value"
-          style="color: var(--xm-brand); font-weight: bold"
+          class="score-total"
+          :class="{ 'score-fail': Number(row.score) < 60 }"
+          >{{ row.score }}</view
         >
-          {{ $t('pages.score.totalScore') }}: {{ row.score }}
-        </view>
+      </view>
+      <view class="item-meta">
+        <text v-if="userStore.role === 'TEACHER'">{{ row.courseName }} · </text>
+        <text v-else>{{ row.teacherName }} · </text>
+        <text
+          >{{ $t('pages.score.ordinaryScore') }} {{ row.ordinaryScore }} · {{ $t('pages.score.examScore') }}
+          {{ row.examScore }}</text
+        >
       </view>
 
       <view
@@ -121,7 +113,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 成绩录入/编辑表单（底部弹层，仅教师） -->
     <view
@@ -348,9 +345,33 @@ onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
-.field {
-  width: 50%;
-  margin-bottom: 8rpx;
+/* 主标题行可收缩省略，右侧总分固定不被挤压 */
+.item-head {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-weight: bold;
+}
+
+/* 总分大字右置；不及格红色警示 */
+.score-total {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: var(--xm-brand);
+  flex-shrink: 0;
+}
+
+.score-fail {
+  color: var(--xm-danger);
+}
+
+/* 次要信息行：弱化小字 */
+.item-meta {
+  font-size: 24rpx;
+  color: var(--xm-text-2);
+  margin-top: 12rpx;
 }
 
 .picker-display {

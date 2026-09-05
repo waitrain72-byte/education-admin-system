@@ -3,36 +3,43 @@
     class="xm-page"
     :class="themeClass"
   >
-    <!-- 搜索区 -->
+    <!-- 搜索区：第一行 教室名 + 查询/重置；第二行 状态筛选独占整行（不再挤压换行） -->
     <view
       class="xm-card xm-row"
       style="flex-wrap: wrap"
     >
       <input
         class="xm-input"
-        style="flex: 1"
+        style="flex: 1 1 0; min-width: 0"
         v-model="name"
         :placeholder="$t('pages.roomplan.searchPlaceholder')"
       />
-      <picker
-        style="flex: 1"
-        :range="statusLabels"
-        @change="onSearchStatusChange"
-      >
-        <view class="xm-input">{{ status ? statusLabel(status) : $t('pages.roomplan.statusPlaceholder') }}</view>
-      </picker>
       <button
         class="xm-btn xm-btn-primary"
+        style="flex-shrink: 0"
         @click="search"
       >
         {{ $t('common.search') }}
       </button>
       <button
         class="xm-btn xm-btn-plain"
+        style="flex-shrink: 0"
         @click="onReset"
       >
         {{ $t('common.reset') }}
       </button>
+      <picker
+        style="flex: 1 1 100%"
+        :range="statusLabels"
+        @change="onSearchStatusChange"
+      >
+        <!-- 普通 view 不会像原生 input 那样自动垂直居中文字，需显式 flex 居中 -->
+        <view
+          class="xm-input"
+          style="display: flex; align-items: center"
+          >{{ status ? statusLabel(status) : $t('pages.roomplan.statusPlaceholder') }}</view
+        >
+      </picker>
     </view>
 
     <!-- 操作区：仅管理员可新增/批量管理（与 Web 端 user.role === 'ADMIN' 一致） -->
@@ -121,7 +128,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view

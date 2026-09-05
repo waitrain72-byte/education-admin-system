@@ -41,7 +41,7 @@
           @click="go(item.path)"
         >
           <text class="xm-grid-item-emoji">{{ item.icon }}</text>
-          {{ $t(item.name) }}
+          <view class="xm-grid-item-label">{{ $t(item.name) }}</view>
         </view>
       </view>
     </view>

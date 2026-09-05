@@ -75,6 +75,20 @@ page {
   padding: 28rpx;
   margin-bottom: 24rpx;
   box-shadow: var(--xm-shadow);
+  /* 进场动画：卡片淡入上移（transform/opacity 走 GPU，不影响滚动性能） */
+  animation: xm-card-in 0.35s ease both;
+}
+
+@keyframes xm-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 区块标题：左侧主色竖条，与高星项目 Card 头部一致 */
@@ -412,7 +426,8 @@ page {
   }
 }
 
-/* 宫格项：透明底融入卡片，emoji 放进软色圆角 chip（四色轮换），文字限宽防溢出 */
+/* 宫格项：透明底融入卡片，图标软色圆角 chip（四色轮换）在上、文字在下
+   ——文字独占一行，五字标签（管理员信息）不再挤在图标旁换行错位 */
 .xm-grid-item {
   background: transparent;
   border-radius: 20rpx;
@@ -436,6 +451,10 @@ page {
   border-radius: 28rpx;
   margin-bottom: 12rpx;
   background: var(--xm-bg-input);
+}
+
+.xm-grid-item-label {
+  line-height: 1.3;
 }
 
 /* emoji chip 四色轮换：软底色与功能色一一对应 */

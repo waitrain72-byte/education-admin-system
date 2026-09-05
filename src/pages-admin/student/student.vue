@@ -71,7 +71,7 @@
           />
           <image
             v-if="item.avatar"
-            :src="item.avatar"
+            :src="resolveFileUrl(item.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -145,7 +145,7 @@
           v-if="form.avatar"
         >
           <image
-            :src="form.avatar"
+            :src="resolveFileUrl(form.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -245,7 +245,7 @@ import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { getData, put } from '@/utils/request'
+import { getData, put, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 

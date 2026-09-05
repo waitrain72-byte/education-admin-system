@@ -51,62 +51,37 @@
       class="xm-card"
     >
       <view class="xm-between">
-        <view class="xm-row">
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ row.courseName }}</view
-          >
-          <view
-            class="xm-tag"
-            v-if="row.score"
-            :class="scoreTagClass(row.score)"
-            >{{ row.score }}</view
-          >
-        </view>
-        <view class="xm-label">{{ $t('pages.homework.id') }}: {{ row._index }}</view>
-      </view>
-      <view
-        class="xm-row"
-        style="flex-wrap: wrap; margin-top: 12rpx"
-      >
-        <view class="xm-label field">{{ $t('pages.homework.studentName') }}: {{ row.studentName }}</view>
-        <view class="xm-label field">{{ $t('pages.homework.teacherName') }}: {{ row.teacherName }}</view>
-      </view>
-      <view style="margin-top: 8rpx">
-        <view class="xm-label">{{ $t('pages.homework.contentLabel') }}</view>
+        <!-- 主标题：作业内容；右侧批改状态语义化（已批改绿/待批改橙） -->
+        <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
         <view
-          class="xm-value"
-          style="margin-top: 4rpx"
-          >{{ row.content }}</view
+          class="xm-tag status-tag"
+          :class="row.score ? 'xm-tag-success' : 'xm-tag-warning'"
+          >{{ row.score ? row.score + ' 分' : '待批改' }}</view
         >
+      </view>
+      <view class="item-meta">
+        <text>{{ row.courseName }} · </text>
+        <text>{{ userStore.role === 'TEACHER' ? row.studentName : row.teacherName }}</text>
       </view>
       <view
         v-if="row.file"
         class="xm-between"
         style="margin-top: 12rpx"
       >
-        <view class="xm-label file-name">{{ $t('pages.homework.fileLabel') }}: {{ fileNameOf(row.file) }}</view>
+        <view class="xm-label file-name xm-ellipsis">{{ fileNameOf(row.file) }}</view>
         <button
           class="xm-btn xm-btn-plain"
-          style="height: 56rpx; line-height: 56rpx"
+          style="height: 56rpx; line-height: 56rpx; flex-shrink: 0"
           @click="down(row.file)"
         >
           {{ $t('pages.homework.download') }}
         </button>
       </view>
       <view
-        v-if="row.score"
-        style="margin-top: 8rpx"
+        v-if="row.score && row.descr"
+        class="item-descr"
+        >{{ row.descr }}</view
       >
-        <view class="xm-label">{{ $t('pages.homework.scoreLabel') }}: {{ row.score }}</view>
-        <view
-          v-if="row.descr"
-          class="xm-value"
-          style="margin-top: 4rpx"
-          >{{ row.descr }}</view
-        >
-      </view>
 
       <!-- 操作：学生（未打分可编辑/可删除）、教师（打分），与 Web 端一致 -->
       <view
@@ -303,14 +278,6 @@ const fileNameOf = (url) => {
   return decodeURIComponent(path.slice(path.lastIndexOf('/') + 1)) || url
 }
 
-const scoreTagClass = (score) => {
-  const num = Number(score)
-  if (Number.isNaN(num)) return ''
-  if (num >= 80) return 'xm-tag-success'
-  if (num >= 60) return 'xm-tag-warning'
-  return 'xm-tag-danger'
-}
-
 // 学生已选课程列表（与 Web 端 loadCourse 一致）
 const loadCourse = () => {
   get('/choice/selectAll', { studentId: userStore.user.id }).then((res) => {
@@ -459,9 +426,34 @@ onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
-.field {
-  width: 50%;
-  margin-bottom: 8rpx;
+/* 主标题：作业内容单行省略，右侧状态标签不被挤压 */
+.item-title {
+  font-weight: bold;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 状态标签：禁止收缩换行 */
+.status-tag {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 次要信息行：课程/师生弱化小字 */
+.item-meta {
+  font-size: 24rpx;
+  color: var(--xm-text-2);
+  margin-top: 12rpx;
+}
+
+/* 教师评语气泡 */
+.item-descr {
+  font-size: 26rpx;
+  color: var(--xm-text);
+  background: var(--xm-bg-input);
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  margin-top: 12rpx;
 }
 
 .picker-display {
