@@ -150,6 +150,11 @@ public class StudentController {
     @RequirePermission("student:export")
     @PostMapping("/import")
     public Result importExcel(@RequestParam("file") MultipartFile file) throws Exception {
+        // 格式限制：仅允许 Excel 文件（防止误传其它文件导致解析异常）
+        String fileName = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        if (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls")) {
+            return Result.error("400", "仅支持 .xlsx / .xls 格式的 Excel 文件");
+        }
         List<StudentExcel> rows = EasyExcel.read(file.getInputStream())
                 .head(StudentExcel.class)
                 .sheet()

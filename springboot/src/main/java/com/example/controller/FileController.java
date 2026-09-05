@@ -13,6 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 文件接口
@@ -23,6 +26,15 @@ public class FileController {
 
     // 文件上传存储路径
     private static final String filePath = System.getProperty("user.dir") + "/files/";
+
+    /**
+     * 上传扩展名白名单：业务只需要 图片（头像）+ 常见文档/压缩包（作业附件）。
+     * 无扩展名或不在名单内的一律拒绝，防止上传可执行脚本等危险文件。
+     */
+    private static final Set<String> ALLOWED_SUFFIXES = new HashSet<>(Arrays.asList(
+            "jpg", "jpeg", "png", "gif", "bmp", "webp",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "md",
+            "zip", "rar", "7z"));
 
     /**
      * 文件访问 URL 前缀：默认 /api/files/，本地开发（Vite 代理）与容器部署（nginx 反代）均可直接访问；
@@ -42,11 +54,15 @@ public class FileController {
         }
         String fileName = file.getOriginalFilename();
         String suffix = FileUtil.extName(fileName);
+        // 扩展名白名单校验：无扩展名或不在名单内直接拒绝
+        if (StrUtil.isBlank(suffix) || !ALLOWED_SUFFIXES.contains(suffix.toLowerCase())) {
+            return Result.error("400", "不支持的文件类型：仅允许图片、常见文档与压缩包");
+        }
         String storedName;
         try {
             byte[] bytes = file.getBytes();
             String md5 = SecureUtil.md5().digestHex(bytes);
-            storedName = StrUtil.isBlank(suffix) ? md5 : md5 + "." + suffix.toLowerCase();
+            storedName = md5 + "." + suffix.toLowerCase();
             if (!FileUtil.isDirectory(filePath)) {
                 FileUtil.mkdir(filePath);
             }

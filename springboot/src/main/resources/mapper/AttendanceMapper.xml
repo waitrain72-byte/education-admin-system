@@ -35,6 +35,12 @@
         where  id = #{id}
     </delete>
 
+    <delete id="deleteBatchIds">
+        delete from attendance
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
     <insert id="insert" parameterType="com.example.entity.Attendance" useGeneratedKeys="true">
         insert into attendance
         <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -1,5 +1,7 @@
 package com.example.mapper;
 
+import org.apache.ibatis.annotations.Param;
+
 import java.util.List;
 
 /**
@@ -13,6 +15,11 @@ public interface CrudMapper<T> {
     int insert(T entity);
 
     int deleteById(Integer id);
+
+    /**
+     * 批量删除：单条 IN 语句，替代循环逐条删除（空集合由 Service 层拦截，不会生成非法 SQL）
+     */
+    int deleteBatchIds(@Param("ids") List<Integer> ids);
 
     int updateById(T entity);
 

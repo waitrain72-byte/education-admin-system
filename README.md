@@ -61,7 +61,8 @@
 | WebSocket 实时通知 | 请假审核、成绩发布、作业批改实时推送学生；提交通知教师；发通知全员广播，断线自动重连 |
 | Excel 导入导出 | 学生批量导入（EasyExcel 校验、跳过重复）/ 导出，成绩导出 |
 | 防重复提交与 XSS | `@NoRepeatSubmit` 关键写接口 2 秒防重；Jackson 反序列化中和脚本标签 |
-| 通用 CRUD 框架 | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛 |
+| 文件上传安全 | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls |
+| 通用 CRUD 框架 | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛；批量删除收敛为单条 IN 语句（Service 层拦截空集合） |
 | 单元测试与规范 | Vitest 16 个用例（Pinia store / useCrud），ESLint + Prettier |
 | Docker 化部署 | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`） |
 

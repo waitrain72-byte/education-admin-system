@@ -15,8 +15,9 @@ spring:
     url: jdbc:mysql://${ip}:3306/xm_educational_manager?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      # 上传大小限制（配合 FileController 扩展名白名单）：20MB 足够作业文档/图片
+      max-file-size: 20MB
+      max-request-size: 20MB
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml

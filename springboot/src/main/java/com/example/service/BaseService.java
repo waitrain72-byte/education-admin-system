@@ -100,12 +100,13 @@ public abstract class BaseService<T extends Account> {
     }
 
     /**
-     * 批量删除
+     * 批量删除：单条 IN 语句。空集合直接返回（否则 foreach 会生成非法的 IN ()）。
      */
     public void deleteBatch(List<Integer> ids) {
-        for (Integer id : ids) {
-            getMapper().deleteById(id);
+        if (ids == null || ids.isEmpty()) {
+            return;
         }
+        getMapper().deleteBatchIds(ids);
     }
 
     /**

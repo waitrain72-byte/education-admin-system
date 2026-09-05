@@ -33,6 +33,12 @@
         where  id = #{id}
     </delete>
 
+    <delete id="deleteBatchIds">
+        delete from apply
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </delete>
+
     <insert id="insert" parameterType="com.example.entity.Apply" useGeneratedKeys="true">
         insert into apply
         <trim prefix="(" suffix=")" suffixOverrides=",">

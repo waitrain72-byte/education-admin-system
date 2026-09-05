@@ -1,8 +1,7 @@
 -- ============================================================
 -- 教务管理系统 精简演示种子数据（由净化后的数据库自动导出）
--- 演示账号：admin(管理员) / luys(教师) / zhangsan、lisi、wangwu(学生)
--- 头像：files/ 目录仅保留 5 个在用文件，账号头像地址为 /api/files/ 相对路径
--- 如需恢复完整量演示数据，使用同目录 xm_educational_manager-full-original.sql
+-- 演示账号：admin(管理员) / luys(教师) / zhangsan、lisi、wangwu(学生)，初始密码均为 123456
+-- 头像：files/ 目录仅保留 5 个在用文件，账号头像与作业附件地址为 /api/files/ 相对路径
 -- ============================================================
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -176,7 +175,7 @@ CREATE TABLE `homework` (
   `descr` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '说明',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='作业信息表';
-INSERT INTO `homework` (`id`,`content`,`course_id`,`student_id`,`teacher_id`,`file`,`score`,`descr`) VALUES (1,'中国近代史纲要第二章第二节作业！',6,1,2,'http://localhost:9090/files/1733214242205-本科毕业设计（论文）开题报告-219981102-邓余.docx','80','还不错！'),(2,'线性代数第一章作业！',5,2,2,'http://localhost:9091/files/1740051505226-建议.txt',NULL,''),(12,'高等数学 第3次作业（高等数学 练习）',1,2,2,NULL,NULL,'待批改'),(42,'线性代数 第3次作业（线性代数 练习）',5,2,2,NULL,NULL,'待批改'),(43,'线性代数 第4次作业（线性代数 练习）',5,3,2,NULL,'81','已批改'),(47,'中国近代史纲要 第2次作业（中国近代史纲要 练习）',6,1,2,NULL,NULL,'待批改');
+INSERT INTO `homework` (`id`,`content`,`course_id`,`student_id`,`teacher_id`,`file`,`score`,`descr`) VALUES (1,'中国近代史纲要第二章第二节作业！',6,1,2,'/api/files/1733214242205-本科毕业设计（论文）开题报告-219981102-邓余.docx','80','还不错！'),(2,'线性代数第一章作业！',5,2,2,'/api/files/1740051505226-建议.txt',NULL,''),(12,'高等数学 第3次作业（高等数学 练习）',1,2,2,NULL,NULL,'待批改'),(42,'线性代数 第3次作业（线性代数 练习）',5,2,2,NULL,NULL,'待批改'),(43,'线性代数 第4次作业（线性代数 练习）',5,3,2,NULL,'81','已批改'),(47,'中国近代史纲要 第2次作业（中国近代史纲要 练习）',6,1,2,NULL,NULL,'待批改');
 -- homework: 6 rows
 -- >>> end-of-statement <<<
 
@@ -265,7 +264,7 @@ CREATE TABLE `student` (
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='学生信息表';
-INSERT INTO `student` (`id`,`username`,`password`,`name`,`avatar`,`role`,`college_id`,`speciality_id`,`class_id`,`score`,`theme`,`locale`) VALUES (1,'zhangsan','$2a$10$5Pxu5urMtYH1DTPUrVMdHuxWlKrxkKmNQC9MU8g./5K10hMg26z7K','张三','/api/files/1782741766056-蛋白粉.png','STUDENT',5,3,1,7,'system','zh-CN'),(2,'lisi','$2a$10$RSjWQWHUo.z9oxRtp6haHecKBXxv.4qbpV5cbXi31YMxdjtJFbt5y','李四','/api/files/1782741760662-蛋白粉.png','STUDENT',4,4,3,5,'system','zh-CN'),(3,'wangwu','123','王五','/api/files/1782741753481-蛋白粉.png','STUDENT',3,1,2,5,'system','zh-CN');
+INSERT INTO `student` (`id`,`username`,`password`,`name`,`avatar`,`role`,`college_id`,`speciality_id`,`class_id`,`score`,`theme`,`locale`) VALUES (1,'zhangsan','$2a$10$HWTcpOLJAiEFHAguE5nB0.1zvvYxTUVr4IX5GMZRXBwttsnv3vxwC','张三','/api/files/1782741766056-蛋白粉.png','STUDENT',5,3,1,7,'system','zh-CN'),(2,'lisi','$2a$10$pZBRjGax7whN034u83ohX.wl1ctT3g.F8ZmBSREsNMqiuqIa18AHK','李四','/api/files/1782741760662-蛋白粉.png','STUDENT',4,4,3,5,'system','zh-CN'),(3,'wangwu','$2a$10$qC3N4eO9Mm7ghIeDEOKgGOKRHvon7gHyYh/KBmILsbDZV6JqYLnJm','王五','/api/files/1782741753481-蛋白粉.png','STUDENT',3,1,2,5,'system','zh-CN');
 -- student: 3 rows
 -- >>> end-of-statement <<<
 
