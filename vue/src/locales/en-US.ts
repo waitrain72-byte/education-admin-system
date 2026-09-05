@@ -38,6 +38,7 @@ export default {
         choice: 'My Enrollments',
         curriculum: 'My Timetable',
         score: 'My Scores',
+        warning: 'Academic Warning',
         comment: 'Course Evaluation',
         apply: 'Leave Requests',
         homework: 'Homework',
@@ -249,9 +250,11 @@ export default {
             title: 'Permissions',
             subtitle: 'Configure which features each role can access. Changes take effect immediately.',
             adminTag: 'Super Admin',
-            adminHint: 'The Super Admin has all permissions and is always allowed; it needs no configuration and cannot be changed here.',
+            adminHint:
+                'The Super Admin has all permissions and is always allowed; it needs no configuration and cannot be changed here.',
             checkAll: 'Check all in group',
-            resetConfirm: 'This will restore the default permission set for this role (unsaved changes will be lost). Continue?',
+            resetConfirm:
+                'This will restore the default permission set for this role (unsaved changes will be lost). Continue?',
             resetDone: 'Restored to default permissions',
         },
     },

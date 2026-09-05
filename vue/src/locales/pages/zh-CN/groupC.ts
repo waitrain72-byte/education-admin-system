@@ -5,6 +5,7 @@
 export default {
     pages: {
         choice: {
+            recommend: '为你推荐',
             cancelChoice: '取消选课',
             comment: '评教',
             dialogTitle: '请填写评教信息',

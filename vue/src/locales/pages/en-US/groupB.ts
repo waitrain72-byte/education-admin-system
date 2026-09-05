@@ -1,8 +1,22 @@
 /**
- * Group B locale pack (English): notice/examplan/roomplan/college/speciality/classes/course.
+ * Group B locale pack (English): notice/examplan/roomplan/college/speciality/classes/course/warning.
  */
 export default {
     pages: {
+        warning: {
+            desc: 'Multi-indicator weighted model based on scores and attendance: failed ratio (40%) + average-score gap (30%) + abnormal absence rate (30%), composing a 0-100 academic risk index; Admins see all, teachers see their own students, students see only themselves',
+            student: 'Student',
+            courseCount: 'Courses',
+            avg: 'Avg Score',
+            failed: 'Failed',
+            absentRate: 'Abnormal Rate(%)',
+            riskIndex: 'Risk Index',
+            level: 'Level',
+            suggestion: 'Suggestion',
+            notify: 'Send Alert',
+            notifyOk: 'Alert pushed in real time',
+            noData: 'No warning data',
+        },
         notice: {
             id: 'No.',
             searchPlaceholder: 'Enter title to search',

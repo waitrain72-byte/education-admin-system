@@ -40,6 +40,7 @@ export default {
         choice: '我的选课',
         curriculum: '我的课表',
         score: '我的成绩',
+        warning: '学业预警',
         comment: '网上评教',
         apply: '请假申请',
         homework: '作业提交',

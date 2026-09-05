@@ -1,9 +1,23 @@
 /**
- * 分组 B 语言包：教务通知/考试安排/教室安排/学院/专业/班级/课程。
- * 键命名空间：pages.notice / pages.examplan / pages.roomplan / pages.college / pages.speciality / pages.classes / pages.course
+ * 分组 B 语言包：教务通知/考试安排/教室安排/学院/专业/班级/课程/学业预警。
+ * 键命名空间：pages.notice / pages.examplan / pages.roomplan / pages.college / pages.speciality / pages.classes / pages.course / pages.warning
  */
 export default {
     pages: {
+        warning: {
+            desc: '基于成绩与考勤的多指标加权评分模型：不及格占比（40%）+ 平均分差距（30%）+ 异常考勤率（30%），合成 0~100 的学业风险指数；管理员可见全部，教师可见本人任课学生，学生仅见本人',
+            student: '学生',
+            courseCount: '修读门数',
+            avg: '平均分',
+            failed: '不及格门数',
+            absentRate: '异常考勤率(%)',
+            riskIndex: '风险指数',
+            level: '预警等级',
+            suggestion: '建议',
+            notify: '推送提醒',
+            notifyOk: '预警提醒已实时推送',
+            noData: '暂无预警数据',
+        },
         notice: {
             id: '序号',
             searchPlaceholder: '请输入标题查询',

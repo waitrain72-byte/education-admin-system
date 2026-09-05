@@ -4,6 +4,7 @@
 export default {
     pages: {
         choice: {
+            recommend: 'Recommended for You',
             cancelChoice: 'Drop Course',
             comment: 'Evaluate',
             dialogTitle: 'Please Fill in the Course Evaluation',
@@ -32,7 +33,8 @@ export default {
             selectStudent: 'Student',
             ordinaryScore: 'Regular Score',
             examScore: 'Final Exam Score',
-            deleteConfirm: 'Are you sure you want to delete it? The student\'s credits will be reduced accordingly, and you will need to enter them again?',
+            deleteConfirm:
+                "Are you sure you want to delete it? The student's credits will be reduced accordingly, and you will need to enter them again?",
             ruleOrdinaryRequired: 'Please enter the regular score',
             ruleExamRequired: 'Please enter the final exam score',
             id: 'No.',
