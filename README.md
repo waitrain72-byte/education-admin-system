@@ -73,7 +73,7 @@
 学生：zhangsan（张三）、lisi（李四）、wangwu（王五）
 ```
 
-数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。
+数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)。
 
 ## 核心模块之间的联系（数据怎么流转）
 
@@ -103,6 +103,7 @@
 ```text
 manager-vue3
 +-- sql/                          # 全量数据库种子（表结构 + 索引 + 演示数据 + RBAC 授权）
++-- docs/                         # 数据库 ER 图（Mermaid，GitHub 原生渲染）
 +-- vue/                          # Web 前端（components/composables/locales/stores/views 等）
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
 +-- docker-compose.yml            # 三容器编排
