@@ -58,6 +58,26 @@
     </view>
 
     <template v-else>
+      <!-- 为你推荐（协同过滤课程推荐，仅学生角色；点击进入选课页） -->
+      <view
+        v-if="userStore.role === 'STUDENT' && recommends.length"
+        class="xm-card"
+      >
+        <view class="xm-card-title">{{ $t('home.recommend') }}</view>
+        <view
+          v-for="c in recommends"
+          :key="c.id"
+          class="notice-item"
+          @click="go('/pages/choice/choice')"
+        >
+          <view class="xm-between">
+            <view class="xm-value">{{ c.name }}</view>
+            <view class="xm-label">{{ c.teacherName }}</view>
+          </view>
+          <view class="recommend-reason">{{ c.reason }}</view>
+        </view>
+      </view>
+
       <!-- 教务通知 / 考试安排（首页仅展示最新 3 条，避免数据多时页面过长） -->
       <view class="xm-card">
         <view class="xm-card-title">{{ $t('home.notice') }}</view>
@@ -242,6 +262,8 @@ const go = (path) => uni.navigateTo({ url: path })
 
 const notices = ref([])
 const examplans = ref([])
+// 课程推荐（基于物品的协同过滤）：仅学生角色请求与展示
+const recommends = ref([])
 
 // 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用（返回 Promise 供缓存写回时机使用）
 const loadNotices = () =>
@@ -302,6 +324,7 @@ const applyCache = () => {
       examplans.value = cached.examplans || []
       if (cached.attendanceStats) attendanceStats.value = cached.attendanceStats
       if (cached.scoreStats) scoreStats.value = cached.scoreStats
+      if (Array.isArray(cached.recommends)) recommends.value = cached.recommends
       return true
     }
   } catch {}
@@ -315,6 +338,7 @@ const saveCache = () => {
       examplans: examplans.value,
       attendanceStats: attendanceStats.value,
       scoreStats: scoreStats.value,
+      recommends: recommends.value,
     })
   } catch {}
 }
@@ -370,6 +394,14 @@ onShow(() => {
       }
     }),
   ]
+  // 学生角色追加课程推荐（协同过滤）
+  if (userStore.role === 'STUDENT') {
+    tasks.push(
+      get('/course/recommend?limit=4').then((res) => {
+        recommends.value = (res.data && res.data.data) || []
+      }),
+    )
+  }
   Promise.all([...tasks, loadNotices().catch(() => {})].map((p) => p.catch(() => {}))).then(() => {
     saveCache()
     firstLoading.value = false
@@ -441,6 +473,13 @@ onHide(() => {
 
 .notice-item:last-child {
   border-bottom: none;
+}
+
+/* 推荐理由：品牌色弱化小字 */
+.recommend-reason {
+  font-size: 24rpx;
+  color: var(--xm-brand);
+  margin-top: 4rpx;
 }
 
 /* 「查看全部」入口：右对齐，主题色 */

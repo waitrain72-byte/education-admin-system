@@ -52,10 +52,10 @@ export default {
     admin: 'Administrators',
     teacher: 'Teachers',
     student: 'Students',
-        person: 'Profile',
-        password: 'Change Password',
-        mine: 'Mine',
-    },
+    person: 'Profile',
+    password: 'Change Password',
+    mine: 'Mine',
+  },
 
   layout: {
     title: 'Educational Management System',
@@ -141,6 +141,7 @@ export default {
     attendanceStats: 'Attendance Stats',
     scoreStats: 'Score Stats',
     quickEntry: 'Quick Entry',
+    recommend: 'Recommended for You',
     prefs: 'Preferences',
     statusNormal: 'Normal',
     statusLate: 'Late',

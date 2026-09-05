@@ -142,6 +142,7 @@ export default {
     attendanceStats: '考勤统计',
     scoreStats: '成绩统计',
     quickEntry: '功能入口',
+    recommend: '为你推荐',
     prefs: '偏好设置',
     statusNormal: '正常',
     statusLate: '迟到',
