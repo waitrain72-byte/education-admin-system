@@ -47,3 +47,7 @@ replay_pid*
 
 # CI ÅäÖÃ£ºµ±Ç° token ÎŞ workflow È¨ÏŞ£¬Ôİ²»Èë¿â£¨ÄÃµ½´ø workflow scope µÄ token ºó¿ÉÒÆ³ı´ËĞĞ£©
 .github/
+
+# pnpm æ®‹ç•™ï¼ˆæœ¬æœºç¯å¢ƒæ’æŸ¥æ—¶ pnpm é‡è£…ä¾èµ–äº§ç”Ÿï¼Œé¡¹ç›®ç»Ÿä¸€ä½¿ç”¨ npmï¼‰
+vue/pnpm-lock.yaml
+vue/pnpm-workspace.yaml

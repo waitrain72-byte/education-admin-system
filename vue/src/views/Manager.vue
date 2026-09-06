@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="manager-container" :class="{ 'sidebar-open': sidebarOpen }">
         <!--  头部  -->
         <div class="manager-header">
@@ -19,22 +19,6 @@
                         route.meta?.name ? $t(route.meta.name as string) : $t('common.page')
                     }}</el-breadcrumb-item>
                 </el-breadcrumb>
-
-                <!-- 多标签页：紧跟在面包屑后面，可快速切换/关闭 -->
-                <div class="manager-tabs">
-                    <div
-                        v-for="tab in tabs"
-                        :key="tab.path"
-                        class="manager-tab"
-                        :class="{ active: route.path === tab.path }"
-                        @click="router.push(tab.path)"
-                    >
-                        <span>{{ $t(tab.name) }}</span>
-                        <el-icon v-if="tab.path !== '/home'" class="tab-close" @click.stop="closeTab(tab.path)">
-                            <CircleClose />
-                        </el-icon>
-                    </div>
-                </div>
             </div>
 
             <div class="manager-header-right">
@@ -111,11 +95,60 @@
 
             <!--  数据表格（keep-alive 缓存已打开标签页对应的页面，关闭标签即释放缓存）  -->
             <div class="manager-main-right">
+                <!-- 多标签页条：结构/交互/样式照搬 vue-element-plus-admin 的 TagsView
+                     （左右滚动箭头 + 标签列表（右键菜单）+ 刷新 + 更多操作下拉） -->
+                <div class="tags-view">
+                    <span class="tags-view__tool tags-view__tool--first" @click="move(-200)">
+                        <el-icon><DArrowLeft /></el-icon>
+                    </span>
+                    <div class="tags-view__list">
+                        <div class="tags-view__list-inner">
+                            <TabContextMenu
+                                v-for="tab in tabs"
+                                :key="tab.path"
+                                :schema="contextMenuSchema(tab)"
+                                @visible-change="(v: boolean) => visibleChange(v, tab)"
+                            >
+                                <div
+                                    class="tags-view__item"
+                                    :class="{ 'is-active': selectedPath === tab.path }"
+                                    @click="router.push(tab.path)"
+                                >
+                                    <span>{{ $t(tab.name) }}</span>
+                                    <el-icon
+                                        v-if="tab.path !== AFFIX_TAB"
+                                        class="tags-view__item-close"
+                                        @click.prevent.stop="closeSelectedTag(tab)"
+                                    >
+                                        <Close />
+                                    </el-icon>
+                                </div>
+                            </TabContextMenu>
+                        </div>
+                    </div>
+                    <span class="tags-view__tool" @click="move(200)">
+                        <el-icon><DArrowRight /></el-icon>
+                    </span>
+                    <span class="tags-view__tool" @click="refreshSelectedTag()">
+                        <el-icon><RefreshRight /></el-icon>
+                    </span>
+                    <TabContextMenu trigger="click" :schema="contextMenuSchema()">
+                        <span class="tags-view__tool">
+                            <el-icon><Setting /></el-icon>
+                        </span>
+                    </TabContextMenu>
+                </div>
+
                 <router-view v-slot="{ Component }">
-                    <!-- 路由切换过渡：淡入淡出 + 轻微上移；keep-alive 缓存保留每页已加载数据，避免重复请求 -->
+                    <!-- 路由切换过渡：淡入淡出 + 轻微上移；keep-alive 缓存保留每页已加载数据，避免重复请求。
+                         reloadKey 供标签页右键"重新加载"使用：key 变化强制重建当前组件实例（其余标签缓存保留） -->
                     <transition name="route-fade" mode="out-in">
                         <keep-alive :include="cachedViews">
-                            <component :is="Component" @update:user="refreshUser" />
+                            <component
+                                :is="Component"
+                                :key="route.path + '-' + reloadKey"
+                                @update:user="refreshUser"
+                            />
                         </keep-alive>
                     </transition>
                 </router-view>
@@ -125,11 +158,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, provide } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Sunny, Moon, Fold } from '@element-plus/icons-vue'
+import {
+    Sunny, Moon, Fold, RefreshRight, Close, Back, Right, CircleClose, SemiSelect,
+    DArrowLeft, DArrowRight, Setting,
+} from '@element-plus/icons-vue'
 import { useUser } from '@/components/useUser.ts'
+import TabContextMenu from '@/components/TabContextMenu.vue'
 import { resolveFileUrl } from '@/utils/file'
 import request from '@/utils/request'
 import { usePermission } from '@/composables/usePermission'
@@ -234,7 +271,7 @@ const tabs = ref<TabItem[]>([{ path: '/home', name: 'menu.home', routeName: 'Hom
 
 const cachedViews = computed(() => tabs.value.map((tab) => tab.routeName))
 
-// 路由变化时把新页面加入标签（首页固定不可关闭）
+// 路由变化时把新页面加入标签（首页固定不可关闭）；immediate 保证整页刷新时当前页也入列
 watch(
     () => route.path,
     (path) => {
@@ -243,6 +280,7 @@ watch(
         const routeName = typeof route.name === 'string' ? route.name : path
         tabs.value.push({ path, name, routeName })
     },
+    { immediate: true },
 )
 
 const closeTab = (path: string) => {
@@ -253,6 +291,169 @@ const closeTab = (path: string) => {
     if (route.path === path) {
         router.push(tabs.value[tabs.value.length - 1].path)
     }
+}
+
+// ========== 标签页（逻辑/交互照搬 vue-element-plus-admin 的 TagsView） ==========
+// 首页为固定标签（affix，不可关闭），其余均可关闭
+const AFFIX_TAB = '/home'
+
+// reloadKey 自增用于强制重建当前页组件（keep-alive 按 key 区分实例，其余标签缓存保留）
+const reloadKey = ref(0)
+
+// 选中的标签：右键其它标签会把其设为选中（菜单动作作用于选中标签），与框架 selectedTag 一致
+const selectedPath = ref(route.path)
+
+const setSelected = (path: string) => {
+    selectedPath.value = path
+}
+
+// 路由变化：选中的标签跟随当前路由
+watch(
+    () => route.path,
+    (path) => {
+        setSelected(path)
+    },
+)
+
+/** 右键菜单 / 齿轮下拉的菜单 schema（禁用逻辑与框架 TagsView 完全一致） */
+const contextMenuSchema = (tab?: TabItem) => {
+    const path = tab?.path ?? selectedPath.value
+    const isSelected = selectedPath.value === path
+    const firstPath = tabs.value[0]?.path
+    const lastPath = tabs.value[tabs.value.length - 1]?.path
+    return [
+        {
+            icon: RefreshRight,
+            label: t('layout.tabs.reload'),
+            disabled: !isSelected,
+            command: () => refreshSelectedTag(path),
+        },
+        {
+            icon: Close,
+            label: t('layout.tabs.close'),
+            divided: true,
+            disabled: path === AFFIX_TAB,
+            command: () => closeSelectedTag({ path } as TabItem),
+        },
+        {
+            icon: Back,
+            label: t('layout.tabs.closeLeft'),
+            disabled: path === firstPath || !isSelected,
+            command: () => closeLeftTags(path),
+        },
+        {
+            icon: Right,
+            label: t('layout.tabs.closeRight'),
+            disabled: path === lastPath || !isSelected,
+            command: () => closeRightTags(path),
+        },
+        {
+            icon: CircleClose,
+            label: t('layout.tabs.closeOther'),
+            divided: true,
+            disabled: !isSelected,
+            command: () => closeOtherTags(path),
+        },
+        {
+            icon: SemiSelect,
+            label: t('layout.tabs.closeAll'),
+            command: () => closeAllTags(),
+        },
+    ]
+}
+
+/** 右键菜单打开时：右键的标签自动设为选中（框架 visibleChange 行为） */
+const visibleChange = (visible: boolean, tab: TabItem) => {
+    if (visible) {
+        setSelected(tab.path)
+    }
+}
+
+/** 重新加载指定标签：先跳转到该页，再强制重建组件 */
+const refreshSelectedTag = async (path?: string) => {
+    const target = path ?? selectedPath.value
+    if (route.path !== target) {
+        await router.push(target)
+    }
+    await nextTick()
+    reloadKey.value++
+}
+
+/** 关闭单个标签；关闭的是当前页时跳到最后一个剩余标签 */
+const closeSelectedTag = (tab: TabItem) => {
+    const index = tabs.value.findIndex((t) => t.path === tab.path)
+    if (index === -1) return
+    tabs.value.splice(index, 1)
+    if (route.path === tab.path) {
+        toLastView()
+    }
+    if (selectedPath.value === tab.path) {
+        setSelected(route.path)
+    }
+}
+
+/** 跳到最后一个剩余标签（没有则回首页） */
+const toLastView = () => {
+    const latest = tabs.value[tabs.value.length - 1]
+    if (latest) {
+        router.push(latest.path)
+    } else {
+        router.push(AFFIX_TAB)
+    }
+}
+
+const closeLeftTags = (path: string) => {
+    const index = tabs.value.findIndex((t) => t.path === path)
+    const closed = tabs.value
+        .slice(0, index)
+        .filter((t) => t.path !== AFFIX_TAB)
+        .map((t) => t.path)
+    const pathSet = new Set(closed)
+    tabs.value = tabs.value.filter((t) => !pathSet.has(t.path))
+    if (pathSet.has(route.path)) {
+        router.push(path)
+    }
+}
+
+const closeRightTags = (path: string) => {
+    const index = tabs.value.findIndex((t) => t.path === path)
+    const closed = tabs.value
+        .slice(index + 1)
+        .filter((t) => t.path !== AFFIX_TAB)
+        .map((t) => t.path)
+    const pathSet = new Set(closed)
+    tabs.value = tabs.value.filter((t) => !pathSet.has(t.path))
+    if (pathSet.has(route.path)) {
+        router.push(path)
+    }
+}
+
+const closeOtherTags = (path: string) => {
+    const closed = tabs.value
+        .filter((t) => t.path !== path && t.path !== AFFIX_TAB)
+        .map((t) => t.path)
+    const pathSet = new Set(closed)
+    tabs.value = tabs.value.filter((t) => !pathSet.has(t.path))
+    if (pathSet.has(route.path)) {
+        router.push(path)
+    }
+}
+
+const closeAllTags = () => {
+    const closed = tabs.value
+        .filter((t) => t.path !== AFFIX_TAB)
+        .map((t) => t.path)
+    const pathSet = new Set(closed)
+    tabs.value = tabs.value.filter((t) => !pathSet.has(t.path))
+    if (pathSet.has(route.path)) {
+        toLastView()
+    }
+}
+
+/** 标签条左右滚动（照框架 move ±200px，平滑滚动） */
+const move = (to: number) => {
+    const list = document.querySelector('.tags-view__list') as HTMLElement | null
+    list?.scrollTo({ left: list.scrollLeft + to, behavior: 'smooth' })
 }
 
 // 提供 refreshUser 方法给子组件
@@ -297,3 +498,119 @@ const logout = () => {
     router.push('/login')
 }
 </script>
+
+<style scoped>
+/* 标签页条：样式照搬 vue-element-plus-admin 的 TagsView（工具栏分隔线 + 边框卡片式标签） */
+.tags-view {
+    display: flex;
+    width: 100%;
+    height: 35px;
+    position: relative;
+    background: var(--xm-bg-card, #fff);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+.tags-view__tool {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    color: var(--el-text-color-placeholder);
+    transition: color 0.2s ease;
+}
+
+.tags-view__tool::before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 1px);
+    border-left: 1px solid var(--xm-border, #d9d9d9);
+}
+
+.tags-view__tool--first::before {
+    border-right: 1px solid var(--xm-border, #d9d9d9);
+    border-left: none;
+}
+
+.tags-view__tool:hover {
+    color: var(--el-color-primary);
+}
+
+.tags-view__list {
+    flex: 1;
+    overflow: hidden;
+}
+
+.tags-view__list-inner {
+    display: flex;
+    height: 100%;
+}
+
+/* 单个标签：矩形边框卡片，hover 显示关闭按钮，选中蓝底白字 */
+.tags-view__item {
+    position: relative;
+    top: 3px;
+    height: calc(100% - 6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 25px 0 15px;
+    margin-left: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #d9d9d9;
+    border-radius: 2px;
+    white-space: nowrap;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.tags-view__item-close {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    display: none;
+    transform: translate(0, -50%);
+    font-size: 12px;
+    color: #333;
+}
+
+.tags-view__item:hover .tags-view__item-close {
+    display: block;
+}
+
+.tags-view__item:not(.is-active):hover {
+    color: var(--el-color-primary);
+}
+
+.tags-view__item.is-active {
+    color: #ffffff;
+    background-color: var(--el-color-primary);
+    border: 1px solid var(--el-color-primary);
+}
+
+.tags-view__item.is-active .tags-view__item-close {
+    color: #ffffff !important;
+}
+
+/* 深色模式适配（旧系统 dark 类挂在 html 上） */
+:global(html.dark) .tags-view {
+    background: var(--xm-bg-card, #141414);
+}
+
+:global(html.dark) .tags-view__item {
+    border-color: var(--el-border-color);
+}
+
+:global(html.dark) .tags-view__tool::before,
+:global(html.dark) .tags-view__tool--first::before {
+    border-color: var(--el-border-color);
+}
+</style>

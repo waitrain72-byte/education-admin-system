@@ -48,6 +48,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SchemaForm: typeof import('./src/components/SchemaForm.vue')['default']
+    TabContextMenu: typeof import('./src/components/TabContextMenu.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

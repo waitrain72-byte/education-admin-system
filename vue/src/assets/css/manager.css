@@ -270,7 +270,6 @@ html.dark .theme-switch {
 
 /* 澶氭爣绛鹃〉锛氬祵鍦ㄥご閮ㄥ唴銆侀潰鍖呭睉鍙充晶锛涙案杩滃崟琛屾í鍚戞粴鍔?*/
 .manager-tabs {
-    flex: 1 1 auto;
     display: flex;
     flex-wrap: nowrap;
     flex-direction: row;
@@ -279,8 +278,10 @@ html.dark .theme-switch {
     overflow-x: auto;
     overflow-y: hidden;
     min-width: 0;
-    padding: 2px 0;
+    margin-bottom: 14px;
+    padding: 6px 2px;
     white-space: nowrap;
+    scrollbar-width: thin;
 }
 
 .manager-tab {
@@ -416,6 +417,10 @@ html.dark .theme-switch {
 @media (max-width: 768px) {
     /* 手机：隐藏面包屑与多标签（信息密度过高），只保留 logo + 关键操作 */
     .manager-header-center {
+        display: none;
+    }
+
+    .manager-tabs {
         display: none;
     }
 

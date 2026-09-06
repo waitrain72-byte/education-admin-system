@@ -7,6 +7,17 @@
   <link rel="icon" href="/favicon.ico">
   <title>教务管理系统</title>
   <script>
+    // 诊断辅助：捕获启动阶段运行时错误（白屏/异常跳转排查用）
+    window.__appErrors = []
+    window.addEventListener('error', function (e) {
+      window.__appErrors.push((e.message || 'error') + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''))
+    })
+    window.addEventListener('unhandledrejection', function (e) {
+      var r = e.reason
+      window.__appErrors.push('unhandledrejection: ' + ((r && (r.stack || r.message)) || String(r)))
+    })
+  </script>
+  <script>
     // 防闪烁：应用挂载前根据本地偏好/系统颜色模式预设 dark 类，
     // 与 src/composables/useTheme.ts 中的 storageKey 保持一致
     (function () {
