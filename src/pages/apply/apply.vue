@@ -60,11 +60,11 @@
     </view>
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="row in list"
@@ -72,46 +72,23 @@
       class="xm-card"
     >
       <view class="xm-between">
-        <view class="xm-row">
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ row.studentName }}</view
-          >
-          <view
-            class="xm-tag"
-            :class="statusTagClass(row.status)"
-            >{{ statusLabelOf(row.status) }}</view
-          >
-        </view>
-        <view class="xm-label">{{ $t('pages.apply.id') }}: {{ row._index }}</view>
-      </view>
-      <view
-        class="xm-row"
-        style="flex-wrap: wrap; margin-top: 12rpx"
-      >
-        <view class="xm-label field">{{ $t('pages.apply.timeLabel') }}: {{ row.time }}</view>
-        <view class="xm-label field">{{ $t('pages.apply.dayLabel') }}: {{ row.day }}</view>
-      </view>
-      <view style="margin-top: 8rpx">
-        <view class="xm-label">{{ $t('pages.apply.contentLabel') }}</view>
+        <!-- 主标题：请假缘由；右侧审核状态语义化标签 -->
+        <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
         <view
-          class="xm-value"
-          style="margin-top: 4rpx"
-          >{{ row.content }}</view
+          class="xm-tag status-tag"
+          :class="statusTagClass(row.status)"
+          >{{ statusLabelOf(row.status) }}</view
         >
+      </view>
+      <view class="item-meta">
+        <text v-if="userStore.role !== 'STUDENT'">{{ row.studentName }} · </text>
+        <text>{{ row.time }} · {{ $t('pages.apply.dayLabel') }} {{ row.day }}</text>
       </view>
       <view
         v-if="row.descr"
-        style="margin-top: 8rpx"
+        class="item-descr"
+        >{{ row.descr }}</view
       >
-        <view class="xm-label">{{ $t('pages.apply.descrLabel') }}</view>
-        <view
-          class="xm-value"
-          style="margin-top: 4rpx"
-          >{{ row.descr }}</view
-        >
-      </view>
 
       <view class="xm-actions">
         <button
@@ -138,7 +115,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 请假申请/编辑表单（底部弹层，学生） -->
     <view
@@ -162,11 +144,18 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.timeLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.time"
-          :placeholder="$t('pages.apply.datePlaceholder')"
-        />
+        <picker
+          mode="date"
+          :value="form.time"
+          @change="onTimeChange"
+        >
+          <view
+            class="xm-input picker-display"
+            :class="{ 'picker-placeholder': !form.time }"
+          >
+            {{ form.time || $t('pages.apply.datePlaceholder') }}
+          </view>
+        </picker>
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.dayLabel') }}</view>
@@ -251,6 +240,7 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
@@ -295,7 +285,6 @@ const statusTagClass = (value) => {
   return 'xm-tag-warning'
 }
 
-const searchStatusIndex = computed(() => statusOptions.value.findIndex((o) => o.value === status.value))
 const checkStatusIndex = computed(() => statusOptions.value.findIndex((o) => o.value === form.value.status))
 
 // 顶部状态筛选 Tab：'' = 全部（useCrud 会剔除空参数，后端不加 status 条件）
@@ -309,6 +298,11 @@ const onTabChange = (value) => {
 const onCheckStatusChange = (e) => {
   const opt = statusOptions.value[e.detail.value]
   if (opt) form.value.status = opt.value
+}
+
+// 请假日期：日期选择器（YYYY-MM-DD，后端仍按字符串存储）
+const onTimeChange = (e) => {
+  form.value.time = e.detail.value
 }
 
 const onAdd = () => {
@@ -383,9 +377,34 @@ onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
-.field {
-  width: 50%;
-  margin-bottom: 8rpx;
+/* 主标题：请假缘由单行省略，右侧状态标签不被挤压 */
+.item-title {
+  font-weight: bold;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 状态标签：禁止收缩换行 */
+.status-tag {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* 次要信息行：学生/时间/天数弱化小字 */
+.item-meta {
+  font-size: 24rpx;
+  color: var(--xm-text-2);
+  margin-top: 12rpx;
+}
+
+/* 审核说明气泡 */
+.item-descr {
+  font-size: 26rpx;
+  color: var(--xm-text);
+  background: var(--xm-bg-input);
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  margin-top: 12rpx;
 }
 
 .picker-display {

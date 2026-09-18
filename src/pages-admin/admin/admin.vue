@@ -4,49 +4,20 @@
     :class="themeClass"
   >
     <!-- 搜索区 -->
-    <view class="xm-card xm-row">
-      <input
-        class="xm-input"
-        style="flex: 1"
-        v-model="keyword"
-        :placeholder="$t('pages.admin.searchPlaceholder')"
-      />
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="search"
-      >
-        {{ $t('common.search') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="onReset"
-      >
-        {{ $t('common.reset') }}
-      </button>
-    </view>
+    <xm-search-card
+      v-model="keyword"
+      :placeholder="$t('pages.admin.searchPlaceholder')"
+      @search="search"
+      @reset="onReset"
+    />
 
     <!-- 操作区：新增 / 批量管理 -->
-    <view class="xm-card xm-row">
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="onAdd"
-      >
-        {{ $t('common.add') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="toggleManage"
-      >
-        {{ manageMode ? $t('common.done') : $t('common.manage') }}
-      </button>
-      <button
-        v-if="manageMode"
-        class="xm-btn xm-btn-danger"
-        @click="delBatch"
-      >
-        {{ $t('common.batchDelete') }}
-      </button>
-    </view>
+    <xm-action-bar
+      :manage-mode="manageMode"
+      @add="onAdd"
+      @toggle-manage="toggleManage"
+      @del-batch="delBatch"
+    />
 
     <!-- 列表 -->
     <view
@@ -71,7 +42,7 @@
           />
           <image
             v-if="item.avatar"
-            :src="item.avatar"
+            :src="resolveFileUrl(item.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -113,22 +84,21 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
-    <view
-      v-if="formVisible"
-      class="xm-mask"
-      @click="closeForm"
-    ></view>
-
-    <view
-      v-if="formVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="formVisible"
+      :saving="saving"
+      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.admin.dialogTitle')"
+      @close="closeForm"
+      @save="save"
     >
-      <view class="xm-popup-title"
-        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.admin.dialogTitle') }}</view
-      >
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.admin.username') }}</view>
         <input
@@ -168,7 +138,7 @@
           v-if="form.avatar"
         >
           <image
-            :src="form.avatar"
+            :src="resolveFileUrl(form.avatar)"
             class="xm-avatar"
             mode="aspectFill"
           />
@@ -180,26 +150,9 @@
           {{ $t('pages.admin.uploadAvatar') }}
         </button>
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="closeForm"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="save"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
+
+    <xm-loader />
   </view>
 </template>
 
@@ -208,18 +161,18 @@ import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
-import { put } from '@/utils/request'
+import { useManage } from '@/composables/useManage'
+import { put, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 
 const userStore = useUserStore()
 const keyword = ref('')
-const manageMode = ref(false)
 
 const {
   list,
-  total,
   loading,
+  saving,
   finished,
   form,
   formVisible,
@@ -253,16 +206,7 @@ const {
   },
 })
 
-const toggleManage = () => {
-  manageMode.value = !manageMode.value
-  if (!manageMode.value) selectedIds.value = []
-}
-
-const toggleSelect = (id) => {
-  const idx = selectedIds.value.indexOf(id)
-  if (idx >= 0) selectedIds.value.splice(idx, 1)
-  else selectedIds.value.push(id)
-}
+const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
 
 const onAdd = () => handleAdd({})
 const onEdit = (row) => handleEdit(row)

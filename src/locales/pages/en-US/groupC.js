@@ -134,6 +134,7 @@ export default {
       friday: 'Friday',
       saturday: 'Saturday',
       sunday: 'Sunday',
+      colorTip: 'Blocks are colored by course; today is highlighted',
     },
   },
 }

@@ -1,0 +1,2 @@
+# 提交前自动执行：仅检查暂存文件（lint-staged 配置见 package.json）
+npx lint-staged

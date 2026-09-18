@@ -4,11 +4,11 @@
     :class="themeClass"
   >
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="row in list"
@@ -64,7 +64,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 评教表单（底部弹层） -->
     <view
@@ -106,6 +111,7 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 

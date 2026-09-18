@@ -29,6 +29,7 @@ export default {
     noMore: 'No more data',
     empty: 'No data yet',
     loading: 'Loading…',
+    reload: 'Reload',
     all: 'All',
     manageMode: 'Batch manage',
   },
@@ -52,10 +53,11 @@ export default {
     admin: 'Administrators',
     teacher: 'Teachers',
     student: 'Students',
-        person: 'Profile',
-        password: 'Change Password',
-        mine: 'Mine',
-    },
+    person: 'Profile',
+    password: 'Change Password',
+    mine: 'Mine',
+    message: 'Messages',
+  },
 
   layout: {
     title: 'Educational Management System',
@@ -141,6 +143,7 @@ export default {
     attendanceStats: 'Attendance Stats',
     scoreStats: 'Score Stats',
     quickEntry: 'Quick Entry',
+    recommend: 'Recommended for You',
     prefs: 'Preferences',
     statusNormal: 'Normal',
     statusLate: 'Late',
@@ -149,6 +152,18 @@ export default {
     bandExcellent: 'Excellent',
     bandGood: 'Good',
     bandFail: 'Fail',
+    todayTitle: "Today's Classes",
+    noClassToday: 'No classes today. Enjoy!',
+    classDoing: 'Now',
+    classTodo: 'Upcoming',
+    classDone: 'Ended',
+    donutTotal: 'Total',
+    tabFeed: 'Feed',
+    tabStats: 'Stats',
+    todayCount: '{n} classes today',
+    nextClass: 'Next',
+    expand: 'Expand',
+    collapse: 'Collapse',
   },
 
   notFound: {
@@ -161,6 +176,15 @@ export default {
 
   request: {
     failed: 'Request failed',
+    timeout: 'Connection timed out, please try again',
+    offline: 'Network unavailable, please check your connection',
+  },
+
+  message: {
+    markAllRead: 'Mark all read',
+    clear: 'Clear',
+    clearConfirm: 'Clear all messages?',
+    empty: 'No messages yet',
   },
 
   errors: {
@@ -181,6 +205,8 @@ export default {
     5007: 'The score of this student for this course has already been recorded',
     5008: 'You have already evaluated the teacher of this course',
     5009: 'The attendance of this student has already been recorded today',
+    5010: 'This room is already occupied for that time slot',
+    5011: 'This room code already exists',
   },
 
   pages: {

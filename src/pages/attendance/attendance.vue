@@ -60,11 +60,11 @@
     </view>
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="row in list"
@@ -120,7 +120,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 添加/编辑考勤表单（底部弹层，教师） -->
     <view
@@ -168,11 +173,18 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.attendance.timeLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.time"
-          :placeholder="$t('pages.attendance.datePlaceholder')"
-        />
+        <picker
+          mode="date"
+          :value="form.time"
+          @change="onFormTimeChange"
+        >
+          <view
+            class="xm-input picker-display"
+            :class="{ 'picker-placeholder': !form.time }"
+          >
+            {{ form.time || $t('pages.attendance.datePlaceholder') }}
+          </view>
+        </picker>
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.attendance.statusLabel') }}</view>
@@ -209,6 +221,7 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
@@ -387,6 +400,11 @@ const onFormStudentChange = (e) => {
 const onFormStatusChange = (e) => {
   const opt = statusOptions.value[e.detail.value]
   if (opt) form.value.status = opt.value
+}
+
+// 考勤日期：日期选择器（YYYY-MM-DD，后端仍按字符串存储）
+const onFormTimeChange = (e) => {
+  form.value.time = e.detail.value
 }
 
 const onAdd = () => {

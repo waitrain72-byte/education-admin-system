@@ -3,12 +3,7 @@
     class="xm-page"
     :class="themeClass"
   >
-    <!-- 8 列课表：时间 + 星期一~星期日，横向滚动查看 -->
-    <view
-      v-if="!tableData.length"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+    <xm-empty v-if="!tableData.length" />
 
     <view
       class="xm-card"
@@ -24,6 +19,7 @@
               class="th"
               v-for="h in headers"
               :key="h"
+              :class="{ 'th-today': h === todayLabel }"
               >{{ h }}</view
             >
           </view>
@@ -37,12 +33,21 @@
               class="td"
               v-for="f in dayFields"
               :key="f"
-              >{{ row[f] }}</view
+              :class="{ 'td-today': f === todayField }"
             >
+              <view
+                v-if="row[f]"
+                class="course-block"
+                :style="blockStyle(row[f])"
+                >{{ row[f] }}</view
+              >
+            </view>
           </view>
         </view>
       </scroll-view>
+      <view class="xm-label table-tip">{{ $t('pages.curriculum.colorTip') }}</view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
@@ -51,6 +56,7 @@ import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { get } from '@/utils/request'
+import { courseBlockStyle } from '@/utils/courseColor'
 import { t, apiMessage } from '@/i18n'
 
 const userStore = useUserStore()
@@ -68,6 +74,14 @@ const headers = computed(() => [
   t('pages.curriculum.saturday'),
   t('pages.curriculum.sunday'),
 ])
+
+// 今日高亮：getDay() 周一=1 … 周六=6、周日=0 → dayFields 下标 (getDay()+6)%7
+const todayIndex = (new Date().getDay() + 6) % 7
+const todayField = dayFields[todayIndex]
+const todayLabel = computed(() => headers.value[todayIndex + 1])
+
+// 课程块配色与首页「今日课程」共用同一套工具（utils/courseColor.ts），保证颜色语言一致
+const blockStyle = courseBlockStyle
 
 const load = () => {
   get('/choice/getCurriculum').then((res) => {
@@ -128,7 +142,31 @@ onShow(() => {
   text-align: center;
 }
 
+/* 今日列：表头品牌色 + 列体品牌软底 */
+.th-today {
+  color: var(--xm-brand);
+}
+
+.td-today {
+  background: var(--xm-brand-soft);
+}
+
 .td-time {
   font-weight: bold;
+}
+
+/* 课程块：软色底 + 同色描边，颜色由 blockStyle 按课程名注入 */
+.course-block {
+  border-radius: 10rpx;
+  padding: 10rpx 8rpx;
+  font-size: 22rpx;
+  line-height: 1.4;
+  min-height: 72rpx;
+  box-sizing: border-box;
+}
+
+.table-tip {
+  margin-top: 12rpx;
+  text-align: center;
 }
 </style>

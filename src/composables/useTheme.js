@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { get, put } from '@/utils/request'
 
@@ -27,6 +27,40 @@ export const isDark = computed(() => {
 })
 
 export const themeClass = computed(() => (isDark.value ? 'theme-dark' : 'theme-light'))
+
+/** 与 useTheme 原生层取值一致：导航栏 / tabBar 的深浅两套配色 */
+const NATIVE_CHROME = {
+  light: { navBg: '#4f6cff', tabBg: '#ffffff', tabColor: '#8a90a0', tabSelected: '#5b6cff' },
+  dark: { navBg: '#1a1f29', tabBg: '#1a1f29', tabColor: '#99a0af', tabSelected: '#7d89ff' },
+}
+
+/**
+ * 原生导航栏 / tabBar 配色跟随应用内主题，
+ * 避免出现「页面已变暗、导航栏还是亮蓝」的割裂（H5 端无原生层，静默忽略）。
+ * 模块加载、主题切换、App onShow（App.vue 兜底）三个时机都会调用。
+ */
+export function syncNativeChrome() {
+  const c = isDark.value ? NATIVE_CHROME.dark : NATIVE_CHROME.light
+  try {
+    uni.setNavigationBarColor({ frontColor: '#ffffff', backgroundColor: c.navBg, fail: () => {} })
+  } catch {
+    // 平台不支持时忽略
+  }
+  try {
+    uni.setTabBarStyle({
+      backgroundColor: c.tabBg,
+      color: c.tabColor,
+      selectedColor: c.tabSelected,
+      fail: () => {},
+    })
+  } catch {
+    // 平台不支持时忽略
+  }
+}
+
+watch(isDark, syncNativeChrome)
+// 冷启动时立即应用一次（首屏原生层即与主题一致）
+syncNativeChrome()
 
 let serverTheme = ''
 let pushTimer = null

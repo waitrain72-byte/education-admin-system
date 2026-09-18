@@ -1,12 +1,17 @@
 import { ref } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { get, post, put, del as delRequest } from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 
 /**
  * 通用 CRUD 组合式函数（移动端版，与 Web 端 useCrud 语义对齐）：
  * - 分页列表：load(true) 重置到第一页，load() 追加下一页
- * - 新增/编辑表单：form + formVisible
+ * - 新增/编辑表单：form + formVisible + saving（保存防重复提交）
  * - 删除/批量删除：uni.showModal 原生确认框
+ * - 下拉刷新：页面在 pages.json 开启 enablePullDownRefresh 后，此处统一注册
+ *   onPullDownRefresh（重置到第一页 + 收起下拉动画），页面无需重复实现
+ * - 加载动画：首屏/搜索（重置且非下拉触发）由请求层唤起统一 xm-loader 蒙层；
+ *   触底加载更多保持静默，进度反馈交给列表底部的 xm-list-footer
  */
 export function useCrud(options) {
   const list = ref([])
@@ -14,14 +19,17 @@ export function useCrud(options) {
   const pageSize = 10
   const total = ref(0)
   const loading = ref(false)
+  const saving = ref(false)
   const formVisible = ref(false)
   const form = ref({})
   const selectedIds = ref([])
 
-  const finished = () => list.value.length >= total.value && total.value > 0
+  // total 为 0（含首次）视为没有更多，避免空结果页面反复触底请求
+  const finished = () => total.value === 0 || list.value.length >= total.value
 
-  const load = async (reset = false) => {
+  const load = async (reset = false, fromPullDown = false) => {
     if (loading.value) return
+    const pageBefore = pageNum.value
     if (reset) pageNum.value = 1
     loading.value = true
     try {
@@ -34,7 +42,10 @@ export function useCrud(options) {
         const v = params[key]
         if (v === '' || v === null || v === undefined) delete params[key]
       }
-      const res = await get(`${options.url}/selectPage`, params)
+      // 下拉刷新走原生动画反馈；追加分页静默（底部 footer 已有 loading 态）
+      const res = await get(`${options.url}/selectPage`, params, {
+        loading: reset && !fromPullDown,
+      })
       if (res.data && res.data.code === '200') {
         const rows = (res.data.data && res.data.data.list) || []
         const count = (res.data.data && res.data.data.total) || 0
@@ -51,13 +62,21 @@ export function useCrud(options) {
         total.value = count
       } else {
         uni.showToast({ title: apiMessage(res.data), icon: 'none' })
+        // 追加失败回滚页码到上一已加载页，否则下次 loadNext 会跳页漏数据
+        if (!reset) pageNum.value = Math.max(1, pageBefore - 1)
       }
     } catch {
-      // 请求层已统一提示
+      // 请求层已统一提示；同上回滚页码
+      if (!reset) pageNum.value = Math.max(1, pageBefore - 1)
     } finally {
       loading.value = false
     }
   }
+
+  // 下拉刷新：重置到第一页并收起下拉动画（仅开启了 enablePullDownRefresh 的页面会触发）
+  onPullDownRefresh(() => {
+    load(true, true).finally(() => uni.stopPullDownRefresh())
+  })
 
   const loadNext = () => {
     if (finished() || loading.value) return
@@ -67,7 +86,7 @@ export function useCrud(options) {
 
   const search = () => load(true)
 
-  const resetSearch = (defaults = {}) => {
+  const resetSearch = (_defaults = {}) => {
     if (options.resetParams) options.resetParams()
     load(true)
   }
@@ -87,6 +106,7 @@ export function useCrud(options) {
   }
 
   const save = async () => {
+    if (saving.value) return
     if (options.validate) {
       const msg = options.validate(form.value)
       if (msg) {
@@ -94,8 +114,16 @@ export function useCrud(options) {
         return
       }
     }
+    // 防重复提交：保存请求进行中忽略再次点击（弹层确定按钮同步按 saving 禁用）
+    saving.value = true
     try {
-      if (options.beforeSave) await options.beforeSave(form.value)
+      if (options.beforeSave) {
+        const msg = await options.beforeSave(form.value)
+        if (msg) {
+          uni.showToast({ title: msg, icon: 'none' })
+          return
+        }
+      }
       const isEdit = !!form.value.id
       const res = isEdit ? await put(`${options.url}/update`, form.value) : await post(`${options.url}/add`, form.value)
       if (res.data && res.data.code === '200') {
@@ -108,6 +136,8 @@ export function useCrud(options) {
       }
     } catch {
       // 请求层已统一提示
+    } finally {
+      saving.value = false
     }
   }
 
@@ -150,6 +180,7 @@ export function useCrud(options) {
     pageSize,
     total,
     loading,
+    saving,
     finished,
     form,
     formVisible,

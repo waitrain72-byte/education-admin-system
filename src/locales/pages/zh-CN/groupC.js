@@ -134,6 +134,7 @@ export default {
       friday: '星期五',
       saturday: '星期六',
       sunday: '星期日',
+      colorTip: '课程块颜色按课程自动区分，今日列高亮显示',
     },
   },
 }

@@ -1,10 +1,15 @@
 /// <reference types='@dcloudio/types' />
-import 'vue'
+/// <reference types='vite/client' />
 
-declare module '@vue/runtime-core' {
-  type Hooks = App.AppInstance & Page.PageInstance;
+export {}
 
-  interface ComponentCustomOptions extends Hooks {
+declare module 'vue' {
+  type Hooks = App.AppInstance & Page.PageInstance
+  interface ComponentCustomOptions extends Hooks {}
+}
 
-  }
+/** .env.development / .env.production 中的自定义环境变量（渐进式 TS：先给配置层上类型） */
+interface ImportMetaEnv {
+  /** 后端接口地址，见 src/utils/config.ts */
+  readonly VITE_API_BASE_URL?: string
 }

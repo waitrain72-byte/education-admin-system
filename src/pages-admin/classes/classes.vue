@@ -4,49 +4,20 @@
     :class="themeClass"
   >
     <!-- 搜索区 -->
-    <view class="xm-card xm-row">
-      <input
-        class="xm-input"
-        style="flex: 1"
-        v-model="name"
-        :placeholder="$t('pages.classes.searchPlaceholder')"
-      />
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="search"
-      >
-        {{ $t('common.search') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="onReset"
-      >
-        {{ $t('common.reset') }}
-      </button>
-    </view>
+    <xm-search-card
+      v-model="name"
+      :placeholder="$t('pages.classes.searchPlaceholder')"
+      @search="search"
+      @reset="onReset"
+    />
 
     <!-- 操作区 -->
-    <view class="xm-card xm-row">
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="onAdd"
-      >
-        {{ $t('common.add') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="toggleManage"
-      >
-        {{ manageMode ? $t('common.done') : $t('common.manage') }}
-      </button>
-      <button
-        v-if="manageMode"
-        class="xm-btn xm-btn-danger"
-        @click="delBatch"
-      >
-        {{ $t('common.batchDelete') }}
-      </button>
-    </view>
+    <xm-action-bar
+      :manage-mode="manageMode"
+      @add="onAdd"
+      @toggle-manage="toggleManage"
+      @del-batch="delBatch"
+    />
 
     <!-- 列表 -->
     <view
@@ -108,22 +79,21 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
-    <view
-      v-if="formVisible"
-      class="xm-mask"
-      @click="closeForm"
-    ></view>
-
-    <view
-      v-if="formVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="formVisible"
+      :saving="saving"
+      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.classes.dialogTitle')"
+      @close="closeForm"
+      @save="save"
     >
-      <view class="xm-popup-title"
-        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.classes.dialogTitle') }}</view
-      >
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.classes.name') }}</view>
         <input
@@ -162,26 +132,9 @@
           <view class="xm-input">{{ teacherName(form.teacherId) || $t('pages.classes.teacherPlaceholder') }}</view>
         </picker>
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="closeForm"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="save"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
+
+    <xm-loader />
   </view>
 </template>
 
@@ -190,19 +143,19 @@ import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
+import { useManage } from '@/composables/useManage'
 import { get } from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 
 const userStore = useUserStore()
 const name = ref('')
-const manageMode = ref(false)
 const specialityData = ref([])
 const teacherData = ref([])
 
 const {
   list,
-  total,
   loading,
+  saving,
   finished,
   form,
   formVisible,
@@ -224,6 +177,8 @@ const {
     return ''
   },
 })
+
+const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
 
 // 级联下拉：上级专业/教师列表（接口与 Web 端一致），表单打开时加载
 const loadSpeciality = async () => {
@@ -278,17 +233,6 @@ const teacherName = (id) => {
 const onTeacherChange = (e) => {
   const item = teacherData.value[Number(e.detail.value)]
   if (item) form.value.teacherId = item.id
-}
-
-const toggleManage = () => {
-  manageMode.value = !manageMode.value
-  if (!manageMode.value) selectedIds.value = []
-}
-
-const toggleSelect = (id) => {
-  const idx = selectedIds.value.indexOf(id)
-  if (idx >= 0) selectedIds.value.splice(idx, 1)
-  else selectedIds.value.push(id)
 }
 
 const onAdd = () => {

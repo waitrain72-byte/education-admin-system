@@ -30,6 +30,7 @@ export default {
     noMore: '没有更多了',
     empty: '暂无数据',
     loading: '加载中…',
+    reload: '重新加载',
     all: '全部',
     manageMode: '批量管理',
   },
@@ -56,6 +57,7 @@ export default {
     person: '个人信息',
     password: '修改密码',
     mine: '我的',
+    message: '消息中心',
   },
 
   layout: {
@@ -142,6 +144,7 @@ export default {
     attendanceStats: '考勤统计',
     scoreStats: '成绩统计',
     quickEntry: '功能入口',
+    recommend: '为你推荐',
     prefs: '偏好设置',
     statusNormal: '正常',
     statusLate: '迟到',
@@ -150,6 +153,18 @@ export default {
     bandExcellent: '优秀',
     bandGood: '良好',
     bandFail: '不及格',
+    todayTitle: '今日课程',
+    noClassToday: '今天没有课，好好休息！',
+    classDoing: '进行中',
+    classTodo: '未开始',
+    classDone: '已结束',
+    donutTotal: '总计',
+    tabFeed: '动态',
+    tabStats: '统计',
+    todayCount: '今日 {n} 节课',
+    nextClass: '下一节',
+    expand: '展开',
+    collapse: '收起',
   },
 
   notFound: {
@@ -162,6 +177,15 @@ export default {
 
   request: {
     failed: '请求失败',
+    timeout: '连接超时，请稍后重试',
+    offline: '网络不可用，请检查网络连接',
+  },
+
+  message: {
+    markAllRead: '全部已读',
+    clear: '清空',
+    clearConfirm: '确定要清空所有消息吗？',
+    empty: '暂无消息',
   },
 
   errors: {
@@ -182,6 +206,8 @@ export default {
     5007: '您已经录入了该学生该门课的成绩',
     5008: '您已经对该门课的老师评教过了，请勿重复评教',
     5009: '该学生当天的考勤已经录入，请勿重复录入',
+    5010: '该教室在此时间段已被其他课程占用',
+    5011: '教室编号已存在',
   },
 
   pages: {

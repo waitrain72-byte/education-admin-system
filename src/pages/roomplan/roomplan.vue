@@ -3,36 +3,43 @@
     class="xm-page"
     :class="themeClass"
   >
-    <!-- 搜索区 -->
+    <!-- 搜索区：第一行 教室名 + 查询/重置；第二行 状态筛选独占整行（不再挤压换行） -->
     <view
       class="xm-card xm-row"
       style="flex-wrap: wrap"
     >
       <input
         class="xm-input"
-        style="flex: 1"
+        style="flex: 1 1 0; min-width: 0"
         v-model="name"
         :placeholder="$t('pages.roomplan.searchPlaceholder')"
       />
-      <picker
-        style="flex: 1"
-        :range="statusLabels"
-        @change="onSearchStatusChange"
-      >
-        <view class="xm-input">{{ status ? statusLabel(status) : $t('pages.roomplan.statusPlaceholder') }}</view>
-      </picker>
       <button
         class="xm-btn xm-btn-primary"
+        style="flex-shrink: 0"
         @click="search"
       >
         {{ $t('common.search') }}
       </button>
       <button
         class="xm-btn xm-btn-plain"
+        style="flex-shrink: 0"
         @click="onReset"
       >
         {{ $t('common.reset') }}
       </button>
+      <picker
+        style="flex: 1 1 100%"
+        :range="statusLabels"
+        @change="onSearchStatusChange"
+      >
+        <!-- 普通 view 不会像原生 input 那样自动垂直居中文字，需显式 flex 居中 -->
+        <view
+          class="xm-input"
+          style="display: flex; align-items: center"
+          >{{ status ? statusLabel(status) : $t('pages.roomplan.statusPlaceholder') }}</view
+        >
+      </picker>
     </view>
 
     <!-- 操作区：仅管理员可新增/批量管理（与 Web 端 user.role === 'ADMIN' 一致） -->
@@ -62,11 +69,11 @@
     </view>
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="item in list"
@@ -89,6 +96,13 @@
           >
         </view>
         <view class="xm-label">{{ $t('pages.roomplan.id') }}: {{ item._index }}</view>
+      </view>
+      <view
+        class="xm-row"
+        style="margin-top: 8rpx"
+      >
+        <view class="xm-label">{{ $t('pages.roomplan.code') }}: {{ item.code }}</view>
+        <view class="xm-label">{{ $t('pages.roomplan.type') }}: {{ typeLabel(item.type) }}</view>
       </view>
       <view
         class="xm-row"
@@ -121,7 +135,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -137,6 +156,24 @@
       <view class="xm-popup-title"
         >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.roomplan.dialogTitle') }}</view
       >
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.roomplan.code') }}</view>
+        <input
+          class="xm-input"
+          v-model="form.code"
+          :placeholder="$t('pages.roomplan.codePlaceholder')"
+        />
+      </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.roomplan.type') }}</view>
+        <picker
+          :range="typeLabels"
+          :value="formTypeIndex"
+          @change="onFormTypeChange"
+        >
+          <view class="xm-input">{{ form.type ? typeLabel(form.type) : $t('pages.roomplan.typePlaceholder') }}</view>
+        </picker>
+      </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.name') }}</view>
         <input
@@ -193,6 +230,7 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
@@ -219,7 +257,6 @@ const statusLabel = (value) => {
 
 const {
   list,
-  total,
   loading,
   finished,
   form,
@@ -238,7 +275,9 @@ const {
   url: '/roomplan',
   getParams: () => ({ name: name.value, status: status.value }),
   validate: (f) => {
+    if (!f.code) return t('pages.roomplan.ruleCodeRequired')
     if (!f.name) return t('pages.roomplan.ruleNameRequired')
+    if (!f.type) return t('pages.roomplan.ruleTypeRequired')
     if (!f.status) return t('pages.roomplan.ruleStatusRequired')
     if (!f.num) return t('pages.roomplan.ruleNumRequired')
     if (!f.content) return t('pages.roomplan.ruleContentRequired')
@@ -254,6 +293,25 @@ const formStatusIndex = computed(() =>
 )
 const onFormStatusChange = (e) => {
   form.value.status = statusValues[Number(e.detail.value)] || ''
+}
+
+// 教室类型：授课教室/运动场馆可参与排课，固定占用（办公/器材/杂物）不参与
+const typeValues = ['授课教室', '运动场馆', '固定占用']
+const typeLabels = computed(() => [
+  t('pages.roomplan.typeTeaching'),
+  t('pages.roomplan.typeVenue'),
+  t('pages.roomplan.typeFixed'),
+])
+const typeLabel = (value) => {
+  const idx = typeValues.indexOf(value)
+  return idx >= 0 ? typeLabels.value[idx] : value
+}
+const formTypeIndex = computed(() => {
+  const idx = typeValues.indexOf(form.value.type)
+  return idx >= 0 ? idx : 0
+})
+const onFormTypeChange = (e) => {
+  form.value.type = typeValues[Number(e.detail.value)] || ''
 }
 
 const toggleManage = () => {

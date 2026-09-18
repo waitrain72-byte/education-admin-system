@@ -53,6 +53,7 @@
         >
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 

@@ -52,11 +52,11 @@
     </view>
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="item in list"
@@ -117,7 +117,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -192,18 +197,22 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.course.room') }}</view>
-        <input
-          class="xm-input"
-          v-model="form.room"
-          :disabled="!isAdmin"
-          :placeholder="$t('pages.course.room')"
-        />
+        <picker
+          :range="roomLabels"
+          @change="onRoomChange"
+        >
+          <view
+            class="xm-input picker-text"
+            :class="{ 'picker-placeholder': !form.room }"
+          >
+            {{ form.room ? roomDisplay(form.room) : $t('pages.course.roomPlaceholder') }}
+          </view>
+        </picker>
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.course.week') }}</view>
         <picker
           :range="weekLabels"
-          :disabled="!isAdmin"
           @change="onWeekChange"
         >
           <view
@@ -218,7 +227,6 @@
         <view class="xm-form-label">{{ $t('pages.course.segment') }}</view>
         <picker
           :range="segmentLabels"
-          :disabled="!isAdmin"
           @change="onSegmentChange"
         >
           <view
@@ -263,11 +271,12 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useCrud } from '@/composables/useCrud'
@@ -334,9 +343,67 @@ const onStatusChange = (e) => {
   form.value.status = statusValues[Number(e.detail.value)] || ''
 }
 
+// ===== 教室：按当前星期/大节/人数拉取空闲列表（授课教室+运动场馆），支持自动分配 =====
+const freeRooms = ref([])
+// 选项描述：运动场馆用名称；教室优先用「使用说明」里的用途（多媒体教室/机房等），缺省回退名称
+const roomDesc = (r) => {
+  if (r.type === '运动场馆') return r.name
+  return (
+    String(r.content || '')
+      .split('（')[0]
+      .split('\n')[0]
+      .trim() || r.name
+  )
+}
+const roomLabels = computed(() => [
+  t('pages.course.autoAssignOption'),
+  ...freeRooms.value.map((r) => `${r.code} ${roomDesc(r)}（${r.num}人）`),
+])
+const roomDisplay = (code) => {
+  const hit = freeRooms.value.find((r) => r.code === code)
+  return hit ? `${hit.code} ${roomDesc(hit)}（${hit.num}人）` : code
+}
+const loadFreeRooms = async () => {
+  if (!form.value.week || !form.value.segment) {
+    freeRooms.value = []
+    return
+  }
+  freeRooms.value =
+    (await get(
+      '/course/roomFree',
+      {
+        week: form.value.week,
+        segment: form.value.segment,
+        num: form.value.num || undefined,
+        excludeId: form.value.id || undefined,
+      },
+      { loading: false },
+    ).then((res) => res.data.data)) || []
+}
+const onRoomChange = (e) => {
+  const idx = Number(e.detail.value)
+  if (idx === 0) {
+    // 自动分配：取容量最贴近人数的第一间空闲教室/场地
+    if (!freeRooms.value.length) {
+      uni.showToast({ title: t('pages.course.noFreeRoom'), icon: 'none' })
+      return
+    }
+    form.value.room = freeRooms.value[0].code
+    uni.showToast({
+      title: t('pages.course.autoAssigned', {
+        code: freeRooms.value[0].code,
+        name: roomDesc(freeRooms.value[0]),
+      }),
+      icon: 'none',
+    })
+    return
+  }
+  const hit = freeRooms.value[idx - 1]
+  if (hit) form.value.room = hit.code
+}
+
 const {
   list,
-  total,
   loading,
   finished,
   form,
@@ -356,8 +423,36 @@ const {
   getParams: () => ({ name: keyword.value }),
   validate: (f) => {
     if (!f.name) return t('pages.course.ruleNameRequired')
+    // 已选教室则必须同时有上课时段，否则无法进行占用校验，会产生无排期课程
+    if (f.room && (!f.week || !f.segment)) return t('pages.course.ruleRoomNeedTime')
     return ''
   },
+  beforeSave: async (f) => {
+    // 教室留空 = 系统自动分配：按容量最贴近人数取第一间空闲教室/场地并提示
+    if (!f.room && f.week && f.segment) {
+      const res = await get('/course/roomFree', {
+        week: f.week,
+        segment: f.segment,
+        num: f.num || undefined,
+        excludeId: f.id || undefined,
+      })
+      const list = (res.data && res.data.data) || []
+      if (!list.length) return t('pages.course.noFreeRoom')
+      f.room = list[0].code
+      uni.showToast({
+        title: t('pages.course.autoAssigned', { code: list[0].code, name: roomDesc(list[0]) }),
+        icon: 'none',
+      })
+    }
+    if (!f.room) return t('pages.course.ruleRoomRequired')
+    return ''
+  },
+})
+
+// 弹层打开或星期/大节/人数变化时刷新空闲列表（静默加载）
+// 注意：必须放在 useCrud 解构之后，formVisible 在解构中声明（否则触发 TDZ 引用错误导致页面白屏）
+watch([formVisible, () => form.value.week, () => form.value.segment, () => form.value.num], () => {
+  if (formVisible.value) loadFreeRooms()
 })
 
 const toggleManage = () => {
@@ -414,7 +509,10 @@ onShow(() => {
     return
   }
   load(true)
-  loadTeacher()
+  // 教师下拉仅表单使用且对非管理员禁用：学生无需加载，避免 teacher:view 403
+  if (userStore.role === 'ADMIN') {
+    loadTeacher()
+  }
 })
 
 onReachBottom(() => loadNext())
@@ -424,7 +522,7 @@ onReachBottom(() => loadNext())
 .picker-text {
   display: flex;
   align-items: center;
-  line-height: 76rpx;
+  line-height: 78rpx;
 }
 
 .picker-placeholder {

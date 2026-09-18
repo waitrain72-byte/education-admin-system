@@ -52,11 +52,11 @@
     </view>
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="load(true)"
+    />
 
     <view
       v-for="item in list"
@@ -82,6 +82,7 @@
         <view class="xm-label">{{ $t('pages.examplan.id') }}: {{ item._index }}</view>
       </view>
       <view
+        v-if="item.time"
         class="xm-label"
         style="margin-top: 8rpx"
         >{{ $t('pages.examplan.time') }}: {{ item.time }}</view
@@ -115,7 +116,12 @@
       </view>
     </view>
 
-    <xm-list-footer :visible="!!list.length" :loading="loading" :finished="finished()" @load-more="loadNext" />
+    <xm-list-footer
+      :visible="!!list.length"
+      :loading="loading"
+      :finished="finished()"
+      @load-more="loadNext"
+    />
 
     <!-- 新增/编辑表单（底部弹层） -->
     <view
@@ -147,6 +153,21 @@
           :placeholder="$t('pages.examplan.ruleContentRequired')"
         />
       </view>
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.examplan.time') }}</view>
+        <picker
+          mode="date"
+          :value="form.time"
+          @change="onTimeChange"
+        >
+          <view
+            class="xm-input picker-display"
+            :class="{ 'picker-placeholder': !form.time }"
+          >
+            {{ form.time || $t('pages.examplan.timePlaceholder') }}
+          </view>
+        </picker>
+      </view>
       <view
         class="xm-row"
         style="margin-top: 16rpx"
@@ -167,6 +188,7 @@
         </button>
       </view>
     </view>
+    <xm-loader />
   </view>
 </template>
 
@@ -185,7 +207,6 @@ const canManage = computed(() => userStore.role === 'ADMIN')
 
 const {
   list,
-  total,
   loading,
   finished,
   form,
@@ -227,6 +248,11 @@ const toggleExpand = (id) => {
   else expandedIds.value.push(id)
 }
 
+// 考试日期：日期选择器（YYYY-MM-DD，后端仍按字符串存储）
+const onTimeChange = (e) => {
+  form.value.time = e.detail.value
+}
+
 const onAdd = () => handleAdd({})
 const onEdit = (row) => handleEdit(row)
 const onReset = () => {
@@ -246,3 +272,14 @@ onShow(() => {
 
 onReachBottom(() => loadNext())
 </script>
+
+<style lang="scss" scoped>
+.picker-display {
+  display: flex;
+  align-items: center;
+}
+
+.picker-placeholder {
+  color: var(--xm-text-2);
+}
+</style>
