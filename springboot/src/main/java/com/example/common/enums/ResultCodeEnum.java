@@ -18,6 +18,8 @@ public enum ResultCodeEnum {
     SCORE_ALREADY_ERROR("5007","您已经录入了该学生该门课的成绩"),
     COMMENT_ALREADY_ERROR("5008","您已经对该门课的老师评教过了，请勿重复评教"),
     ATTENDANCE_ALREADY_ERROR("5009","该学生当天的考勤已经录入，请勿重复录入"),
+    ROOM_OCCUPIED_ERROR("5010","该教室在此时间段已被其他课程占用"),
+    ROOM_CODE_EXIST_ERROR("5011","教室编号已存在"),
     CAPTCHA_ERROR("402", "验证码错误"),
     PERMISSION_DENIED_ERROR("403", "无权限执行该操作"),
     ;

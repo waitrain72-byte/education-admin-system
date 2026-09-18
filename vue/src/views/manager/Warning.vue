@@ -2,7 +2,7 @@
     <div>
         <el-card shadow="never">
             <el-alert type="info" :closable="false" :title="$t('pages.warning.desc')" style="margin-bottom: 16px" />
-            <el-table :data="list" v-loading="loading" stripe>
+            <el-table v-loading="loading" :data="list" stripe>
                 <el-table-column prop="studentName" :label="$t('pages.warning.student')" min-width="100" />
                 <el-table-column
                     prop="courseCount"
@@ -52,7 +52,7 @@
 defineOptions({ name: 'Warning' })
 
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { useUserStore } from '@/stores/user'

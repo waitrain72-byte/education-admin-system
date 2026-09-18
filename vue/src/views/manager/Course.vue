@@ -50,15 +50,36 @@
           <el-input v-model="form.num" autocomplete="off" :disabled="user.role !== 'ADMIN'" />
         </el-form-item>
         <el-form-item prop="room" :label="$t('pages.course.room')">
-          <el-input v-model="form.room" autocomplete="off" :disabled="user.role !== 'ADMIN'" />
+          <el-select
+            v-model="form.room"
+            filterable
+            :loading="freeRoomsLoading"
+            :placeholder="$t('pages.course.roomPlaceholder')"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="r in freeRooms"
+              :key="r.code"
+              :label="freeRoomLabel(r)"
+              :value="r.code"
+            />
+          </el-select>
+          <el-alert
+            v-if="roomConflict"
+            :title="roomConflict"
+            type="warning"
+            :closable="false"
+            show-icon
+            style="width: 100%; margin-top: 6px"
+          />
         </el-form-item>
         <el-form-item prop="week" :label="$t('pages.course.week')">
-          <el-select v-model="form.week" :placeholder="$t('pages.course.selectPlaceholder')" style="width: 100%" :disabled="user.role !== 'ADMIN'">
+          <el-select v-model="form.week" :placeholder="$t('pages.course.selectPlaceholder')" style="width: 100%">
             <el-option v-for="d in weekOptions" :key="d.value" :label="d.label" :value="d.value" />
           </el-select>
         </el-form-item>
         <el-form-item prop="segment" :label="$t('pages.course.segment')">
-          <el-select v-model="form.segment" :placeholder="$t('pages.course.selectPlaceholder')" style="width: 100%" :disabled="user.role !== 'ADMIN'">
+          <el-select v-model="form.segment" :placeholder="$t('pages.course.selectPlaceholder')" style="width: 100%">
             <el-option v-for="s in segmentOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
@@ -79,8 +100,8 @@
 <script setup lang="ts">
 defineOptions({ name: 'Course' })
 
-import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted, computed, watch } from 'vue'
+import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
@@ -136,6 +157,94 @@ const columns = computed<CrudColumn[]>(() => [
   { prop: 'status', label: t('pages.course.status'), showOverflowTooltip: true },
 ])
 
+// 教室空闲列表 + 自动分配 + 占用提示：星期/大节/人数/课程名（体育课优先场馆）/弹窗任一变化后刷新
+// （只列「该时段空闲」的教室供选择；留空保存时后端也强校验兜底）
+const freeRooms = ref<any[]>([])
+const freeRoomsLoading = ref(false)
+const roomConflict = ref('')
+let roomTimer: ReturnType<typeof setTimeout> | undefined
+const isPeCourse = computed(() => (form.value.name || '').includes('体育'))
+// 选项描述：运动场馆用名称；教室优先用「使用说明」里的用途（多媒体教室/机房等），缺省回退名称
+const roomDesc = (r: any) => {
+  if (r.type === '运动场馆') return r.name
+  return (
+    String(r.content || '')
+      .split('（')[0]
+      .split('\n')[0]
+      .trim() || r.name
+  )
+}
+const freeRoomLabel = (r: any) => `${r.code} ${roomDesc(r)}（${r.num}人）`
+
+const fetchFreeRooms = () => {
+  if (!formVisible.value || !form.value.week || !form.value.segment) {
+    freeRooms.value = []
+    roomConflict.value = ''
+    return
+  }
+  freeRoomsLoading.value = true
+  const base = {
+    week: form.value.week,
+    segment: form.value.segment,
+    num: form.value.num || undefined,
+    excludeId: form.value.id || undefined,
+  }
+  // 体育类课程优先在运动场馆中找，没有合适场馆再回落到普通教室
+  const req = isPeCourse.value
+    ? request.get('/course/roomFree', { params: { ...base, typeFilter: '运动场馆' } }).then((r1: any) => {
+        const venues = r1.data.data || []
+        if (!venues.length) {
+          return request.get('/course/roomFree', { params: base }).then((r2: any) => venues.concat(r2.data.data || []))
+        }
+        return venues
+      })
+    : request.get('/course/roomFree', { params: base }).then((r: any) => r.data.data || [])
+
+  req
+    .then((list: any[]) => {
+      freeRooms.value = list
+      // 系统自动分配：未手动选择教室时，自动填入容量最贴近的空闲教室/场地并提示
+      if (user.value.role === 'ADMIN' && !form.value.room && list.length) {
+        form.value.room = list[0].code
+        ElMessage.success(t('pages.course.autoAssigned', { code: list[0].code, name: roomDesc(list[0]) }))
+      }
+      // 占用提示兜底：当前选中教室不在空闲列表（被他课占用）时给出提示
+      if (form.value.room && !list.some((r) => r.code === form.value.room)) {
+        request
+          .get('/course/roomOccupied', {
+            params: {
+              room: form.value.room,
+              week: form.value.week,
+              segment: form.value.segment,
+              excludeId: form.value.id || undefined,
+            },
+          })
+          .then((res: any) => {
+            const hit = res.data.data
+            roomConflict.value = hit ? t('pages.course.roomOccupied', { name: hit.name, teacher: hit.teacherName || '-' }) : ''
+          })
+          .catch(() => {})
+      } else {
+        roomConflict.value = ''
+      }
+    })
+    .catch(() => {
+      // 查询失败时清掉过期的占用提示，避免残留误导
+      roomConflict.value = ''
+    })
+    .finally(() => {
+      freeRoomsLoading.value = false
+    })
+}
+
+watch(
+  () => [formVisible.value, form.value.name, form.value.week, form.value.segment, form.value.num],
+  () => {
+    if (roomTimer) clearTimeout(roomTimer)
+    roomTimer = setTimeout(fetchFreeRooms, 300)
+  },
+)
+
 const choiceCourse = (row: any) => {
   request.post('/choice/add', { studentId: user.value.id, teacherId: row.teacherId, courseId: row.id }).then((res: any) => {
     if (res.data.code === '200') {
@@ -143,7 +252,7 @@ const choiceCourse = (row: any) => {
     } else {
       ElMessage.error(apiMessage(res.data))
     }
-  })
+  }).catch(() => {})
 }
 
 const loadTeacher = () => {
@@ -153,7 +262,7 @@ const loadTeacher = () => {
     } else {
       ElMessage.error(apiMessage(res.data))
     }
-  })
+  }).catch(() => {})
 }
 
 const reset = () => {
@@ -163,7 +272,10 @@ const reset = () => {
 
 onMounted(() => {
   load(1)
-  loadTeacher()
+  // 教师下拉仅表单使用且对非管理员禁用：学生/教师无需加载，避免 teacher:view 403
+  if (user.value.role === 'ADMIN') {
+    loadTeacher()
+  }
 })
 </script>
 

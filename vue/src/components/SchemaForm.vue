@@ -62,9 +62,14 @@ export interface SchemaField {
 
 defineOptions({ name: 'SchemaForm' })
 
+/**
+ * 表单数据：由父组件以 v-model:model 传入。
+ * 用 defineModel 而非普通 prop，是因为各字段控件需要原地改写 model 的属性
+ * （普通 prop 上的 v-model 会触发 vue/no-mutating-props）。
+ */
+const model = defineModel<Record<string, any>>('model', { required: true })
+
 const props = withDefaults(defineProps<{
-    /** 表单数据（响应式对象，子组件直接修改其字段） */
-    model: Record<string, any>
     /** 字段定义数组 */
     fields: SchemaField[]
     rules?: any

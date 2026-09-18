@@ -24,7 +24,8 @@ defineOptions({ name: 'Password' })
 
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { apiMessage, t } from '@/i18n'

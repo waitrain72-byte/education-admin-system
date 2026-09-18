@@ -10,7 +10,7 @@
       <el-button type="warning" plain style="margin-left: 10px" @click="onReset">{{ $t('common.reset') }}</el-button>
     </div>
 
-    <div class="operation" v-permission="'ADMIN'">
+    <div v-permission="'ADMIN'" class="operation">
       <el-button type="danger" plain @click="delBatch">{{ $t('common.batchDelete') }}</el-button>
     </div>
 

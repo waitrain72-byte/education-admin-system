@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="manager-container" :class="{ 'sidebar-open': sidebarOpen }">
         <!--  头部  -->
         <div class="manager-header">
@@ -160,7 +160,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
 import {
     Sunny, Moon, Fold, RefreshRight, Close, Back, Right, CircleClose, SemiSelect,
     DArrowLeft, DArrowRight, Setting,
@@ -282,16 +282,6 @@ watch(
     },
     { immediate: true },
 )
-
-const closeTab = (path: string) => {
-    const index = tabs.value.findIndex((tab) => tab.path === path)
-    if (index === -1) return
-    tabs.value.splice(index, 1)
-    // 关闭的是当前页时，跳到最后一个标签
-    if (route.path === path) {
-        router.push(tabs.value[tabs.value.length - 1].path)
-    }
-}
 
 // ========== 标签页（逻辑/交互照搬 vue-element-plus-admin 的 TagsView） ==========
 // 首页为固定标签（affix，不可关闭），其余均可关闭

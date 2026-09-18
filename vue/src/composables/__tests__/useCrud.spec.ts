@@ -13,7 +13,9 @@ const { requestMock } = vi.hoisted(() => {
 
 vi.mock('@/utils/request', () => ({ default: requestMock }))
 
-vi.mock('element-plus', () => ({
+// 项目里 Element Plus 的命令式 API（ElMessage/ElMessageBox…）统一经 @/utils/element-plus
+// 深导入，因此这里 mock 该收敛模块，而不是 'element-plus' 桶
+vi.mock('@/utils/element-plus', () => ({
   ElMessage: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
   ElMessageBox: { confirm: vi.fn(() => Promise.resolve('confirm')) },
 }))

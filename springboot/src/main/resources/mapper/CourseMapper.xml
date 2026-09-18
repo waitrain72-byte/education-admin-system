@@ -99,5 +99,18 @@
         </set>
         where id = #{id}
     </update>
+    <select id="selectRoomOccupied" resultType="com.example.entity.Course">
+        select course.*, teacher.name as teacherName
+        from course
+        left join teacher on course.teacher_id = teacher.id
+        where course.room = #{room}
+          and course.week = #{week}
+          and course.segment = #{segment}
+          and (course.status is null or course.status != '已结课')
+        <if test="id != null">
+            and course.id != #{id}
+        </if>
+        limit 1
+    </select>
 
 </mapper>

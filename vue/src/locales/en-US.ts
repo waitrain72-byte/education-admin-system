@@ -164,6 +164,8 @@ export default {
         '403': 'You are not allowed to perform this action',
         '500': 'Server error',
         '4001': 'Missing parameters',
+        '5010': 'This room is already occupied for that time slot',
+        '5011': 'This room code already exists',
         '4008': 'Account locked, please try again later',
         '5001': 'Username already exists',
         '5002': 'Not signed in',

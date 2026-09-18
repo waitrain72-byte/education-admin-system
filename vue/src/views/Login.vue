@@ -83,7 +83,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { User, Lock, Picture, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'

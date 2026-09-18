@@ -87,3 +87,9 @@ defineEmits<{
   (e: 'page-change', pageNum: number): void
 }>()
 </script>
+
+<style scoped>
+.table-skeleton {
+    padding: 8px 0;
+}
+</style>

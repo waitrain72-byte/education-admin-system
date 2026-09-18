@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.RoomplanMapper">
 
     <sql id="Base_Column_List">
-        id,name,status,num,content
+        id,code,name,type,status,num,content
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Roomplan">
@@ -14,10 +14,48 @@
         from roomplan
         <where>
             <if test="id != null"> and id= #{id}</if>
+            <if test="code != null"> and code like concat('%', #{code}, '%')</if>
             <if test="name != null"> and name like concat('%', #{name}, '%')</if>
+            <if test="type != null"> and type= #{type}</if>
             <if test="status != null"> and status= #{status}</if>
         </where>
         order by id desc
+    </select>
+
+    <!-- 空闲教室查询：可排课类型中，排除已被「非结课课程」占用 week+segment 时段的教室 -->
+    <select id="selectFreeRooms" resultType="com.example.entity.Roomplan">
+        select r.*
+        from roomplan r
+        where r.type in ('授课教室', '运动场馆')
+        <if test="minNum != null">
+            and r.num &gt;= #{minNum}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (r.code like concat('%', #{keyword}, '%') or r.name like concat('%', #{keyword}, '%'))
+        </if>
+        <if test="typeFilter != null and typeFilter != ''">
+            and r.type = #{typeFilter}
+        </if>
+        and not exists (
+            select 1 from course c
+            where c.room = r.code
+              and c.week = #{week}
+              and c.segment = #{segment}
+              and (c.status is null or c.status != '已结课')
+            <if test="excludeId != null">
+                and c.id != #{excludeId}
+            </if>
+        )
+        <choose>
+            <when test="minNum != null">
+                order by case when r.type = '运动场馆' then 1 else 0 end,
+                         abs(r.num - #{minNum}) asc,
+                         r.code asc
+            </when>
+            <otherwise>
+                order by case when r.type = '运动场馆' then 1 else 0 end, r.code asc
+            </otherwise>
+        </choose>
     </select>
 
     <select id="selectById" resultType="com.example.entity.Roomplan">
@@ -42,14 +80,18 @@
         insert into roomplan
         <trim prefix="(" suffix=")" suffixOverrides=",">
                 <if test="id != null">id,</if>
+                <if test="code != null">code,</if>
                 <if test="name != null">name,</if>
+                <if test="type != null">type,</if>
                 <if test="status != null">status,</if>
                 <if test="num != null">num,</if>
                 <if test="content != null">content,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
+                <if test="code != null">#{code},</if>
                 <if test="name != null">#{name},</if>
+                <if test="type != null">#{type},</if>
                 <if test="status != null">#{status},</if>
                 <if test="num != null">#{num},</if>
                 <if test="content != null">#{content},</if>
@@ -59,8 +101,14 @@
     <update id="updateById" parameterType="com.example.entity.Roomplan">
         update roomplan
         <set>
+            <if test="code != null">
+                code = #{code},
+            </if>
             <if test="name != null">
                 name = #{name},
+            </if>
+            <if test="type != null">
+                type = #{type},
             </if>
             <if test="status != null">
                 status = #{status},
@@ -74,5 +122,15 @@
         </set>
         where id = #{id}
     </update>
+    <select id="selectByCode" resultType="com.example.entity.Roomplan">
+        select
+        <include refid="Base_Column_List" />
+        from roomplan
+        where code = #{code}
+        <if test="id != null">
+            and id != #{id}
+        </if>
+        limit 1
+    </select>
 
 </mapper>

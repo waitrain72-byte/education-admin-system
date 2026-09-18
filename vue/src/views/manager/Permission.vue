@@ -36,8 +36,8 @@
 
       <!-- 树形权限分配：模块 -> 权限点，父子联动 -->
       <el-tree
-          v-loading="loading"
           ref="treeRef"
+          v-loading="loading"
           :data="treeData"
           :props="{ label: 'label', children: 'children' }"
           node-key="id"
@@ -61,7 +61,7 @@
 defineOptions({ name: 'Permission' })
 
 import { ref, computed, nextTick, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { currentLocale } from '@/composables/useLocale'

@@ -67,7 +67,8 @@
 defineOptions({ name: 'Attendance' })
 
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, type FormRules } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
+import type { FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'

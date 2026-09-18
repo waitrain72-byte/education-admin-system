@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import type { Ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { apiMessage } from '@/i18n'
 

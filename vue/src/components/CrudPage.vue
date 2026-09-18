@@ -59,7 +59,7 @@
 
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="formVisible" :title="dialogTitle" :width="dialogWidth" :close-on-click-modal="false" destroy-on-close>
-      <SchemaForm ref="schemaForm" :model="form" :fields="fields" :rules="rules" :label-width="labelWidth" :padding-right="paddingRight" />
+      <SchemaForm ref="schemaForm" v-model:model="form" :fields="fields" :rules="rules" :label-width="labelWidth" :padding-right="paddingRight" />
       <template #footer>
         <el-button @click="formVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="saveWithValidate">{{ $t('common.ok') }}</el-button>

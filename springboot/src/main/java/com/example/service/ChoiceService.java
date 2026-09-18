@@ -38,21 +38,27 @@ public class ChoiceService extends CrudService<Choice> {
     }
 
     /**
-     * 新增（选课）：先判断是否满员，再判断与该学生已选课程是否有上课时间冲突
+     * 新增（选课）：先判断课程是否存在/是否满员，再判断与该学生已选课程是否有上课时间冲突
      */
     @Override
     public void add(Choice choice) {
-        // 当前选的课
+        // 当前选的课（不存在时明确报参数错误，避免 NPE 落 500）
         Course course = courseMapper.selectById(choice.getCourseId());
+        if (course == null) {
+            throw new CustomException(ResultCodeEnum.PARAM_ERROR);
+        }
         // 1. 判断该门课是否已选满
         List<Choice> list = choiceMapper.selectByCourseId(choice.getCourseId());
         if (course.getNum().equals(list.size())) {
             throw new CustomException(ResultCodeEnum.COURSE_NUM_ERROR);
         }
-        // 2. 判断该学生所选课程与他之前选的课时间是否冲突
+        // 2. 判断该学生所选课程与他之前选的课时间是否冲突（已结课课程不再占用时段，跳过比对）
         List<Choice> sList = choiceMapper.selectByStudentId(choice.getStudentId());
         for (Choice dbChoice : sList) {
             Course tmpCourse = courseMapper.selectById(dbChoice.getCourseId());
+            if (tmpCourse == null || "已结课".equals(tmpCourse.getStatus())) {
+                continue;
+            }
             if (course.getWeek().equals(tmpCourse.getWeek()) && course.getSegment().equals(tmpCourse.getSegment())) {
                 throw new CustomException("-1", "您之前已经选过" + tmpCourse.getName() + ", 与该门课的上课时间冲突，请重新选择");
             }

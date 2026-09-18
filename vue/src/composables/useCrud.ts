@@ -1,6 +1,6 @@
-import { ref } from 'vue'
+import { ref, toValue } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
@@ -16,8 +16,8 @@ export interface UseCrudOptions {
     beforeSave?: (form: Record<string, any>) => void | Promise<void>
     /** 保存成功后钩子：如同步全局用户信息 */
     afterSave?: (form: Record<string, any>) => void | Promise<void>
-    /** 单个删除的确认文案（默认“您确定删除吗？”） */
-    deleteConfirmMessage?: string
+    /** 单个删除的确认文案（默认“您确定删除吗？”）；支持 computed 以跟随语言切换 */
+    deleteConfirmMessage?: string | ComputedRef<string>
 }
 
 /**
@@ -103,7 +103,7 @@ export function useCrud<T = any>(options: UseCrudOptions) {
     }
 
     const del = (id: number | string) => {
-        ElMessageBox.confirm(options.deleteConfirmMessage || t('common.deleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
+        ElMessageBox.confirm(toValue(options.deleteConfirmMessage) || t('common.deleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
             .then(async () => {
                 try {
                     const res: any = await request.delete(`${options.url}/delete/${id}`)

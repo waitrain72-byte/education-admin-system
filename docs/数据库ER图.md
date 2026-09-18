@@ -73,7 +73,7 @@ erDiagram
         int teacher_id FK "授课教师"
         int score "课程学分"
         int num "上课人数"
-        varchar room "上课教室"
+        varchar room "上课教室(对应ROOMPLAN.code)"
         varchar week "周几"
         varchar segment "第几大节"
         varchar status "上课状态"
@@ -143,7 +143,9 @@ erDiagram
     }
     ROOMPLAN {
         int id PK "主键"
+        varchar code "教室编号(101-501或场馆名)"
         varchar name "教室名称"
+        varchar type "类型(授课教室/运动场馆/固定占用)"
         varchar status "教室状态"
         int num "容纳人数"
         varchar content "使用说明"
@@ -171,6 +173,7 @@ erDiagram
     STUDENT ||--o{ APPLY : "提交请假"
     TEACHER ||--o{ COMMENT : "被评教(按姓名)"
     STUDENT ||--o{ COMMENT : "发起评教(按姓名)"
+    ROOMPLAN ||--o{ COURSE : "排课占用(编号+星期+大节)"
 ```
 
 ## 二、RBAC 权限与日志 ER 图（5 张系统表）
@@ -234,5 +237,9 @@ erDiagram
    `idx_student_course` 等二级索引保证查询性能（索引设计见种子建表语句）。
 4. **三账号表结构相近但分表存储**：`admin` / `teacher` / `student` 字段高度相似，分表是因为三角色的
    业务字段差异（学生有班级归属与学分，教师有职称）与数据隔离需求（各角色独立管理页）。
-5. **独立实体**：`notice`（教务通知）、`examplan`（考试安排）、`roomplan`（教室安排）、`admin`（管理员）
+5. **独立实体**：`notice`（教务通知）、`examplan`（考试安排）、`admin`（管理员）
    无外键关联，为全员公告/独立账号类数据；通知发布时通过 WebSocket 全员广播。
+6. **教室按「编号 + 时段」逻辑占用**：`course.room` 存教室编号（对应 `roomplan.code`）。
+   `roomplan.type = 固定占用`（办公/器材等约 200 间）不参与排课；课程保存时校验同一
+   「教室 + 星期 + 大节」不重叠（错误码 5010），状态为「已结课」的课程自动释放教室；
+   排课表单只列该时段空闲教室，留空时系统按容量就近自动分配（体育课优先运动场馆）。

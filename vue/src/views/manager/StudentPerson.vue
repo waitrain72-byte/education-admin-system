@@ -40,7 +40,7 @@
 defineOptions({ name: 'StudentPerson' })
 
 import { reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
 import { t, apiMessage } from '@/i18n'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/utils/request'

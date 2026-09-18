@@ -72,7 +72,7 @@ class="avatar-uploader" :action="baseUrl + '/files/upload'"
 defineOptions({ name: 'Teacher' })
 
 import { ref, onMounted, inject, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import type { FormRules } from 'element-plus'
 import { Edit, Key, Delete } from '@element-plus/icons-vue'
 import request from '@/utils/request'

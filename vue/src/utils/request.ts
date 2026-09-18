@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
 import router from '@/router/router-index.ts'
 import { useUserStore } from '@/stores/user'
 import { t } from '@/i18n'

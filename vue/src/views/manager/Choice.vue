@@ -62,7 +62,8 @@
 defineOptions({ name: 'Choice' })
 
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage } from '@/utils/element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { apiMessage, t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
@@ -82,7 +83,7 @@ if (user.value.role === 'STUDENT') {
 // 分页/删除复用通用 CRUD，取消选课的确认文案自定义
 const { tableData, pageNum, pageSize, total, loading, load, del } = useCrud({
     url: '/choice',
-    deleteConfirmMessage: t('pages.choice.deleteConfirm'),
+    deleteConfirmMessage: computed(() => t('pages.choice.deleteConfirm')),
 })
 
 const formVisible = ref(false)

@@ -139,7 +139,8 @@ CREATE TABLE `course` (
   `week` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '周几',
   `segment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '第几大节',
   `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '上课状态',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_room_week_segment` (`room`, `week`, `segment`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='课程信息表';
 INSERT INTO `course` (`id`,`name`,`type`,`teacher_id`,`score`,`num`,`room`,`week`,`segment`,`status`) VALUES (1,'高等数学','必修',2,5,50,'7701','星期一','第一大节（08:30 ~ 10:10）','已结课'),(5,'线性代数','必修',2,3,50,'7705','星期五','第三大节（14:00 ~ 15:40）','已结课'),(6,'中国近代史纲要','选修',2,2,50,'7706','星期五','第三大节（14:00 ~ 15:40）','已结课');
 -- course: 3 rows
@@ -201,13 +202,16 @@ INSERT INTO `notice` (`id`,`title`,`content`,`time`,`user`) VALUES (1,'今天系
 DROP TABLE IF EXISTS `roomplan`;
 CREATE TABLE `roomplan` (
   `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '教室编号(101-501或场馆名)',
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '教室名称',
+  `type` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '类型:授课教室/运动场馆/固定占用',
   `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '教室状态',
   `num` int(10) DEFAULT NULL COMMENT '容纳人数',
   `content` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '使用说明',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_room_code` (`code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='教室安排表';
-INSERT INTO `roomplan` (`id`,`name`,`status`,`num`,`content`) VALUES (1,'自习室7707','空闲',50,'计算机教室'),(2,'自习室7708','占用',60,'多媒体教室'),(6,'器材存放教室7709','占用',30,'器材存放'),(7,'自习室7715','空闲',13,'器材存放！\n'),(8,'多媒体教室7710','空闲',60,'多媒体教室'),(9,'计算机实验室7711','占用',40,'计算机实验室');
+INSERT INTO `roomplan` (`id`,`code`,`name`,`type`,`status`,`num`,`content`) VALUES (1,'7707','自习室7707','授课教室','空闲',50,'计算机教室'),(2,'7708','自习室7708','授课教室','空闲',60,'多媒体教室'),(6,'7709','器材存放教室7709','固定占用','占用',30,'器材存放'),(7,'7715','自习室7715','授课教室','空闲',13,'自习室'),(8,'7710','多媒体教室7710','授课教室','空闲',60,'多媒体教室'),(9,'7711','计算机实验室7711','授课教室','空闲',40,'计算机实验室');
 -- roomplan: 6 rows
 -- >>> end-of-statement <<<
 
@@ -359,6 +363,8 @@ CREATE TABLE `sys_role_permission` (
 INSERT INTO `sys_role_permission` (`id`,`role_id`,`permission_id`) VALUES (18,1,1),(12,1,2),(13,1,3),(34,1,4),(35,1,5),(10,1,6),(11,1,7),(16,1,8),(17,1,9),(8,1,10),(9,1,11),(32,1,12),(33,1,13),(14,1,14),(15,1,15),(4,1,16),(5,1,17),(23,1,18),(24,1,19),(6,1,20),(7,1,21),(27,1,22),(28,1,23),(19,1,24),(20,1,25),(30,1,26),(31,1,27),(1,1,28),(2,1,29),(3,1,30),(41,1,31),(42,1,32),(43,1,33),(36,1,34),(37,1,35),(38,1,36),(39,1,37),(40,1,38),(25,1,39),(26,1,40),(21,1,41),(22,1,42),(29,1,43),(169,2,8),(172,2,10),(177,2,12),(178,2,13),(171,2,14),(181,2,16),(182,2,18);
 INSERT INTO `sys_role_permission` (`id`,`role_id`,`permission_id`) VALUES (175,2,19),(176,2,20),(183,2,21),(170,2,22),(180,2,24),(174,2,26),(179,2,31),(173,2,33),(184,2,41),(81,3,1),(82,3,8),(83,3,10),(84,3,11),(85,3,12),(86,3,14),(87,3,15),(88,3,16),(89,3,17),(90,3,18),(91,3,19),(92,3,20),(93,3,22),(94,3,24),(95,3,26),(96,3,34),(97,3,36),(98,3,41);
 -- sys_role_permission: 77 rows
+-- 教师可修改课程排课信息（教室/周几/大节/状态）：授予 course:manage，业务层在 CourseService 中限制教师仅能改本人课程且不可增删
+INSERT INTO `sys_role_permission` (`role_id`,`permission_id`) VALUES (2,9);
 -- >>> end-of-statement <<<
 
 --
@@ -378,7 +384,7 @@ CREATE TABLE `teacher` (
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='教室信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='教师信息表';
 INSERT INTO `teacher` (`id`,`username`,`password`,`name`,`avatar`,`role`,`phone`,`email`,`title`,`theme`,`locale`) VALUES (2,'luys','$2a$10$TUjiUaJ1IKpbDHT5qhJH0ewfoUM5tnaNHzjJCQ3ebj8OljhwTDuIy','路易斯','/api/files/1782741741320-棒球.png','TEACHER','18896188780','2744732031@qq.com','副教授','system','zh-CN');
 -- teacher: 1 rows
 -- >>> end-of-statement <<<

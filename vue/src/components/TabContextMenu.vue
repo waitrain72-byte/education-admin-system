@@ -28,7 +28,7 @@
 <script setup lang="ts">
 // 等价移植 vue-element-plus-admin 的 ContextMenu 组件：
 // 基于 ElDropdown，支持右键/点击触发、分隔线、禁用态与自定义图标（element icons 组件对象）。
-import { ElDropdown, ElDropdownMenu, ElDropdownItem } from 'element-plus'
+import { ElDropdown, ElDropdownMenu, ElDropdownItem } from '@/utils/element-plus'
 import type { Component } from 'vue'
 
 export interface TabContextMenuSchema {
@@ -41,13 +41,14 @@ export interface TabContextMenuSchema {
 
 const emit = defineEmits(['visibleChange'])
 
-const props = defineProps({
+defineProps({
     schema: {
         type: Array as () => TabContextMenuSchema[],
         default: () => [],
     },
     trigger: {
-        type: String as () => 'click' | 'hover' | 'focus' | 'contextmenu',
+        // 取值范围必须与 ElDropdown 的 trigger 一致：它不接受 'focus'
+        type: String as () => 'click' | 'hover' | 'contextmenu',
         default: 'contextmenu',
     },
 })

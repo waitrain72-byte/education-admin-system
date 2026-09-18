@@ -47,7 +47,7 @@
           <span v-if="chartPieSub" class="chart-sub">{{ chartPieSub }}</span>
         </div>
         <div v-loading="pieLoading" class="chart-body">
-          <div ref="pieEl" v-show="!pieEmpty" class="chart"></div>
+          <div v-show="!pieEmpty" ref="pieEl" class="chart"></div>
           <el-empty v-if="pieEmpty" :image-size="80" :description="$t('common.empty')" />
         </div>
       </div>
@@ -58,7 +58,7 @@
           <span class="chart-sub">{{ lineSubText }}</span>
         </div>
         <div v-loading="lineLoading" class="chart-body">
-          <div ref="lineEl" v-show="!lineEmpty" class="chart"></div>
+          <div v-show="!lineEmpty" ref="lineEl" class="chart"></div>
           <el-empty v-if="lineEmpty" :image-size="80" :description="$t('common.empty')" />
         </div>
       </div>

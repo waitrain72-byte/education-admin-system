@@ -1,5 +1,5 @@
 import { watch } from 'vue'
-import { ElNotification } from 'element-plus'
+import { ElNotification } from '@/utils/element-plus'
 import { useUserStore } from '@/stores/user'
 
 /**
