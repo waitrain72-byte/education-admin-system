@@ -22,7 +22,9 @@ CREATE TABLE `admin` (
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
   `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  -- 用户名唯一：既是登录查询的索引，也堵住「先查后插」的账号重复竞态
+  UNIQUE KEY `uk_admin_username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='管理员';
 INSERT INTO `admin` (`id`,`username`,`password`,`name`,`avatar`,`role`,`phone`,`email`,`theme`,`locale`) VALUES (1,'admin','$2b$10$RL2AW18BBO.J2oje.TjxR.sABsocXXFTvC/nusjnJvyueZZxFSr5u','管理员','/api/files/7e2468d07dc47789c731faa6edbd11ea.jpg','ADMIN','12345678901','admin@xm.com','system','zh-CN');
 -- admin: 1 rows
@@ -57,7 +59,11 @@ CREATE TABLE `attendance` (
   `course_id` int(10) DEFAULT NULL COMMENT '课程ID',
   `time` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '上课时间',
   `status` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '考勤状态',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  -- 联合索引对应 AttendanceMapper.selectByStudentIdAndCourseIdAndTime 的重复录入校验
+  KEY `idx_att_student_course` (`student_id`, `course_id`),
+  KEY `idx_att_course` (`course_id`),
+  KEY `idx_att_teacher` (`teacher_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='考勤信息表';
 INSERT INTO `attendance` (`id`,`student_id`,`teacher_id`,`course_id`,`time`,`status`) VALUES (1,1,2,6,'2024-12-10','正常'),(2,2,2,5,'2024-12-10','迟到'),(13,2,2,1,'2026-08-26','缺勤'),(21,2,2,1,'2026-08-26','缺勤'),(80,2,2,5,'2026-03-07 08:30:00','正常'),(81,2,2,5,'2026-04-03 14:00:00','正常'),(82,3,2,5,'2026-03-07 08:30:00','正常'),(83,3,2,5,'2026-04-04 14:00:00','正常'),(90,1,2,6,'2026-03-08 08:30:00','正常'),(91,1,2,6,'2026-04-02 14:00:00','正常');
 -- attendance: 10 rows
@@ -72,7 +78,10 @@ CREATE TABLE `choice` (
   `teacher_id` int(10) DEFAULT NULL COMMENT '授课教师',
   `student_id` int(10) DEFAULT NULL COMMENT '学生ID',
   `course_id` int(10) DEFAULT NULL COMMENT '课程ID',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_choice_student` (`student_id`),
+  KEY `idx_choice_course` (`course_id`),
+  KEY `idx_choice_teacher` (`teacher_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='选课信息表';
 INSERT INTO `choice` (`id`,`teacher_id`,`student_id`,`course_id`) VALUES (1,2,1,6),(2,2,2,1),(4,2,2,5),(7,2,3,5);
 -- choice: 4 rows
@@ -175,7 +184,10 @@ CREATE TABLE `homework` (
   `file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '作业文件',
   `score` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '打分',
   `descr` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '说明',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_hw_student` (`student_id`),
+  KEY `idx_hw_course` (`course_id`),
+  KEY `idx_hw_teacher` (`teacher_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='作业信息表';
 INSERT INTO `homework` (`id`,`content`,`course_id`,`student_id`,`teacher_id`,`file`,`score`,`descr`) VALUES (1,'中国近代史纲要第二章第二节作业！',6,1,2,'/api/files/1733214242205-本科毕业设计（论文）开题报告-219981102-邓余.docx','80','还不错！'),(2,'线性代数第一章作业！',5,2,2,'/api/files/1740051505226-建议.txt',NULL,''),(12,'高等数学 第3次作业（高等数学 练习）',1,2,2,NULL,NULL,'待批改'),(42,'线性代数 第3次作业（线性代数 练习）',5,2,2,NULL,NULL,'待批改'),(43,'线性代数 第4次作业（线性代数 练习）',5,3,2,NULL,'81','已批改'),(47,'中国近代史纲要 第2次作业（中国近代史纲要 练习）',6,1,2,NULL,NULL,'待批改');
 -- homework: 6 rows
@@ -228,7 +240,12 @@ CREATE TABLE `score` (
   `ordinary_score` double(10,2) DEFAULT NULL COMMENT '平时分',
   `exam_score` double(10,2) DEFAULT NULL COMMENT '考试分',
   `score` double(10,2) DEFAULT NULL COMMENT '总成绩',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  -- 联合索引对应 ScoreMapper.selectByCourceIdAndStudentId 的精确查找；
+  -- 最左前缀 course_id 同时服务「按课程过滤成绩」
+  KEY `idx_score_course_student` (`course_id`, `student_id`),
+  KEY `idx_score_student` (`student_id`),
+  KEY `idx_score_teacher` (`teacher_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='成绩信息表';
 INSERT INTO `score` (`id`,`student_id`,`course_id`,`teacher_id`,`ordinary_score`,`exam_score`,`score`) VALUES (1,2,1,2,80.0,90.0,87.0),(2,1,6,2,90.0,60.0,69.0),(21,1,6,2,65.0,70.0,68.5),(22,2,6,2,55.0,60.0,58.5),(26,2,1,2,47.0,57.0,54.0),(56,2,5,2,59.0,77.0,71.6),(57,3,5,2,66.0,88.0,81.4),(61,1,6,2,55.0,71.0,66.2);
 -- score: 8 rows
@@ -268,7 +285,9 @@ CREATE TABLE `student` (
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
   `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  -- 用户名唯一：既是登录查询的索引，也堵住「先查后插」的账号重复竞态
+  UNIQUE KEY `uk_student_username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='学生信息表';
 INSERT INTO `student` (`id`,`username`,`password`,`name`,`avatar`,`role`,`college_id`,`speciality_id`,`class_id`,`score`,`theme`,`locale`) VALUES (1,'zhangsan','$2a$10$HWTcpOLJAiEFHAguE5nB0.1zvvYxTUVr4IX5GMZRXBwttsnv3vxwC','张三','/api/files/1782741766056-蛋白粉.png','STUDENT',5,3,1,7,'system','zh-CN'),(2,'lisi','$2a$10$pZBRjGax7whN034u83ohX.wl1ctT3g.F8ZmBSREsNMqiuqIa18AHK','李四','/api/files/1782741760662-蛋白粉.png','STUDENT',4,4,3,5,'system','zh-CN'),(3,'wangwu','$2a$10$qC3N4eO9Mm7ghIeDEOKgGOKRHvon7gHyYh/KBmILsbDZV6JqYLnJm','王五','/api/files/1782741753481-蛋白粉.png','STUDENT',3,1,2,5,'system','zh-CN');
 -- student: 3 rows
@@ -386,7 +405,9 @@ CREATE TABLE `teacher` (
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
   `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  -- 用户名唯一：既是登录查询的索引，也堵住「先查后插」的账号重复竞态
+  UNIQUE KEY `uk_teacher_username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='教师信息表';
 INSERT INTO `teacher` (`id`,`username`,`password`,`name`,`avatar`,`role`,`phone`,`email`,`title`,`theme`,`locale`) VALUES (2,'luys','$2a$10$TUjiUaJ1IKpbDHT5qhJH0ewfoUM5tnaNHzjJCQ3ebj8OljhwTDuIy','路易斯','/api/files/1782741741320-棒球.png','TEACHER','18896188780','2744732031@qq.com','副教授','system','zh-CN');
 -- teacher: 1 rows

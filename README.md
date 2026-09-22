@@ -363,14 +363,32 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 - [ ] 修改默认管理员密码
 - [ ] 保持 SQL 注入防御约定：Mapper 一律 `#{}` 预编译（禁用 `${}`）、不开 `allowMultiQueries`、枚举入参白名单校验
 - [ ] 高并发场景：调整 `spring.datasource.hikari.maximum-pool-size`，多实例部署需引入 Redis 外置 Session/验证码（登录失败计数、防重复提交、大屏与推荐缓存目前都是进程内实现，仅适用单实例）
-- [ ] 数据量上来后补索引：`choice` / `score` / `attendance` / `homework` 的 `student_id`、`course_id`、`teacher_id` 目前只有主键，数据隔离查询会走全表扫描；三张账号表的 `username` 建议加 UNIQUE（顺带堵住"先查后插"的账号重复竞态）
+## 数据库索引设计
 
-```sql
-ALTER TABLE choice     ADD INDEX idx_choice_student (student_id), ADD INDEX idx_choice_course (course_id), ADD INDEX idx_choice_teacher (teacher_id);
-ALTER TABLE score      ADD INDEX idx_score_student (student_id),  ADD INDEX idx_score_course (course_id),  ADD INDEX idx_score_teacher (teacher_id);
-ALTER TABLE attendance ADD INDEX idx_att_student (student_id),    ADD INDEX idx_att_course (course_id),    ADD INDEX idx_att_teacher (teacher_id);
-ALTER TABLE homework   ADD INDEX idx_hw_student (student_id),     ADD INDEX idx_hw_course (course_id),     ADD INDEX idx_hw_teacher (teacher_id);
-```
+种子已为数据隔离与高频查询建好索引（导入即生效，无需额外操作）：
+
+| 表 | 索引 | 服务的查询 |
+| --- | --- | --- |
+| `choice` | `student_id` / `course_id` / `teacher_id` | 按角色隔离选课数据、按课程统计已选人数 |
+| `score` | **`(course_id, student_id)`** / `student_id` / `teacher_id` | 联合索引对应「查某学生某门课是否已录成绩」的精确查找；最左前缀同时服务按课程过滤 |
+| `attendance` | **`(student_id, course_id)`** / `course_id` / `teacher_id` | 联合索引对应「同一学生同一课程同一天只能一条考勤」的重复校验 |
+| `homework` | `student_id` / `course_id` / `teacher_id` | 作业列表的角色隔离 |
+| `admin` / `teacher` / `student` | `username` **UNIQUE** | 登录查询；同时从数据库层堵住「先查后插」的账号重复竞态 |
+| `course` | `(room, week, segment)` | 教室占用校验与智能排课 |
+| `sys_login_log` / `sys_oper_log` | `create_time` / `username` | 日志分页与按时间清理 |
+
+**实测执行计划**（`EXPLAIN`，演示数据量下）：
+
+| 查询 | `type` | 使用的索引 | 说明 |
+| --- | --- | --- | --- |
+| `score WHERE teacher_id=?`（教师查自己的成绩） | `ref` | `idx_score_teacher` | 走索引 |
+| `score WHERE course_id=? AND student_id=?` | `ref` | `idx_score_course_student` | 优化器在两个候选索引中正确选择了联合索引 |
+| `student WHERE username=?`（登录） | `const` | `uk_student_username` | 唯一索引命中，最优的常量查找 |
+| `apply WHERE status=?`（该列无索引，对照组） | `ALL` | 无 | 全表扫描 |
+
+对照组说明了差异：同样的数据量下，有索引的列走 `ref`/`const`，没有索引的列退化为 `ALL` 全表扫描。数据量增长后这个差距会成数量级放大。
+
+复现方式：`EXPLAIN SELECT * FROM score WHERE teacher_id=2\G`
 
 ## 常见问题
 
