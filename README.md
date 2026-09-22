@@ -79,14 +79,6 @@
 
 数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。
 
-> **已经导过库的环境升级**：种子里新增了「自定义主题色」列，直接执行迁移脚本即可，不用重导、不丢数据：
->
-> ```bash
-> mysql -uroot -p123456 xm_educational_manager < sql/migration-theme-color.sql
-> ```
->
-> 全新导入的环境无需执行——种子文件里已经包含该列。
-
 数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)；系统流程与全部代码文件说明见 [docs/系统设计与文件说明.md](docs/系统设计与文件说明.md)。
 
 ## 核心模块之间的联系（数据怎么流转）
@@ -116,7 +108,7 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 全量数据库种子（表结构 + 演示数据 + RBAC 授权）+ 增量迁移脚本
++-- sql/                          # 全量数据库种子（表结构 + 演示数据 + RBAC 授权）
 +-- docs/                         # 数据库 ER 图 + 系统流程与文件说明（Mermaid，GitHub 原生渲染）
 +-- vue/                          # Web 前端（components/composables/locales/stores/views 等）
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
@@ -390,9 +382,6 @@ ALTER TABLE homework   ADD INDEX idx_hw_student (student_id),     ADD INDEX idx_
 
 **3. 后端启动失败，提示数据库连接失败**
 MySQL 没启动、库没建、备份没导入、账号密码不对——按手动部署第 2 步重来一遍。日志页/主题语言接口报错同理（缺表缺字段就重新导入全量备份）。
-
-**3.1 报错 `Unknown column 'theme_color'`**
-老库没有新增的主题色列。执行 `mysql -uroot -p123456 xm_educational_manager < sql/migration-theme-color.sql` 补上即可，不用重导库。若提示 `Duplicate column name 'theme_color'`，说明已经加过了，忽略即可。
 
 **4. 忘记密码**
 BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码"为 `123456`，登录后立即修改。管理员自己忘了密码只能直接改数据库。
