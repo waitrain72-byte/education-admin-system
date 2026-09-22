@@ -200,6 +200,22 @@ public abstract class BaseService<T extends Account> {
     }
 
     /**
+     * 更新自定义主题色：取值格式（#RRGGBB 或空串）由调用方校验，
+     * 这里回读当前数据后仅覆盖 themeColor 字段，避免误改其他资料。
+     *
+     * <p>注意：空串表示"恢复默认色"。updateById 的 XML 用 &lt;if test="themeColor != null"&gt;
+     * 判断，空串同样会写入，因此清空操作能正常落库。</p>
+     */
+    public void updateThemeColor(Account account) {
+        T dbAccount = getMapper().selectById(account.getId());
+        if (ObjectUtil.isNull(dbAccount)) {
+            throw new CustomException(ResultCodeEnum.USER_NOT_EXIST_ERROR);
+        }
+        dbAccount.setThemeColor(account.getThemeColor());
+        getMapper().updateById(dbAccount);
+    }
+
+    /**
      * 管理员重置密码（仅管理员可调用）
      */
     public void resetPassword(Integer id) {

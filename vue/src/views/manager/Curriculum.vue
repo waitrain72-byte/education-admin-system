@@ -19,15 +19,15 @@
 defineOptions({ name: 'Curriculum' })
 
 import { ref, onMounted } from 'vue'
-import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
-import { apiMessage } from '@/i18n'
 
 const tableData = ref<any[]>([])
 
 const load = () => {
-  request.get('/choice/getCurriculum').then((res: any) => {
-    if (res.data.code === '200') { tableData.value = res.data.data } else { ElMessage.error(apiMessage(res.data)) }
+  request.get<any[]>('/choice/getCurriculum').then((rows) => {
+    tableData.value = rows
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
   })
 }
 

@@ -100,12 +100,12 @@
 <script setup lang="ts">
 defineOptions({ name: 'Course' })
 
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
 const { user } = useUser()
@@ -190,18 +190,18 @@ const fetchFreeRooms = () => {
     excludeId: form.value.id || undefined,
   }
   // 体育类课程优先在运动场馆中找，没有合适场馆再回落到普通教室
-  const req = isPeCourse.value
-    ? request.get('/course/roomFree', { params: { ...base, typeFilter: '运动场馆' } }).then((r1: any) => {
-        const venues = r1.data.data || []
-        if (!venues.length) {
-          return request.get('/course/roomFree', { params: base }).then((r2: any) => venues.concat(r2.data.data || []))
+  const req: Promise<any[]> = isPeCourse.value
+    ? request.get<any[]>('/course/roomFree', { params: { ...base, typeFilter: '运动场馆' } }).then((venues) => {
+        if (!venues?.length) {
+          return request.get<any[]>('/course/roomFree', { params: base })
         }
         return venues
       })
-    : request.get('/course/roomFree', { params: base }).then((r: any) => r.data.data || [])
+    : request.get<any[]>('/course/roomFree', { params: base })
 
   req
     .then((list: any[]) => {
+      list = list || []
       freeRooms.value = list
       // 系统自动分配：未手动选择教室时，自动填入容量最贴近的空闲教室/场地并提示
       if (user.value.role === 'ADMIN' && !form.value.room && list.length) {
@@ -219,8 +219,7 @@ const fetchFreeRooms = () => {
               excludeId: form.value.id || undefined,
             },
           })
-          .then((res: any) => {
-            const hit = res.data.data
+          .then((hit: any) => {
             roomConflict.value = hit ? t('pages.course.roomOccupied', { name: hit.name, teacher: hit.teacherName || '-' }) : ''
           })
           .catch(() => {})
@@ -245,24 +244,25 @@ watch(
   },
 )
 
+// 组件卸载时清掉待触发的防抖定时器，否则页面已销毁仍会发出一次 fetchFreeRooms 请求
+onBeforeUnmount(() => {
+  if (roomTimer) clearTimeout(roomTimer)
+})
+
 const choiceCourse = (row: any) => {
-  request.post('/choice/add', { studentId: user.value.id, teacherId: row.teacherId, courseId: row.id }).then((res: any) => {
-    if (res.data.code === '200') {
-      ElMessage.success(t('pages.course.choiceSuccess'))
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  }).catch(() => {})
+  request.post('/choice/add', { studentId: user.value.id, teacherId: row.teacherId, courseId: row.id })
+    .then(() => ElMessage.success(t('pages.course.choiceSuccess')))
+    .catch(() => {
+      // 选课失败（满员/时间冲突）的提示已由 axios 拦截器统一弹出
+    })
 }
 
 const loadTeacher = () => {
-  request.get('/teacher/selectAll').then((res: any) => {
-    if (res.data.code === '200') {
-      teacherData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  }).catch(() => {})
+  request.get<any[]>('/teacher/selectAll').then((list) => {
+    teacherData.value = list
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
+  })
 }
 
 const reset = () => {

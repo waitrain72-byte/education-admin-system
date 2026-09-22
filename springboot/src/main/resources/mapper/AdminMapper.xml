@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.AdminMapper">
 
     <sql id="Base_Column_List">
-        id,username,password,name,phone,email,avatar,role,theme,locale
+        id,username,password,name,phone,email,avatar,role,theme,locale,theme_color
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Admin">
@@ -55,6 +55,7 @@
                 <if test="role != null">role,</if>
                 <if test="theme != null">theme,</if>
                 <if test="locale != null">locale,</if>
+                <if test="themeColor != null">theme_color,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
@@ -67,6 +68,7 @@
                 <if test="role != null">#{role},</if>
                 <if test="theme != null">#{theme},</if>
                 <if test="locale != null">#{locale},</if>
+                <if test="themeColor != null">#{themeColor},</if>
         </trim>
     </insert>
 
@@ -99,6 +101,10 @@
             </if>
             <if test="locale != null">
                 locale = #{locale},
+            </if>
+            <!-- 空串是合法值（表示恢复默认色），所以这里只判 null 不判空 -->
+            <if test="themeColor != null">
+                theme_color = #{themeColor},
             </if>
         </set>
         where id = #{id} 

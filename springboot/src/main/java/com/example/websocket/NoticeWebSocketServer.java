@@ -55,21 +55,35 @@ public class NoticeWebSocketServer {
         }
         this.userKey = parts[0] + "-" + parts[1];
         this.session = session;
-        SESSIONS.put(userKey, session);
+        // 同一用户重连时顶掉旧连接：旧 session 必须显式关闭，否则会成为孤儿连接常驻内存
+        Session old = SESSIONS.put(userKey, session);
+        if (old != null && old != session) {
+            closeQuietly(old);
+        }
         log.debug("WebSocket 连接建立：{}", userKey);
     }
 
     @OnClose
     public void onClose() {
-        if (userKey != null) {
-            SESSIONS.remove(userKey);
-        }
+        unregister();
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
-        if (userKey != null) {
-            SESSIONS.remove(userKey);
+        log.warn("WebSocket 连接异常：{}", userKey, error);
+        unregister();
+    }
+
+    /**
+     * 注销本连接的登记。
+     *
+     * <p>必须用「值匹配删除」：每个连接对应一个独立的端点实例，重连时旧实例的 onClose 会在
+     * 新实例登记之后才触发，若按 key 无条件 remove 就会把刚注册的新 session 一起删掉，
+     * 该用户此后再也收不到任何推送。</p>
+     */
+    private void unregister() {
+        if (userKey != null && session != null) {
+            SESSIONS.remove(userKey, session);
         }
     }
 
@@ -108,10 +122,13 @@ public class NoticeWebSocketServer {
             Map<String, String> message = new java.util.HashMap<>();
             message.put("title", title);
             message.put("content", content);
+            // 必须用 getBasicRemote 同步发送：getAsyncRemote 在方法返回后才真正写出，
+            // synchronized 保护不到实际写入，全员广播时会抛 IllegalStateException: TEXT_FULL_WRITING
             synchronized (session) {
-                session.getAsyncRemote().sendText(JSONUtil.toJsonStr(message));
+                session.getBasicRemote().sendText(JSONUtil.toJsonStr(message));
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("WebSocket 推送失败: {}", e.getMessage());
         }
     }
 

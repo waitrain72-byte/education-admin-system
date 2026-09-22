@@ -45,8 +45,7 @@ function isLoggedIn(): boolean {
 export async function pullLocaleFromServer() {
     if (!isLoggedIn()) return
     try {
-        const res = await request.get('/locale')
-        const value = res.data?.data
+        const value = await request.get<string>('/locale')
         if (value !== 'zh-CN' && value !== 'en-US') return
         serverLocale = value
         if (currentLocale() !== value) {

@@ -74,7 +74,7 @@ import { User, Lock, Sunny, Moon, Monitor } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useTheme } from '@/composables/useTheme'
 import { currentLocale, setLocale } from '@/composables/useLocale'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 interface RegisterForm {
   username: string
@@ -139,15 +139,11 @@ const register = (): void => {
         username: form.username,
         password: form.password,
         role: form.role
-      }).then((res: any) => {
-        if (res.data.code === '200') {
-          ElMessage.success(t('register.success'))
-          router.push('/login')
-        } else {
-          ElMessage.error(apiMessage(res.data))
-        }
+      }).then(() => {
+        ElMessage.success(t('register.success'))
+        router.push('/login')
       }).catch(() => {
-        ElMessage.error(t('register.failedRetry'))
+        // 失败原因（用户名已存在等）的提示已由 axios 拦截器统一弹出
       })
     }
   })

@@ -9,10 +9,14 @@ import request from '@/utils/request'
  *   const { download } = useDownload('/student/export')
  *   download('学生列表.xlsx')
  */
+/** 导出超时：大表导出远超默认的 10 秒，单独放宽到 60 秒 */
+const EXPORT_TIMEOUT = 60000
+
 export function useDownload(url: string) {
     const download = async (filename: string, params?: Record<string, any>) => {
-        const res: any = await request.get(url, { params, responseType: 'blob' })
-        const blobUrl = URL.createObjectURL(res.data)
+        // 二进制响应没有 { code, msg, data } 包装，拦截器原样返回 Blob
+        const blob = await request.get<Blob>(url, { params, responseType: 'blob', timeout: EXPORT_TIMEOUT })
+        const blobUrl = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = blobUrl
         link.download = filename

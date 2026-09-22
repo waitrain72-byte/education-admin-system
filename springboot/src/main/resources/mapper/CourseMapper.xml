@@ -12,12 +12,13 @@
         select course.*, teacher.name as teacherName
         from course
         left join teacher on course.teacher_id = teacher.id
+        <!-- 过滤条件一律带表前缀：join 进来的 teacher 与 course 都有 id 列 -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
+            <if test="id != null"> and course.id= #{id}</if>
             <if test="name != null"> and course.name like concat('%', #{name}, '%')</if>
             <if test="teacherId != null"> and course.teacher_id = #{teacherId}</if>
         </where>
-        order by id desc
+        order by course.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Course">

@@ -35,6 +35,48 @@
                     </template>
                 </el-dropdown>
 
+                <!-- 主题色：预设色板 + 任意取色，选中即生效并保存到当前账号 -->
+                <el-dropdown placement="bottom-end" trigger="click" :hide-on-click="false">
+                    <span class="theme-switch-trigger color-trigger" :title="$t('layout.themeColor.switch')">
+                        <span class="color-dot" :style="{ background: themeColor || 'var(--xm-brand)' }"></span>
+                    </span>
+                    <template #dropdown>
+                        <div class="color-panel">
+                            <div class="color-panel__title">{{ $t('layout.themeColor.title') }}</div>
+                            <div class="color-panel__swatches">
+                                <button
+                                    v-for="preset in PRESET_COLORS"
+                                    :key="preset.value || 'default'"
+                                    type="button"
+                                    class="color-swatch"
+                                    :class="{ 'is-active': themeColor === preset.value }"
+                                    :title="$t(preset.label)"
+                                    :style="preset.value ? { background: preset.value } : undefined"
+                                    :data-default="!preset.value"
+                                    @click="setThemeColor(preset.value)"
+                                ></button>
+                            </div>
+                            <div class="color-panel__custom">
+                                <span>{{ $t('layout.themeColor.custom') }}</span>
+                                <el-color-picker
+                                    :model-value="themeColor || null"
+                                    size="small"
+                                    @change="onPickColor"
+                                />
+                            </div>
+                            <el-button
+                                class="color-panel__reset"
+                                size="small"
+                                plain
+                                :disabled="!isCustomThemeColor"
+                                @click="setThemeColor('')"
+                            >
+                                {{ $t('layout.themeColor.reset') }}
+                            </el-button>
+                        </div>
+                    </template>
+                </el-dropdown>
+
                 <!-- 主题切换开关：浅色 / 深色 -->
                 <el-tooltip :content="isDark ? $t('layout.theme.light') : $t('layout.theme.dark')" placement="bottom">
                     <el-switch
@@ -171,6 +213,9 @@ import { resolveFileUrl } from '@/utils/file'
 import request from '@/utils/request'
 import { usePermission } from '@/composables/usePermission'
 import { isDark, setThemeMode } from '@/composables/useTheme'
+import {
+    PRESET_COLORS, isCustomThemeColor, resetThemeColorOnLogout, setThemeColor, useThemeColor,
+} from '@/composables/useThemeColor'
 import { currentLocale, setLocale } from '@/composables/useLocale'
 import { t } from '@/i18n'
 
@@ -186,6 +231,11 @@ const { pullPermissions } = usePermission()
 // 窄屏侧边栏抽屉开关（≤1024px 生效，桌面端由 CSS 忽略）
 const sidebarOpen = ref(false)
 
+// 自定义主题色：themeColor 为 '' 表示用系统内置默认色
+const themeColor = useThemeColor()
+// el-color-picker 清空时回调 null，等价于恢复默认
+const onPickColor = (value: string | null) => setThemeColor(value || '')
+
 // 跨端资料同步：手机端等其它入口修改资料（如头像）后，Web 端在进入系统/切换页面时
 // 静默拉取一次最新用户信息，右上角头像等无需重新登录即可更新。
 // selectById 返回的 token 为空，回填本地 token 与权限码，防止把登录态冲掉。
@@ -197,9 +247,9 @@ async function refreshCurrentUser() {
     if (now - lastUserRefreshAt < 10000) return
     lastUserRefreshAt = now
     try {
-        const res: any = await request.get(`/${String(user.value.role).toLowerCase()}/selectById/${user.value.id}`)
-        if (res.data?.code === '200' && res.data.data) {
-            updateUser({ ...res.data.data, token: user.value.token, permissions: user.value.permissions })
+        const profile = await request.get<any>(`/${String(user.value.role).toLowerCase()}/selectById/${user.value.id}`)
+        if (profile) {
+            updateUser({ ...profile, token: user.value.token, permissions: user.value.permissions })
         }
     } catch {
         // 静默失败：拉取不到时保留本地缓存
@@ -484,6 +534,9 @@ const goToPerson = () => {
 
 const logout = () => {
     clearUser()
+    // 复位主题色：否则下一个在本机登录的账号会先看到上一个账号的配色，
+    // 直到 /themeColor 拉取完成才闪回自己的
+    resetThemeColorOnLogout()
     ElMessage.success(t('layout.loggedOut'))
     router.push('/login')
 }

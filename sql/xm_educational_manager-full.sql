@@ -21,6 +21,7 @@ CREATE TABLE `admin` (
   `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
+  `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='管理员';
 INSERT INTO `admin` (`id`,`username`,`password`,`name`,`avatar`,`role`,`phone`,`email`,`theme`,`locale`) VALUES (1,'admin','$2b$10$RL2AW18BBO.J2oje.TjxR.sABsocXXFTvC/nusjnJvyueZZxFSr5u','管理员','/api/files/7e2468d07dc47789c731faa6edbd11ea.jpg','ADMIN','12345678901','admin@xm.com','system','zh-CN');
@@ -266,6 +267,7 @@ CREATE TABLE `student` (
   `score` int(11) DEFAULT '0' COMMENT '学分',
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
+  `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='学生信息表';
 INSERT INTO `student` (`id`,`username`,`password`,`name`,`avatar`,`role`,`college_id`,`speciality_id`,`class_id`,`score`,`theme`,`locale`) VALUES (1,'zhangsan','$2a$10$HWTcpOLJAiEFHAguE5nB0.1zvvYxTUVr4IX5GMZRXBwttsnv3vxwC','张三','/api/files/1782741766056-蛋白粉.png','STUDENT',5,3,1,7,'system','zh-CN'),(2,'lisi','$2a$10$pZBRjGax7whN034u83ohX.wl1ctT3g.F8ZmBSREsNMqiuqIa18AHK','李四','/api/files/1782741760662-蛋白粉.png','STUDENT',4,4,3,5,'system','zh-CN'),(3,'wangwu','$2a$10$qC3N4eO9Mm7ghIeDEOKgGOKRHvon7gHyYh/KBmILsbDZV6JqYLnJm','王五','/api/files/1782741753481-蛋白粉.png','STUDENT',3,1,2,5,'system','zh-CN');
@@ -383,6 +385,7 @@ CREATE TABLE `teacher` (
   `title` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '职称',
   `theme` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '主题偏好: light/dark/system',
   `locale` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'zh-CN' COMMENT '界面语言: zh-CN/en-US',
+  `theme_color` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '自定义主题色: #RRGGBB，空串表示用内置默认色',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='教师信息表';
 INSERT INTO `teacher` (`id`,`username`,`password`,`name`,`avatar`,`role`,`phone`,`email`,`title`,`theme`,`locale`) VALUES (2,'luys','$2a$10$TUjiUaJ1IKpbDHT5qhJH0ewfoUM5tnaNHzjJCQ3ebj8OljhwTDuIy','路易斯','/api/files/1782741741320-棒球.png','TEACHER','18896188780','2744732031@qq.com','副教授','system','zh-CN');

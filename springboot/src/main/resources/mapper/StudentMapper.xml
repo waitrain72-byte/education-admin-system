@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.StudentMapper">
 
     <sql id="Base_Column_List">
-        id,username,password,name,avatar,role,college_id,speciality_id,class_id,score,theme,locale
+        id,username,password,name,avatar,role,college_id,speciality_id,class_id,score,theme,locale,theme_color
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Student">
@@ -14,15 +14,16 @@
         left join college on student.college_id = college.id
         left join speciality on student.speciality_id = speciality.id
         left join classes on student.class_id = classes.id
+        <!-- 过滤条件一律带表前缀：join 进来的 college/speciality/classes 与 student 都有 id 与 name 列 -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
-            <if test="username != null"> and username like concat('%', #{username}, '%')</if>
-            <if test="password != null"> and password= #{password}</if>
-            <if test="name != null"> and name= #{name}</if>
-            <if test="avatar != null"> and avatar= #{avatar}</if>
-            <if test="role != null"> and role= #{role}</if>
+            <if test="id != null"> and student.id= #{id}</if>
+            <if test="username != null"> and student.username like concat('%', #{username}, '%')</if>
+            <if test="password != null"> and student.password= #{password}</if>
+            <if test="name != null"> and student.name= #{name}</if>
+            <if test="avatar != null"> and student.avatar= #{avatar}</if>
+            <if test="role != null"> and student.role= #{role}</if>
         </where>
-        order by id desc
+        order by student.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Student">
@@ -58,6 +59,7 @@
             <if test="score != null">score,</if>
             <if test="theme != null">theme,</if>
             <if test="locale != null">locale,</if>
+            <if test="themeColor != null">theme_color,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -72,6 +74,7 @@
             <if test="score != null">#{score},</if>
             <if test="theme != null">#{theme},</if>
             <if test="locale != null">#{locale},</if>
+            <if test="themeColor != null">#{themeColor},</if>
         </trim>
     </insert>
     <!--college_id,spaciality_id,class_id,score-->
@@ -110,6 +113,10 @@
             </if>
             <if test="locale != null">
                 locale = #{locale},
+            </if>
+            <!-- 空串是合法值（表示恢复默认色），所以这里只判 null 不判空 -->
+            <if test="themeColor != null">
+                theme_color = #{themeColor},
             </if>
         </set>
         where id = #{id}

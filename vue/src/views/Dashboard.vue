@@ -122,10 +122,9 @@ function initChart(el: HTMLElement | undefined, option: echarts.EChartsCoreOptio
 
 const renderCharts = () => {
   // 成绩分布（柱状）
-  request.get('/score/getLine').then((res: any) => {
-    if (res.data.code !== '200') return
-    const xAxis: string[] = res.data.data.xAxis || []
-    const values: number[] = res.data.data.yAxis || []
+  request.get<any>('/score/getLine').then((data) => {
+    const xAxis: string[] = data?.xAxis || []
+    const values: number[] = data?.yAxis || []
     initChart(chartScore.value, {
       grid: baseGrid,
       tooltip: {},
@@ -133,12 +132,13 @@ const renderCharts = () => {
       yAxis: { type: 'value', minInterval: 1, axisLabel: { color: AXUS }, splitLine: { lineStyle: { color: SPLIT } } },
       series: [{ type: 'bar', data: values, barWidth: 22, itemStyle: { borderRadius: [4, 4, 0, 0], color: '#2f7cff' } }],
     })
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理（并已去重，不会叠成一屏 toast）
   })
 
   // 考勤占比（环形）
-  request.get('/attendance/getPie').then((res: any) => {
-    if (res.data.code !== '200') return
-    const data = res.data.data.data || []
+  request.get<any>('/attendance/getPie').then((payload) => {
+    const data = payload?.data || []
     initChart(chartAttendance.value, {
       tooltip: { trigger: 'item' },
       legend: { bottom: 0, textStyle: { color: AXUS }, itemWidth: 12, itemHeight: 12 },
@@ -149,6 +149,8 @@ const renderCharts = () => {
         itemStyle: { borderRadius: 6, borderColor: '#0a1628', borderWidth: 2 },
       }],
     })
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理（并已去重，不会叠成一屏 toast）
   })
 
   const s = stats.value
@@ -204,8 +206,10 @@ const renderCharts = () => {
 let noticeTimer: ReturnType<typeof setInterval> | null = null
 
 const loadNotices = () => {
-  request.get('/notice/selectAll').then((res: any) => {
-    notices.value = res.data?.data || []
+  request.get<any[]>('/notice/selectAll').then((rows) => {
+    notices.value = rows || []
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
   })
 }
 
@@ -216,9 +220,10 @@ onMounted(async () => {
   clockTimer = setInterval(updateClock, 1000)
 
   await nextTick()
-  const res: any = await request.get('/dashboard/stats')
-  if (res.data.code === '200') {
-    stats.value = res.data.data || {}
+  try {
+    stats.value = (await request.get<any>('/dashboard/stats')) || {}
+  } catch {
+    // 指标拉取失败时仍继续渲染图表，大屏不至于整页空白
   }
   renderCharts()
   loadNotices()

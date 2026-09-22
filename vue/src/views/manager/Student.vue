@@ -38,7 +38,7 @@
     >
       <template #avatar="{ row }">
         <div style="display: flex; align-items: center">
-          <el-image v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%" :src="row.avatar" />
+          <el-image v-if="row.avatar" style="width: 40px; height: 40px; border-radius: 50%" :src="resolveFileUrl(row.avatar)" />
         </div>
       </template>
       <template #actions="{ row }">
@@ -100,6 +100,7 @@ import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import { useOptions } from '@/composables/useOptions'
 import { useDownload } from '@/composables/useDownload'
+import { resolveFileUrl } from '@/utils/file'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
 
 const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:9091'
@@ -150,13 +151,11 @@ const columns = computed<CrudColumn[]>(() => [
 
 const resetPassword = (row: any) => {
   ElMessageBox.confirm(t('pages.student.resetConfirm', { username: row.username }), t('common.resetPassword'), { type: 'warning' }).then(() => {
-    request.put('/student/resetPassword/' + row.id).then((res: any) => {
-      if (res.data.code === '200') {
-        ElMessage.success(t('pages.student.resetSuccess'))
-      } else {
-        ElMessage.error(apiMessage(res.data))
-      }
-    })
+    request.put('/student/resetPassword/' + row.id)
+      .then(() => ElMessage.success(t('pages.student.resetSuccess')))
+      .catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
+      })
   }).catch(() => {})
 }
 

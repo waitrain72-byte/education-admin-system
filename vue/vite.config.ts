@@ -35,6 +35,46 @@ function buildElementPlusComponentMap(): Map<string, string> {
 const elementPlusComponentMap = buildElementPlusComponentMap()
 
 /**
+ * 收集 es/components 下所有自带样式入口（style/css）的目录名。
+ *
+ * 样式目录与 JS 目录不是一回事：像 ElBreadcrumbItem / ElTabPane 这类子组件，
+ * **JS 由父目录导出**（breadcrumb/index、tabs/index，所以上面的映射表是对的），
+ * 但**样式有自己的目录**（breadcrumb-item/style/css、tab-pane/style/css）。
+ * 若样式路径直接复用 JS 目录，这些子组件的样式就会漏掉（面包屑分隔符、标签页内容区掉样式）。
+ */
+function buildElementPlusStyleDirs(): Set<string> {
+    const dirs = new Set<string>()
+    const base = resolve(__dirname, 'node_modules/element-plus/es/components')
+    if (!existsSync(base)) return dirs
+    for (const dir of readdirSync(base)) {
+        if (existsSync(resolve(base, dir, 'style/css.mjs'))) {
+            dirs.add(dir)
+        }
+    }
+    return dirs
+}
+
+const elementPlusStyleDirs = buildElementPlusStyleDirs()
+
+/** ElBreadcrumbItem → breadcrumb-item */
+function kebabOf(componentName: string): string {
+    return componentName
+        .replace(/^El/, '')
+        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+        .toLowerCase()
+}
+
+/**
+ * 组件对应的样式入口：优先用与组件名同名的样式目录（覆盖子组件独立样式的情况），
+ * 没有才回退到 JS 所在目录。都没有样式目录时返回 undefined（如无渲染的 ElConfigProvider）。
+ */
+function styleEntryOf(componentName: string, jsDir: string): string | undefined {
+    const own = kebabOf(componentName)
+    const dir = elementPlusStyleDirs.has(own) ? own : jsDir
+    return elementPlusStyleDirs.has(dir) ? `element-plus/es/components/${dir}/style/css` : undefined
+}
+
+/**
  * Element Plus 组件解析器：把模板里的 <el-xxx> 解析为**深导入**，而不是官方
  * ElementPlusResolver 使用的桶导入 `element-plus/es`。
  *
@@ -46,6 +86,10 @@ const elementPlusComponentMap = buildElementPlusComponentMap()
  * tree-shaking 与下面的分块策略都能正常工作。
  *
  * 映射表由 element-plus 自身导出声明扫描得到，升级 Element Plus 无需手工维护。
+ *
+ * `sideEffects` 让 unplugin 顺带注入该组件的样式入口，从而 CSS 也按需引入：
+ * 否则就只能在 main.ts 里全量 import element-plus/dist/index.css（355 KB 首屏加载），
+ * JS 侧的 tree-shaking 成果会被 CSS 抵消一半。
  */
 function deepElementPlusResolver() {
     return {
@@ -57,7 +101,11 @@ function deepElementPlusResolver() {
             }
             const dir = elementPlusComponentMap.get(name)
             if (!dir) return
-            return { name, from: `element-plus/es/components/${dir}/index` }
+            return {
+                name,
+                from: `element-plus/es/components/${dir}/index`,
+                sideEffects: styleEntryOf(name, dir),
+            }
         },
     }
 }
@@ -81,6 +129,7 @@ function deepElementPlusDirectiveResolver() {
             return {
                 name: directive.importName,
                 from: `element-plus/es/components/${directive.dir}/index`,
+                sideEffects: `element-plus/es/components/${directive.dir}/style/css`,
             }
         },
     }

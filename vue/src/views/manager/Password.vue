@@ -28,7 +28,7 @@ import { ElMessage } from '@/utils/element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 const router = useRouter()
 const formRef = ref<FormInstance>()
@@ -56,12 +56,12 @@ const rules: FormRules = {
 const update = () => {
   formRef.value?.validate((valid) => {
     if (valid) {
-      request.put('/updatePassword', user).then((res: any) => {
-        if (res.data.code === '200') {
-          clearUser()
-          ElMessage.success(t('pages.password.success'))
-          router.push('/login')
-        } else { ElMessage.error(apiMessage(res.data)) }
+      request.put('/updatePassword', user).then(() => {
+        clearUser()
+        ElMessage.success(t('pages.password.success'))
+        router.push('/login')
+      }).catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
       })
     }
   })

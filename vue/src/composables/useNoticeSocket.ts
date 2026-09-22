@@ -85,6 +85,12 @@ export function installNoticeSocket() {
                 connect()
             } else {
                 intentionallyClosed = true
+                // 必须同时清掉待触发的重连定时器：只置 intentionallyClosed 拦不住已在排队的那一次，
+                // 它的回调会在退出登录后仍调用 connect() 重新建连
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer)
+                    reconnectTimer = null
+                }
                 socket?.close()
                 socket = null
             }

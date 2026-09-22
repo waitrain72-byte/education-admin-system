@@ -109,6 +109,13 @@
             <version>3.3.4</version>
         </dependency>
 
+        <!-- 单元测试：JUnit 5 + Mockito（算法类为纯计算，单测不启动 Spring 上下文、不连数据库） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

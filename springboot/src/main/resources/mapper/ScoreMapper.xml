@@ -14,13 +14,37 @@
         left join student on score.student_id = student.id
         left join course on score.course_id = course.id
         left join teacher on score.teacher_id = teacher.id
+        <!-- 过滤条件一律带表前缀：本查询 join 了 student/course/teacher，它们与 score 都有 id 列，
+             不限定表名会报 Column 'id' in where clause is ambiguous -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
+            <if test="id != null"> and score.id= #{id}</if>
             <if test="studentId != null"> and score.student_id= #{studentId}</if>
             <if test="courseId != null"> and score.course_id= #{courseId}</if>
             <if test="teacherId != null"> and score.teacher_id= #{teacherId}</if>
         </where>
-        order by id desc
+        order by score.id desc
+    </select>
+
+    <!-- 成绩分段统计：分桶与计数全部交给数据库，档位只回传 A~E 码，中文展示文案留在 Java 侧。
+         score IS NULL 的行必须排除：库里允许总成绩为空，在内存里比较 null >= 90 会抛 NPE。 -->
+    <select id="selectScoreDistribution" resultType="java.util.Map">
+        select
+            case
+                when score.score &gt;= 90 then 'A'
+                when score.score &gt;= 80 then 'B'
+                when score.score &gt;= 70 then 'C'
+                when score.score &gt;= 60 then 'D'
+                else 'E'
+            end as bucket,
+            count(*) as value
+        from score
+        <where>
+            score.score is not null
+            <if test="studentId != null"> and score.student_id = #{studentId}</if>
+            <if test="courseId != null"> and score.course_id = #{courseId}</if>
+            <if test="teacherId != null"> and score.teacher_id = #{teacherId}</if>
+        </where>
+        group by bucket
     </select>
 
     <select id="selectById" resultType="com.example.entity.Score">

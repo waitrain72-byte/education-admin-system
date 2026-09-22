@@ -85,7 +85,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from '@/utils/element-plus'
 import type { FormRules } from 'element-plus'
 import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -138,14 +138,12 @@ const handleCheck = (row: any) => {
 }
 
 const check = () => {
-  request.put('/apply/update', form.value).then((res: any) => {
-    if (res.data.code === '200') {
-      ElMessage.success(t('common.operationSuccess'))
-      load(1)
-      checkVisible.value = false
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
+  request.put('/apply/update', form.value).then(() => {
+    ElMessage.success(t('common.operationSuccess'))
+    load(1)
+    checkVisible.value = false
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
   })
 }
 

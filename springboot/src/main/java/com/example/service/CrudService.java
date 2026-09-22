@@ -3,6 +3,8 @@ package com.example.service;
 import com.example.mapper.CrudMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -13,6 +15,11 @@ import java.util.List;
  * 注：既有 {@link BaseService} 专用于管理员/教师/学生三类账号（含登录/改密/头像/语言主题/重置密码），本类面向其他业务实体。
  */
 public abstract class CrudService<T> {
+
+    private static final Logger log = LoggerFactory.getLogger(CrudService.class);
+
+    /** selectAll 的行数硬上限，防止无 LIMIT 的全量查询把整表拉进内存 */
+    private static final int MAX_SELECT_ALL_ROWS = 5000;
 
     protected abstract CrudMapper<T> getMapper();
 
@@ -52,9 +59,22 @@ public abstract class CrudService<T> {
     protected void applyDataScope(T entity) {
     }
 
+    /**
+     * 全量查询。
+     *
+     * <p>加一道行数硬上限：本方法经 CrudController 为全部业务实体统一开放了 /xxx/selectAll，
+     * 而各 Mapper 的 selectAll 都没有 LIMIT。上限远高于下拉选项等正常用途的真实需求，
+     * 触顶说明该调用点本就应该改用分页接口。</p>
+     */
     public List<T> selectAll(T entity) {
         applyDataScope(entity);
-        return getMapper().selectAll(entity);
+        PageHelper.startPage(1, MAX_SELECT_ALL_ROWS, false);
+        List<T> list = getMapper().selectAll(entity);
+        if (list.size() >= MAX_SELECT_ALL_ROWS) {
+            log.warn("{}.selectAll 返回行数达到上限 {}，结果已被截断，该调用点应改用分页接口",
+                    getClass().getSimpleName(), MAX_SELECT_ALL_ROWS);
+        }
+        return list;
     }
 
     /**

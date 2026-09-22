@@ -174,14 +174,18 @@ onActivated(async () => {
 })
 
 const loadNotices = () => {
-  request.get('/notice/selectAll').then((res: any) => {
-    notices.value = res.data?.data || []
+  request.get<any[]>('/notice/selectAll').then((rows) => {
+    notices.value = rows || []
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
   })
 }
 
 const loadExamplans = () => {
-  request.get('/examplan/selectAll').then((res: any) => {
-    examplans.value = res.data?.data || []
+  request.get<any[]>('/examplan/selectAll').then((rows) => {
+    examplans.value = rows || []
+  }).catch(() => {
+    // 错误提示已由 axios 拦截器统一处理
   })
 }
 
@@ -201,19 +205,16 @@ const lineY = ref<number[]>([])
 const loadPie = async () => {
   pieLoading.value = true
   try {
-    const res: any = await request.get('/attendance/getPie')
-    if (res.data.code === '200') {
-      const data = res.data.data
-      chartPieTitle.value = data?.text || ''
-      chartPieSub.value = data?.subtext || ''
-      const rows: any[] = data?.data || []
-      pieEmpty.value = !rows.length
-      pieRows.value = rows
-      if (rows.length) {
-        // 容器可能刚从 v-show 隐藏态转为显示，等 DOM 更新后再初始化图表，避免 0 尺寸
-        await nextTick()
-        renderPie()
-      }
+    const data = await request.get<any>('/attendance/getPie')
+    chartPieTitle.value = data?.text || ''
+    chartPieSub.value = data?.subtext || ''
+    const rows: any[] = data?.data || []
+    pieEmpty.value = !rows.length
+    pieRows.value = rows
+    if (rows.length) {
+      // 容器可能刚从 v-show 隐藏态转为显示，等 DOM 更新后再初始化图表，避免 0 尺寸
+      await nextTick()
+      renderPie()
     }
   } catch {
     // 请求层已统一提示
@@ -226,20 +227,17 @@ const loadPie = async () => {
 const loadLine = async () => {
   lineLoading.value = true
   try {
-    const res: any = await request.get('/score/getLine')
-    if (res.data.code === '200') {
-      const data = res.data.data
-      chartLineTitle.value = data?.text || ''
-      chartLineSub.value = data?.subtext || ''
-      const x: string[] = data?.xAxis || []
-      const y: number[] = data?.yAxis || []
-      lineEmpty.value = !y.length
-      lineX.value = x
-      lineY.value = y
-      if (y.length) {
-        await nextTick()
-        renderLine()
-      }
+    const data = await request.get<any>('/score/getLine')
+    chartLineTitle.value = data?.text || ''
+    chartLineSub.value = data?.subtext || ''
+    const x: string[] = data?.xAxis || []
+    const y: number[] = data?.yAxis || []
+    lineEmpty.value = !y.length
+    lineX.value = x
+    lineY.value = y
+    if (y.length) {
+      await nextTick()
+      renderLine()
     }
   } catch {
     // 请求层已统一提示

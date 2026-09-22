@@ -26,6 +26,14 @@
         var dark = mode === 'dark' ||
             (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
         if (dark) document.documentElement.classList.add('dark')
+
+        // 自定义主题色同样要在挂载前铺上，否则首屏会先闪一下默认靛蓝再变色。
+        // 这里只写基色，完整的派生层级由 composables/useThemeColor.ts 接管。
+        var color = localStorage.getItem('xm-theme-color') || ''
+        if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+          document.documentElement.style.setProperty('--el-color-primary', color)
+          document.documentElement.style.setProperty('--xm-brand', color)
+        }
       } catch (e) { /* 忽略存储不可用的情况 */ }
     })()
   </script>

@@ -20,7 +20,8 @@ vi.mock('@/utils/element-plus', () => ({
   ElMessageBox: { confirm: vi.fn(() => Promise.resolve('confirm')) },
 }))
 
-const okResponse = (data: any) => ({ data: { code: '200', msg: '成功', data } })
+// 响应拦截器已统一解包：调用方拿到的就是业务数据本身，不再是 AxiosResponse
+const okResponse = (data: any) => data
 
 describe('useCrud', () => {
   beforeEach(() => {

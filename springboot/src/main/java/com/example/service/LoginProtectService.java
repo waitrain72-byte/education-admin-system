@@ -3,6 +3,8 @@ package com.example.service;
 import com.example.entity.LoginLog;
 import com.example.exception.CustomException;
 import com.example.mapper.LoginLogMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,6 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class LoginProtectService {
+
+    /** 命名为 LOG 而非 log，避免与 saveLog 内的 LoginLog 局部变量重名 */
+    private static final Logger LOG = LoggerFactory.getLogger(LoginProtectService.class);
 
     /** 连续失败锁定阈值 */
     private static final int MAX_ATTEMPTS = 5;
@@ -54,13 +59,30 @@ public class LoginProtectService {
         saveLog(username, ip, "成功", "登录成功");
     }
 
+    /**
+     * 记录一次「账号或密码错误」，累加失败次数，达到阈值则锁定。
+     * 计数与锁定时间的更新在 compute 的映射函数内完成，保证并发下的原子性。
+     */
     public void recordFailure(String username, String ip, String reason) {
-        FailInfo info = failMap.computeIfAbsent(username, k -> new FailInfo());
-        info.count++;
-        if (info.count >= MAX_ATTEMPTS) {
-            info.lockedUntil = System.currentTimeMillis() + LOCK_MILLIS;
-        }
+        failMap.compute(username, (k, info) -> {
+            FailInfo current = info == null ? new FailInfo() : info;
+            current.count++;
+            if (current.count >= MAX_ATTEMPTS) {
+                current.lockedUntil = System.currentTimeMillis() + LOCK_MILLIS;
+            }
+            return current;
+        });
         saveLog(username, ip, "失败", reason);
+    }
+
+    /**
+     * 记录一次验证码错误：只写登录日志，不累加账号失败次数。
+     *
+     * <p>验证码错误与「猜密码」不是同一回事——若也计入锁定计数，任何知道用户名的人
+     * 都能通过反复提交错误验证码把该账号锁死 10 分钟，形成拒绝服务。</p>
+     */
+    public void recordCaptchaFailure(String username, String ip) {
+        saveLog(username, ip, "失败", "验证码错误");
     }
 
     private void saveLog(String username, String ip, String status, String msg) {
@@ -71,8 +93,9 @@ public class LoginProtectService {
             log.setStatus(status);
             log.setMsg(msg);
             loginLogMapper.insert(log);
-        } catch (Exception ignored) {
-            // 日志写入失败不影响登录流程
+        } catch (Exception e) {
+            // 日志写入失败不影响登录流程，但要留痕，否则登录日志缺失时无从排查
+            LOG.warn("登录日志写入失败: username={}, {}", username, e.getMessage());
         }
     }
 }

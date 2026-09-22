@@ -112,11 +112,20 @@ public class TokenUtils {
     }
 
     /**
-     * 获取当前登录的用户信息（基于请求头 token）
+     * 获取当前登录的用户信息（基于请求头 token）。
+     *
+     * <p>优先读 JwtInterceptor 放进请求属性的那一份：单个请求内本方法会被鉴权切面、
+     * 日志切面、防重切面以及各 Service 的数据隔离钩子反复调用，每次都验签 + 查库纯属浪费。
+     * 未命中（登录接口、/files/** 等被 WebConfig 排除拦截的路径）才回退到验签 + 查库，
+     * 并把结果回填请求属性。</p>
      */
     public static Account getCurrentUser() {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            Object cached = request.getAttribute(Constants.CURRENT_USER);
+            if (cached instanceof Account) {
+                return (Account) cached;
+            }
             String token = request.getHeader(Constants.TOKEN);
             if (ObjectUtil.isNotEmpty(token)) {
                 String userRole = verifyToken(token);
@@ -125,7 +134,11 @@ public class TokenUtils {
                 }
                 String[] parts = userRole.split("-");
                 if (parts.length == 2) {
-                    return getAccountById(Integer.valueOf(parts[0]), parts[1]);
+                    Account account = getAccountById(Integer.valueOf(parts[0]), parts[1]);
+                    if (account != null) {
+                        request.setAttribute(Constants.CURRENT_USER, account);
+                        return account;
+                    }
                 }
             }
         } catch (Exception e) {

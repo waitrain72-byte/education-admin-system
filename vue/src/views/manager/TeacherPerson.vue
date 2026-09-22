@@ -44,7 +44,7 @@ defineOptions({ name: 'TeacherPerson' })
 
 import { reactive } from 'vue'
 import { ElMessage } from '@/utils/element-plus'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
@@ -55,14 +55,12 @@ const { user: storeUser, updateUser } = useUser()
 const user = reactive<Record<string, any>>({ ...storeUser.value })
 
 const update = () => {
-    request.put('/teacher/update', user).then((res: any) => {
-        if (res.data.code === '200') {
-            ElMessage.success(t('common.saveSuccess'))
-            updateUser({ ...user })
-            emit('update:user')
-        } else {
-            ElMessage.error(apiMessage(res.data))
-        }
+    request.put('/teacher/update', user).then(() => {
+        ElMessage.success(t('common.saveSuccess'))
+        updateUser({ ...user })
+        emit('update:user')
+    }).catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
     })
 }
 

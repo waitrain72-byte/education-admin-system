@@ -22,11 +22,8 @@ public interface DashboardMapper {
     @Select("SELECT COUNT(*) FROM choice")
     int countChoice();
 
-    @Select("SELECT COUNT(*) FROM sys_login_log WHERE DATE(create_time) = CURDATE()")
-    int countLoginToday();
-
-    @Select("SELECT COUNT(*) FROM sys_login_log WHERE DATE(create_time) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)")
-    int countLoginWeek();
+    // 今日 / 近 7 天登录数不再单独查询：DashboardService 直接从 loginTrend() 的结果里汇总得出。
+    // 原先那两条 SQL 用 DATE(create_time) 包住列，会让 sys_login_log 上的 idx_create_time 失效。
 
     @Select("SELECT COUNT(*) FROM apply WHERE status = '待审核'")
     int countPendingApply();

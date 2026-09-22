@@ -13,6 +13,7 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 import i18n from '@/i18n'
 import { installThemeSync } from '@/composables/useTheme'
+import { installThemeColorSync } from '@/composables/useThemeColor'
 import { installNoticeSocket } from '@/composables/useNoticeSocket'
 
 // Element Plus 内置语言包随 vue-i18n 当前语言联动
@@ -20,6 +21,8 @@ const elementLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? zhC
 
 // 主题同步只需在根组件安装一次：模式变化时防抖推送到后端
 installThemeSync()
+// 自定义主题色：首屏应用一次，之后颜色/深浅模式变化时重算 CSS 变量并防抖推送
+installThemeColorSync()
 // 实时通知 WebSocket：登录后自动建连接收推送
 installNoticeSocket()
 </script>

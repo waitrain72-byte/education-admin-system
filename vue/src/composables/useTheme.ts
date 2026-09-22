@@ -90,8 +90,7 @@ export async function pullThemeFromServer() {
     const mode = useTheme()
     if (!isLoggedIn()) return
     try {
-        const res = await request.get('/theme')
-        const value = res.data?.data
+        const value = await request.get<string>('/theme')
         if (typeof value !== 'string' || !(value in SERVER_TO_LOCAL)) return
         serverTheme = value
         const local = SERVER_TO_LOCAL[value]

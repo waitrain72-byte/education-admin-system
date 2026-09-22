@@ -65,7 +65,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from '@/utils/element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -74,9 +74,11 @@ const { user } = useUser()
 
 // 为你推荐：基于物品的协同过滤（/course/recommend），学生登录后加载一次
 const recommends = ref<any[]>([])
-if (user.value.role === 'STUDENT') {
-    request.get('/course/recommend?limit=5').then((res: any) => {
-        recommends.value = res.data.data || []
+const loadRecommends = () => {
+    request.get<any[]>('/course/recommend', { params: { limit: 5 } }).then((rows) => {
+        recommends.value = rows || []
+    }).catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
     })
 }
 
@@ -123,19 +125,21 @@ const save = () => {
             student: user.value.name,
             content: form.value.content,
         }
-        request.post('/comment/add', data).then((res: any) => {
-            if (res.data.code === '200') {
-                ElMessage.success(t('pages.choice.commentSuccess'))
-                formVisible.value = false
-            } else {
-                ElMessage.error(apiMessage(res.data))
-            }
+        request.post('/comment/add', data).then(() => {
+            ElMessage.success(t('pages.choice.commentSuccess'))
+            formVisible.value = false
+        }).catch(() => {
+            // 错误提示已由 axios 拦截器统一处理
         })
     })
 }
 
 onMounted(() => {
     load(1)
+    // 与 load 一起放在 onMounted：原先写在 setup 顶层，属于「渲染期发副作用」
+    if (user.value.role === 'STUDENT') {
+        loadRecommends()
+    }
 })
 </script>
 

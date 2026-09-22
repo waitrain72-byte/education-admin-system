@@ -39,13 +39,8 @@ public class WarningController {
      */
     @PostMapping("/notify/{studentId}")
     public Result notify(@PathVariable Integer studentId) {
-        Map<String, Object> target = null;
-        for (Map<String, Object> row : warningService.listWarnings()) {
-            if (studentId.equals(row.get("studentId"))) {
-                target = row;
-                break;
-            }
-        }
+        // 只算这一个学生，不必把全量预警列表重算一遍再线性查找
+        Map<String, Object> target = warningService.warningOf(studentId);
         if (target == null) {
             return Result.error("400", "该学生当前无预警数据");
         }

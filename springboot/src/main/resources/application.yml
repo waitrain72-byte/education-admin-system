@@ -23,8 +23,16 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.example.entity
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 走 slf4j 而不是 StdOutImpl：StdOutImpl 无条件把每条 SQL 与每个绑定参数打到 stdout，
+    # 生产环境会刷爆容器日志，且 BCrypt 密码哈希会作为 SQL 参数落进日志文件。
+    # 调试需要看 SQL 时把下面的 logging.level 临时改成 debug 即可。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
+
+logging:
+  level:
+    # 改成 debug 可打印 SQL 与参数（仅本地排查时使用）
+    com.example.mapper: warn
 
 pagehelper:
   helper-dialect: mysql

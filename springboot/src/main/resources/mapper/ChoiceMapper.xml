@@ -8,15 +8,22 @@
         id,teacher_id,student_id,course_id
     </sql>
 
+    <!-- 课程字段必须逐列列出，不能用 course.*：
+         course 与 choice 都有 id/teacher_id 列，列标签重复时自动映射按「后者覆盖」生效，
+         Choice.id 会拿到课程 id 而不是选课记录 id，退课就会按错误的 id 删除。 -->
     <select id="selectAll" resultType="com.example.entity.Choice">
-        select choice.*, teacher.name as teacherName, student.name as studentName, course.*
+        select choice.id, choice.teacher_id, choice.student_id, choice.course_id,
+               teacher.name as teacherName, student.name as studentName,
+               course.name as name, course.type as type, course.score as score, course.num as num,
+               course.room as room, course.week as week, course.segment as segment, course.status as status
         from choice
         left join teacher on choice.teacher_id = teacher.id
         left join student on choice.student_id = student.id
         left join course on choice.course_id = course.id
         <where>
-            <if test="id != null"> and id= #{id}</if>
-            <if test="name != null"> and choice.name like concat('%', #{name}, '%')</if>
+            <if test="id != null"> and choice.id= #{id}</if>
+            <!-- 按课程名搜索：choice 表本身没有 name 列，条件必须落在 course 上 -->
+            <if test="name != null"> and course.name like concat('%', #{name}, '%')</if>
             <if test="teacherId != null"> and choice.teacher_id = #{teacherId}</if>
             <if test="studentId != null"> and choice.student_id = #{studentId}</if>
             <if test="courseId != null"> and choice.course_id = #{courseId}</if>

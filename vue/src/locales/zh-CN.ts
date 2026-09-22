@@ -88,6 +88,22 @@ export default {
                 auto: '当前跟随系统，点击切换',
             },
         },
+        themeColor: {
+            title: '主题色',
+            switch: '自定义主题色',
+            custom: '自定义',
+            reset: '恢复默认',
+            preset: {
+                default: '默认（靛蓝）',
+                blue: '蓝色',
+                green: '绿色',
+                teal: '青色',
+                red: '玫红',
+                orange: '橙色',
+                purple: '紫色',
+                gray: '石墨',
+            },
+        },
         lang: {
             label: '语言',
             zh: '中文',

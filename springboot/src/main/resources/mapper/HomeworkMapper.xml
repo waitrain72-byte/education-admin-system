@@ -14,13 +14,14 @@
         left join student on homework.student_id = student.id
         left join teacher on homework.teacher_id = teacher.id
         left join course on homework.course_id = course.id
+        <!-- 过滤条件一律带表前缀：join 进来的 student/teacher/course 与 homework 都有 id 列 -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
-            <if test="content != null"> and content like concat('%', #{content}, '%')</if>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="id != null"> and homework.id= #{id}</if>
+            <if test="content != null"> and homework.content like concat('%', #{content}, '%')</if>
+            <if test="studentId != null"> and homework.student_id = #{studentId}</if>
             <if test="teacherId != null"> and homework.teacher_id = #{teacherId}</if>
         </where>
-        order by id desc
+        order by homework.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Homework">

@@ -14,6 +14,7 @@ declare module 'vue' {
     ElBreadcrumbItem: typeof import('element-plus/es/components/breadcrumb/index')['ElBreadcrumbItem']
     ElButton: typeof import('element-plus/es/components/button/index')['ElButton']
     ElCard: typeof import('element-plus/es/components/card/index')['ElCard']
+    ElColorPicker: typeof import('element-plus/es/components/color-picker/index')['ElColorPicker']
     ElConfigProvider: typeof import('element-plus/es/components/config-provider/index')['ElConfigProvider']
     ElDatePicker: typeof import('element-plus/es/components/date-picker/index')['ElDatePicker']
     ElDialog: typeof import('element-plus/es/components/dialog/index')['ElDialog']

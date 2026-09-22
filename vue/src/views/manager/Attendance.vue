@@ -67,10 +67,9 @@
 defineOptions({ name: 'Attendance' })
 
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from '@/utils/element-plus'
 import type { FormRules } from 'element-plus'
 import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -108,60 +107,49 @@ const columns = computed<CrudColumn[]>(() => [
   { prop: 'status', label: t('pages.attendance.statusLabel'), showOverflowTooltip: true },
 ])
 
-const loadCourseSearch = () => {
-  if (user.value.role === 'STUDENT') {
-    request.get('/choice/selectAll?studentId=' + user.value.id).then((res: any) => {
-      if (res.data.code === '200') {
-        res.data.data.forEach((item: any) => {
-          item.id = item.courseId
-        })
-        courseSearchData.value = res.data.data
-      }
-    })
-  } else {
-    const url = user.value.role === 'ADMIN' ? '/course/selectAll' : '/course/selectAll?teacherId=' + user.value.id
-    request.get(url).then((res: any) => {
-      if (res.data.code === '200') {
-        courseSearchData.value = res.data.data
-      } else {
-        ElMessage.error(apiMessage(res.data))
-      }
-    })
+const loadCourseSearch = async () => {
+  try {
+    if (user.value.role === 'STUDENT') {
+      // 学生端拿到的是选课记录，下拉要以课程 id 作为值
+      const choices = await request.get<any[]>('/choice/selectAll', { params: { studentId: user.value.id } })
+      choices.forEach((item) => {
+        item.id = item.courseId
+      })
+      courseSearchData.value = choices
+    } else {
+      const params = user.value.role === 'ADMIN' ? {} : { teacherId: user.value.id }
+      courseSearchData.value = await request.get<any[]>('/course/selectAll', { params })
+    }
+  } catch {
+    // 错误提示已由 axios 拦截器统一处理
   }
 }
 
-const loadCourseByTeacher = () => {
-  request.get('/course/selectAll', { params: { teacherId: user.value.id } }).then((res: any) => {
-    if (res.data.code === '200') {
-      courseData.value = res.data.data
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
+const loadCourseByTeacher = async () => {
+  try {
+    courseData.value = await request.get<any[]>('/course/selectAll', { params: { teacherId: user.value.id } })
+  } catch {
+    // 错误提示已由 axios 拦截器统一处理
+  }
 }
 
-const getStudent = (cId: any) => {
-  request.get('/choice/selectAll', { params: { courseId: cId } }).then((res: any) => {
-    if (res.data.code === '200') {
-      studentData.value = res.data.data
-      studentId.value = null
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
-  })
-}
-
-const getStudentEdit = (cId: any) => {
-  request.get('/choice/selectAll', { params: { courseId: cId } }).then((res: any) => {
-    if (res.data.code === '200') {
-      studentData.value = res.data.data
-      studentId.value = form.value.studentId
+/**
+ * 加载某门课的学生名单。
+ * openDialog 为 true 时用于「编辑」：回填已选学生并打开弹窗；否则用于「新增」时切换课程，清空已选学生。
+ */
+const loadStudents = async (cId: any, openDialog = false) => {
+  try {
+    studentData.value = await request.get<any[]>('/choice/selectAll', { params: { courseId: cId } })
+    studentId.value = openDialog ? form.value.studentId : null
+    if (openDialog) {
       formVisible.value = true
-    } else {
-      ElMessage.error(apiMessage(res.data))
     }
-  })
+  } catch {
+    // 错误提示已由 axios 拦截器统一处理
+  }
 }
+
+const getStudent = (cId: any) => loadStudents(cId)
 
 const handleAdd = () => {
   form.value = { teacherId: user.value.id }
@@ -171,7 +159,7 @@ const handleAdd = () => {
 
 const handleEdit = (row: any) => {
   form.value = JSON.parse(JSON.stringify(row))
-  getStudentEdit(form.value.courseId)
+  loadStudents(form.value.courseId, true)
 }
 
 const reset = () => {
@@ -181,8 +169,15 @@ const reset = () => {
 
 onMounted(() => {
   load(1)
-  loadCourseByTeacher()
-  loadCourseSearch()
+  // 教师身份下 loadCourseByTeacher 与 loadCourseSearch 请求的是同一份数据，只取一次
+  if (user.value.role === 'TEACHER') {
+    loadCourseByTeacher().then(() => {
+      courseSearchData.value = courseData.value
+    })
+  } else {
+    loadCourseByTeacher()
+    loadCourseSearch()
+  }
 })
 </script>
 

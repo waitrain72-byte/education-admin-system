@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from '@/utils/element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -90,20 +90,15 @@ import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { usePermission } from '@/composables/usePermission'
 import { useTheme, pullThemeFromServer } from '@/composables/useTheme'
+import { pullThemeColorFromServer } from '@/composables/useThemeColor'
 import { currentLocale, setLocale, pullLocaleFromServer } from '@/composables/useLocale'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 interface LoginForm {
   username: string
   password: string
   captcha: string
   role: string
-}
-
-interface LoginResponse {
-  code: string
-  msg: string
-  data: Record<string, unknown>
 }
 
 const router = useRouter()
@@ -141,40 +136,49 @@ const rules: FormRules = {
 
 const refreshCaptcha = async (): Promise<void> => {
   try {
-    const response = await request.get('/captcha', {
+    // 二进制响应没有 { code, msg, data } 包装，拦截器原样返回 Blob
+    const blob = await request.get<Blob>('/captcha', {
       params: { t: Date.now() },
       responseType: 'blob',
     })
-    if (response.data instanceof Blob) {
-      captchaUrl.value = URL.createObjectURL(response.data)
+    if (blob instanceof Blob) {
+      // 先回收上一张验证码的 blob URL，否则每次刷新验证码都会泄漏一个对象 URL
+      if (captchaUrl.value) {
+        URL.revokeObjectURL(captchaUrl.value)
+      }
+      captchaUrl.value = URL.createObjectURL(blob)
     }
   } catch {
     ElMessage.error(t('login.captchaFailed'))
   }
 }
 
+// 离开登录页时回收最后一张验证码的 blob URL
+onBeforeUnmount(() => {
+  if (captchaUrl.value) {
+    URL.revokeObjectURL(captchaUrl.value)
+  }
+})
+
 const login = (): void => {
   formRef.value?.validate((valid: boolean) => {
     if (valid) {
-      request.post<LoginResponse>('/login', form)
-          .then((res) => {
-            if (res.data.code === '200') {
-              // 登录态写入 Pinia store（内部负责持久化到 localStorage）
-              useUserStore().updateUser(res.data.data as Record<string, any>)
-              // 拉取当前用户权限码并持久化（按钮/接口级 RBAC；顺序在路由跳转前，确保 v-permission 立即可用）
-              pullPermissions()
-              router.push('/')
-              // 从后端拉取该用户保存的主题与语言偏好，覆盖本地默认，实现多端同步
-              pullThemeFromServer()
-              pullLocaleFromServer()
-              ElMessage.success(t('common.operationSuccess'))
-            } else {
-              ElMessage.error(apiMessage(res.data))
-              refreshCaptcha()
-            }
+      request.post<Record<string, any>>('/login', form)
+          .then((account) => {
+            // 登录态写入 Pinia store（内部负责持久化到 localStorage）
+            useUserStore().updateUser(account)
+            // 拉取当前用户权限码并持久化（按钮/接口级 RBAC；顺序在路由跳转前，确保 v-permission 立即可用）
+            pullPermissions()
+            router.push('/')
+            // 从后端拉取该用户保存的主题、主题色与语言偏好，覆盖本地默认，实现多端同步
+            pullThemeFromServer()
+            pullThemeColorFromServer()
+            pullLocaleFromServer()
+            ElMessage.success(t('common.operationSuccess'))
           })
           .catch(() => {
-            ElMessage.error(t('login.loginFailed'))
+            // 失败原因（密码错误/验证码错误/账号锁定）的提示已由 axios 拦截器统一弹出；
+            // 验证码一码一用，无论失败原因都要换一张
             refreshCaptcha()
           })
     }

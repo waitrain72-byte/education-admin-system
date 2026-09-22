@@ -33,7 +33,7 @@
 ## 技术栈
 
 - **Web 前端**：Vue 3 + Vite 5 + TypeScript + Element Plus + Pinia + Vue Router + Vue I18n + ECharts + Axios + Vitest + ESLint/Prettier
-- **后端**：Java 8 + Spring Boot 2.7.18 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha
+- **后端**：Java 8 + Spring Boot 2.7.18 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha + JUnit 5/Mockito
 - **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图 + WebSocket 实时通知
 - **部署**：Docker / docker-compose + nginx + GitHub Actions（CI）
 
@@ -57,6 +57,7 @@
 | 数据隔离                  | 教师只看自己任课课程的成绩/考勤/作业/评教，学生只看自己的数据，管理员看全部                                                                                                                                                                   |
 | 中英文国际化              | vue-i18n 全页面覆盖；语言/主题偏好存数据库，一次设置多端同步                                                                                                                                                                                  |
 | 深浅色主题                | light / dark / 跟随系统三档，CSS 变量体系 + Element Plus 暗色联动 + ECharts 重绘                                                                                                                                                              |
+| 自定义主题色（按账号）    | 顶栏取色面板：8 个预设 + 任意取色 + 恢复默认；按 Element Plus 同款算法派生完整色阶（深色模式自动提亮基色并反向派生），颜色存账号表 `theme_color`，换终端登录自动跟随。**Web 端功能，小程序端暂未支持**                                        |
 | 数据大屏                  | `/dashboard` 全屏页：指标卡 + 成绩分布/考勤占比/学院人数/选课热度/职称结构/登录趋势六图                                                                                                                                                       |
 | 智能算法                  | 课程推荐：基于物品的协同过滤（选课矩阵 + 余弦相似度），冷启动自动降级热门推荐；学业预警：不及格占比/平均分差距/异常考勤率加权合成风险指数，三级预警并经 WebSocket 实时推送提醒                                                                |
 | WebSocket 实时通知        | 请假审核、成绩发布、作业批改实时推送学生；提交通知教师；发通知全员广播，断线自动重连                                                                                                                                                          |
@@ -64,7 +65,8 @@
 | 防重复提交与 XSS          | `@NoRepeatSubmit` 关键写接口 2 秒防重；Jackson 反序列化中和脚本标签                                                                                                                                                                           |
 | 文件上传安全              | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls                                                                                                                                        |
 | 通用 CRUD 框架            | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛；批量删除收敛为单条 IN 语句（Service 层拦截空集合）                                                                                |
-| 单元测试与规范            | Vitest 16 个用例（Pinia store / useCrud），ESLint + Prettier                                                                                                                                                                                  |
+| 性能优化                  | 请求级用户缓存（单个写请求原先要查 3~4 遍同一行账号，收敛为 1 次）；成绩分段/考勤占比统计下推数据库 `GROUP BY`；学业预警按角色过滤下推 SQL；数据大屏 30s、课程推荐 60s 进程内缓存；Element Plus 按需引入（JS 深导入 + CSS 按需，首屏样式 355→216 KB） |
+| 单元测试与规范            | 前端 Vitest 27 个用例（Pinia store / useCrud / 主题色派生）；后端 JUnit 5 + Mockito 47 个用例（学业预警评分模型、协同过滤推荐、选课时间冲突与满员边界、成绩学分记账）；ESLint + Prettier                                                       |
 | Docker 化部署             | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`）                                                                                                                                                                      |
 
 **内置账号**（初始密码均为 `123456`，数据库存 BCrypt 哈希，登录后可修改）：
@@ -75,7 +77,17 @@
 学生：zhangsan（张三）、lisi（李四）、wangwu（王五）
 ```
 
-数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、索引、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)；系统流程与全部代码文件说明见 [docs/系统设计与文件说明.md](docs/系统设计与文件说明.md)。
+数据库种子文件 `sql/xm_educational_manager-full.sql`（含全部表结构、RBAC 权限表与授权、精简演示数据：保留账号的课程/选课/成绩/考勤/作业/评教齐全，日志表仅结构），导入即得可演示环境；头像文件仅 5 个，与演示账号一一对应。
+
+> **已经导过库的环境升级**：种子里新增了「自定义主题色」列，直接执行迁移脚本即可，不用重导、不丢数据：
+>
+> ```bash
+> mysql -uroot -p123456 xm_educational_manager < sql/migration-theme-color.sql
+> ```
+>
+> 全新导入的环境无需执行——种子文件里已经包含该列。
+
+数据库 ER 图（Mermaid，含设计要点说明）见 [docs/数据库ER图.md](docs/数据库ER图.md)；系统流程与全部代码文件说明见 [docs/系统设计与文件说明.md](docs/系统设计与文件说明.md)。
 
 ## 核心模块之间的联系（数据怎么流转）
 
@@ -104,7 +116,7 @@
 
 ```text
 manager-vue3
-+-- sql/                          # 全量数据库种子（表结构 + 索引 + 演示数据 + RBAC 授权）
++-- sql/                          # 全量数据库种子（表结构 + 演示数据 + RBAC 授权）+ 增量迁移脚本
 +-- docs/                         # 数据库 ER 图 + 系统流程与文件说明（Mermaid，GitHub 原生渲染）
 +-- vue/                          # Web 前端（components/composables/locales/stores/views 等）
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
@@ -239,7 +251,7 @@ mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.s
 ```
 
 - 第一条：创建数据库（`-p123456` 换成你自己的 root 密码）；
-- 第二条：导入全量种子（表结构 + 索引 + 演示数据 + RBAC 授权一次到位），没有任何输出就是成功；
+- 第二条：导入全量种子（表结构 + 演示数据 + RBAC 授权一次到位），没有任何输出就是成功；
 - 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`。
 
 #### 3. 启动后端
@@ -358,7 +370,15 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 - [ ] 小程序 AppID 替换为自己的
 - [ ] 修改默认管理员密码
 - [ ] 保持 SQL 注入防御约定：Mapper 一律 `#{}` 预编译（禁用 `${}`）、不开 `allowMultiQueries`、枚举入参白名单校验
-- [ ] 高并发场景：调整 `spring.datasource.hikari.maximum-pool-size`，多实例部署需引入 Redis 外置 Session/验证码
+- [ ] 高并发场景：调整 `spring.datasource.hikari.maximum-pool-size`，多实例部署需引入 Redis 外置 Session/验证码（登录失败计数、防重复提交、大屏与推荐缓存目前都是进程内实现，仅适用单实例）
+- [ ] 数据量上来后补索引：`choice` / `score` / `attendance` / `homework` 的 `student_id`、`course_id`、`teacher_id` 目前只有主键，数据隔离查询会走全表扫描；三张账号表的 `username` 建议加 UNIQUE（顺带堵住"先查后插"的账号重复竞态）
+
+```sql
+ALTER TABLE choice     ADD INDEX idx_choice_student (student_id), ADD INDEX idx_choice_course (course_id), ADD INDEX idx_choice_teacher (teacher_id);
+ALTER TABLE score      ADD INDEX idx_score_student (student_id),  ADD INDEX idx_score_course (course_id),  ADD INDEX idx_score_teacher (teacher_id);
+ALTER TABLE attendance ADD INDEX idx_att_student (student_id),    ADD INDEX idx_att_course (course_id),    ADD INDEX idx_att_teacher (teacher_id);
+ALTER TABLE homework   ADD INDEX idx_hw_student (student_id),     ADD INDEX idx_hw_course (course_id),     ADD INDEX idx_hw_teacher (teacher_id);
+```
 
 ## 常见问题
 
@@ -370,6 +390,9 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 **3. 后端启动失败，提示数据库连接失败**
 MySQL 没启动、库没建、备份没导入、账号密码不对——按手动部署第 2 步重来一遍。日志页/主题语言接口报错同理（缺表缺字段就重新导入全量备份）。
+
+**3.1 报错 `Unknown column 'theme_color'`**
+老库没有新增的主题色列。执行 `mysql -uroot -p123456 xm_educational_manager < sql/migration-theme-color.sql` 补上即可，不用重导库。若提示 `Duplicate column name 'theme_color'`，说明已经加过了，忽略即可。
 
 **4. 忘记密码**
 BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码"为 `123456`，登录后立即修改。管理员自己忘了密码只能直接改数据库。
@@ -391,7 +414,7 @@ BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码
 
 ## 维护约定（两端必读）
 
-1. **用户偏好多端同步**：主题（`theme`：light/dark/system）与语言（`locale`：zh-CN/en-US）存账号表，两端登录自动拉取、修改后防抖推送。
+1. **用户偏好多端同步**：主题（`theme`：light/dark/system）与语言（`locale`：zh-CN/en-US）存账号表，两端登录自动拉取、修改后防抖推送。自定义主题色（`theme_color`：`#RRGGBB`，空串=用内置默认色）走同一套机制，但**目前只有 Web 端实现**；小程序端若要跟进，照 `useThemeColor.ts` 的模式接 `/themeColor` 接口即可。
 2. **语言包词条键两端一致**：Web（vue-i18n）与小程序（自研 i18n）使用相同键名，改文案两端同步。
 3. **数据库枚举值为中文**：考勤状态、请假状态、课程性质等按中文入库，后端统计按中文分组——界面只翻译展示文案，不要改入库枚举值。
 4. **接口约定**：统一返回 `{ code, msg, data }`；token 放自定义请求头 `token`；错误码见 `ResultCodeEnum`，前端按码本地化、未知码回退后端消息。
@@ -403,6 +426,7 @@ BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码
 | 想改什么    | 位置                                                                                                                          |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | 系统名称    | Web：`vue/src/locales/zh-CN.ts` 的 `layout.title`；小程序：`BISHE-mobile/src/locales/zh-CN.js` 同名键（中英两个语言包都要改） |
-| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`              |
+| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——登录后点顶栏的彩色圆点即可换，按账号保存；要调预设色板改 `vue/src/composables/useThemeColor.ts` 的 `PRESET_COLORS` |
+| 页面切换动画 | `vue/src/assets/css/manager.css` 的 `.route-fade-*`（离场 0.06s + 进场 0.16s）；想完全关掉就把两条 `transition` 改成 `none`  |
 | 大屏样式    | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放）                                                                           |
 | 演示数据    | `sql/` 下备份脚本可按需修改                                                                                                   |

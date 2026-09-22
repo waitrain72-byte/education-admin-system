@@ -37,4 +37,7 @@ public class Account {
     /** 界面语言：zh-CN / en-US */
     private String locale;
 
+    /** 自定义主题色：#RRGGBB；空串表示使用系统内置默认色 */
+    private String themeColor;
+
 }

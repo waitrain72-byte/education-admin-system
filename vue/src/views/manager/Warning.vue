@@ -54,7 +54,7 @@ defineOptions({ name: 'Warning' })
 import { ref, onMounted } from 'vue'
 import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
@@ -64,9 +64,12 @@ const loading = ref(false)
 const load = () => {
     loading.value = true
     request
-        .get('/warning/list')
-        .then((res: any) => {
-            list.value = res.data.data || []
+        .get<any[]>('/warning/list')
+        .then((rows) => {
+            list.value = rows || []
+        })
+        .catch(() => {
+            // 错误提示已由 axios 拦截器统一处理
         })
         .finally(() => {
             loading.value = false
@@ -75,13 +78,11 @@ const load = () => {
 
 /** 向学生实时推送预警提醒（WebSocket：App 端 toast + 角标，Web 端弹窗） */
 const notify = (row: any) => {
-    request.post(`/warning/notify/${row.studentId}`).then((res: any) => {
-        if (res.data.code === '200') {
-            ElMessage.success(t('pages.warning.notifyOk'))
-        } else {
-            ElMessage.error(apiMessage(res.data))
-        }
-    })
+    request.post(`/warning/notify/${row.studentId}`)
+        .then(() => ElMessage.success(t('pages.warning.notifyOk')))
+        .catch(() => {
+            // 错误提示已由 axios 拦截器统一处理
+        })
 }
 
 const tagType = (level: string) => {

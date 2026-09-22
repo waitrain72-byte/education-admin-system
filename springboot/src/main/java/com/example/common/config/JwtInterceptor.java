@@ -45,6 +45,9 @@ public class JwtInterceptor implements HandlerInterceptor {
             if (ObjectUtil.isNull(account)) {
                 throw new CustomException(ResultCodeEnum.USER_NOT_EXIST_ERROR);
             }
+            // 缓存到请求属性：本次请求后续的鉴权/日志/防重切面与各 Service 的数据隔离钩子
+            // 直接复用这一份，不再重复查库（原先单个写请求要查 3~4 遍同一行）
+            request.setAttribute(Constants.CURRENT_USER, account);
         } catch (NumberFormatException e) {
             throw new CustomException(ResultCodeEnum.TOKEN_CHECK_ERROR);
         }

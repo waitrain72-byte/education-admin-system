@@ -120,7 +120,7 @@ import { ElMessage } from '@/utils/element-plus'
 import type { FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { resolveFileUrl } from '@/utils/file'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { useUser } from '@/components/useUser.ts'
 import { useCrud } from '@/composables/useCrud'
 import CrudTable, { type CrudColumn } from '@/components/CrudTable.vue'
@@ -153,12 +153,10 @@ const columns = computed<CrudColumn[]>(() => [
 ])
 
 const loadCourse = () => {
-    request.get('/choice/selectAll?studentId=' + user.value.id).then((res: any) => {
-        if (res.data.code === '200') {
-            courseData.value = res.data.data
-        } else {
-            ElMessage.error(apiMessage(res.data))
-        }
+    request.get<any[]>('/choice/selectAll', { params: { studentId: user.value.id } }).then((list) => {
+        courseData.value = list
+    }).catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
     })
 }
 
@@ -180,14 +178,12 @@ const handleCheck = (row: any) => {
 }
 
 const check = () => {
-    request.put('/homework/update', form.value).then((res: any) => {
-        if (res.data.code === '200') {
-            ElMessage.success(t('common.operationSuccess'))
-            load(1)
-            checkVisible.value = false
-        } else {
-            ElMessage.error(apiMessage(res.data))
-        }
+    request.put('/homework/update', form.value).then(() => {
+        ElMessage.success(t('common.operationSuccess'))
+        load(1)
+        checkVisible.value = false
+    }).catch(() => {
+        // 错误提示已由 axios 拦截器统一处理
     })
 }
 

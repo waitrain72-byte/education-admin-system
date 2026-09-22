@@ -14,8 +14,7 @@ export function usePermission() {
     async function pullPermissions(): Promise<string[]> {
         if (!store.token) return []
         try {
-            const res: any = await request.get('/permission/my')
-            const codes: string[] = res.data?.data || []
+            const codes = (await request.get<string[]>('/permission/my')) || []
             store.setPermissions(codes)
             return codes
         } catch {

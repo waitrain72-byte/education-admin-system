@@ -4,8 +4,10 @@ import {
     ChatRound, Check, CircleClose, Clock, HomeFilled, Medal, Message, Setting,
     Opportunity, Plus, Stamp, Star, User, Warning,
 } from '@element-plus/icons-vue'
-import 'element-plus/dist/index.css'
-// Element Plus 暗色变量：配合 <html> 上的 dark 类生效
+// Element Plus 的组件样式由 vite.config.ts 里 resolver 的 sideEffects 按需注入，
+// 命令式 API（ElMessage 等）的样式在 @/utils/element-plus 内显式引入，
+// 故此处不再全量 import element-plus/dist/index.css（355 KB）。
+// 下面这份暗色变量是纯 CSS 变量定义、不含组件样式，必须保留，否则深色主题失效。
 import 'element-plus/theme-chalk/dark/css-vars.css'
 // 全局样式：基础 reset + 主题变量 + 后台布局样式（manager.css 曾放在 Manager.vue 的
 // style @import 中，Vite 热更新场景下会偶发丢失导致布局错乱，现统一在入口引入）

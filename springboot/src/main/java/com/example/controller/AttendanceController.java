@@ -38,15 +38,8 @@ public class AttendanceController extends CrudController<Attendance> {
     @GetMapping("/getPie")
     public Result getPie() {
         Map<String, Object> resultMap = new HashMap<>();
-        List<Map<String, Object>> list = new ArrayList<>();
-        List<Attendance> all = attendanceService.selectAll(new Attendance());
-        Map<String, List<Attendance>> collect = all.stream().collect(Collectors.groupingBy(Attendance::getStatus));
-        for (String key : collect.keySet()) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("name", key);
-            map.put("value", collect.get(key).size());
-            list.add(map);
-        }
+        // 分组计数由数据库完成（见 AttendanceService.statusDistribution）
+        List<Map<String, Object>> list = attendanceService.statusDistribution();
         resultMap.put("text", "考勤状态统计图（饼图）");
         resultMap.put("subtext", "统计维度：考勤状态");
         resultMap.put("name", "考勤状态");

@@ -63,7 +63,7 @@ defineOptions({ name: 'Permission' })
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 import { currentLocale } from '@/composables/useLocale'
 
 interface Permission {
@@ -226,8 +226,7 @@ const treeData = computed<TreeNode[]>(() => {
 const load = async () => {
   loading.value = true
   try {
-    const res: any = await request.get('/permission/selectAll')
-    const data = res.data?.data
+    const data = await request.get<any>('/permission/selectAll')
     roles.value = data?.roles || []
     permissions.value = data?.permissions || []
     if (!activeRole.value && roles.value.length) {
@@ -235,6 +234,8 @@ const load = async () => {
     }
     await nextTick()
     restoreChecked()
+  } catch {
+    // 错误提示已由 axios 拦截器统一处理
   } finally {
     loading.value = false
   }
@@ -271,16 +272,14 @@ const save = async () => {
     // 只取叶子权限码（node-key 中含 ":"），父节点(模块)仅作分组不入库
     const checkedKeys = (treeRef.value?.getCheckedKeys() || []) as string[]
     const permissionCodes = checkedKeys.filter((k) => k.includes(':'))
-    const res: any = await request.put('/permission/updateRolePermissions', {
+    await request.put('/permission/updateRolePermissions', {
       roleCode: activeRole.value,
       permissionCodes,
     })
-    if (res.data.code === '200') {
-      ElMessage.success(t('common.saveSuccess'))
-      await load()
-    } else {
-      ElMessage.error(apiMessage(res.data))
-    }
+    ElMessage.success(t('common.saveSuccess'))
+    await load()
+  } catch {
+    // 错误提示已由 axios 拦截器统一处理
   } finally {
     saving.value = false
   }

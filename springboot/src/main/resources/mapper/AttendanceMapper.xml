@@ -14,13 +14,28 @@
         left join student on attendance.student_id = student.id
         left join course on attendance.course_id = course.id
         left join teacher on attendance.teacher_id = teacher.id
+        <!-- 过滤条件一律带表前缀：join 进来的 student/course/teacher 与 attendance 都有 id 列 -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
+            <if test="id != null"> and attendance.id= #{id}</if>
             <if test="studentId != null"> and attendance.student_id= #{studentId}</if>
             <if test="courseId != null"> and attendance.course_id= #{courseId}</if>
             <if test="teacherId != null"> and attendance.teacher_id= #{teacherId}</if>
         </where>
-        order by id desc
+        order by attendance.id desc
+    </select>
+
+    <!-- 考勤状态占比：分组计数交给数据库。
+         status IS NULL 的行必须排除：内存里 Collectors.groupingBy 遇到 null key 会抛 NPE。 -->
+    <select id="selectStatusDistribution" resultType="java.util.Map">
+        select attendance.status as name, count(*) as value
+        from attendance
+        <where>
+            attendance.status is not null
+            <if test="studentId != null"> and attendance.student_id = #{studentId}</if>
+            <if test="courseId != null"> and attendance.course_id = #{courseId}</if>
+            <if test="teacherId != null"> and attendance.teacher_id = #{teacherId}</if>
+        </where>
+        group by attendance.status
     </select>
 
     <select id="selectById" resultType="com.example.entity.Attendance">

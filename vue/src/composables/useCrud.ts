@@ -2,8 +2,8 @@ import { ref, toValue } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import request from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import request, { type PageResult } from '@/utils/request'
+import { t } from '@/i18n'
 
 export interface UseCrudOptions {
     /** 接口基础路径，如 '/college'，自动拼接 /selectPage、/add、/update、/delete/{id}、/delete/batch */
@@ -53,11 +53,11 @@ export function useCrud<T = any>(options: UseCrudOptions) {
                     delete params[key]
                 }
             }
-            const res: any = await request.get(`${options.url}/selectPage`, {
+            const page = await request.get<PageResult<T>>(`${options.url}/selectPage`, {
                 params,
             })
-            tableData.value = res.data?.data?.list || []
-            total.value = res.data?.data?.total || 0
+            tableData.value = page?.list || []
+            total.value = page?.total || 0
         } catch {
             // 错误提示已由 axios 拦截器统一处理
         } finally {
@@ -84,21 +84,17 @@ export function useCrud<T = any>(options: UseCrudOptions) {
         try {
             await options.beforeSave?.(form.value)
             const isEdit = !!form.value.id
-            const res: any = await request({
+            await request({
                 url: isEdit ? `${options.url}/update` : `${options.url}/add`,
                 method: isEdit ? 'PUT' : 'POST',
                 data: form.value,
             })
-            if (res.data.code === '200') {
-                ElMessage.success(t('common.saveSuccess'))
-                await options.afterSave?.(form.value)
-                load(1)
-                formVisible.value = false
-            } else {
-                ElMessage.error(apiMessage(res.data))
-            }
+            ElMessage.success(t('common.saveSuccess'))
+            await options.afterSave?.(form.value)
+            load(1)
+            formVisible.value = false
         } catch {
-            // 错误提示已由 axios 拦截器统一处理
+            // 业务错误码与网络异常的提示均已由 axios 拦截器统一处理
         }
     }
 
@@ -106,15 +102,11 @@ export function useCrud<T = any>(options: UseCrudOptions) {
         ElMessageBox.confirm(toValue(options.deleteConfirmMessage) || t('common.deleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
             .then(async () => {
                 try {
-                    const res: any = await request.delete(`${options.url}/delete/${id}`)
-                    if (res.data.code === '200') {
-                        ElMessage.success(t('common.operationSuccess'))
-                        load(1)
-                    } else {
-                        ElMessage.error(apiMessage(res.data))
-                    }
+                    await request.delete(`${options.url}/delete/${id}`)
+                    ElMessage.success(t('common.operationSuccess'))
+                    load(1)
                 } catch {
-                    // 错误提示已由 axios 拦截器统一处理
+                    // 业务错误码与网络异常的提示均已由 axios 拦截器统一处理
                 }
             })
             .catch(() => {
@@ -134,17 +126,13 @@ export function useCrud<T = any>(options: UseCrudOptions) {
         ElMessageBox.confirm(t('common.batchDeleteConfirm'), t('common.confirmDeleteTitle'), { type: 'warning' })
             .then(async () => {
                 try {
-                    const res: any = await request.delete(`${options.url}/delete/batch`, {
+                    await request.delete(`${options.url}/delete/batch`, {
                         data: selectedIds.value,
                     })
-                    if (res.data.code === '200') {
-                        ElMessage.success(t('common.operationSuccess'))
-                        load(1)
-                    } else {
-                        ElMessage.error(apiMessage(res.data))
-                    }
+                    ElMessage.success(t('common.operationSuccess'))
+                    load(1)
                 } catch {
-                    // 错误提示已由 axios 拦截器统一处理
+                    // 业务错误码与网络异常的提示均已由 axios 拦截器统一处理
                 }
             })
             .catch(() => {

@@ -12,6 +12,8 @@ import com.example.utils.TokenUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 考勤信息表业务处理（通用增删改查见 {@link CrudService}）
@@ -37,6 +39,16 @@ public class AttendanceService extends CrudService<Attendance> {
             throw new CustomException(ResultCodeEnum.ATTENDANCE_ALREADY_ERROR);
         }
         attendanceMapper.insert(attendance);
+    }
+
+    /**
+     * 考勤状态占比（首页饼图）：分组计数交给数据库。
+     * 数据范围沿用 {@link #applyDataScope}，教师只统计本人任课、学生只统计本人。
+     */
+    public List<Map<String, Object>> statusDistribution() {
+        Attendance probe = new Attendance();
+        applyDataScope(probe);
+        return attendanceMapper.selectStatusDistribution(probe);
     }
 
     /**
