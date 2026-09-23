@@ -29,7 +29,6 @@
   - WebSocket：连接幂等、推送入列与角标（99+）、心跳、半开连接检测、指数退避重连与上限、主动关闭不重连
   - 主题色：色值归一化、Element Plus 同款混色算法、深色提亮（与 Web 端同色同值的跨端用例）、原生导航色
   - 登录拦截 / 错误上报 / 消息中心 / 今日课程节次解析与排序 / useCrud / i18n
-- **GitHub Actions CI**：push 到 `mobile` 分支或提 PR 时自动执行 `lint → test → build:mp-weixin`（见 `.github/workflows/ci.yml`）
 - **发布前地址校验**：构建时检查 `VITE_API_BASE_URL`，非 https / 局域网 IP / 带端口时输出告警；`RELEASE=1` 时直接构建失败，防止把本机地址打进上线包
 - **渐进式 TypeScript**：请求层 / WebSocket / 配置 / 用户 store 已迁移 TS（`tsconfig.json` 已就位，剩余模块可按需跟进）
 
@@ -66,7 +65,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 ### 工程化命令
 
 ```bash
-npm run lint        # ESLint 检查（CI 同款，不写文件）
+npm run lint        # ESLint 检查（不写文件）
 npm run lint:fix    # ESLint 自动修复
 npm run format      # Prettier 格式化 src
 npm test            # Vitest 单元测试（单次）
@@ -128,7 +127,6 @@ src/
 |   +-- home/components/        # 首页区块组件：头卡 / 功能入口 / 今日课程 / 动态 / 统计（首页本体只管数据与缓存）
 +-- pages-admin/                # 6 个管理页（分包 + 首页 wifi 预载）
 tests/                          # Vitest 单元测试（9 个文件 100 条，setup.js 提供全局 uni mock）
-.github/workflows/ci.yml        # CI：lint + test + build:mp-weixin（mobile 分支触发）
 ```
 
 ## 与 Web 端的交互适配说明
