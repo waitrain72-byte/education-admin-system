@@ -135,6 +135,9 @@ const rules: FormRules = {
 }
 
 const refreshCaptcha = async (): Promise<void> => {
+  // 验证码一码一用（后端读取即失效）：换新图时旧输入必然错误，必须清空，
+  // 否则用户直接再点登录会平白多失败一次
+  form.captcha = ''
   try {
     // 二进制响应没有 { code, msg, data } 包装，拦截器原样返回 Blob
     const blob = await request.get<Blob>('/captcha', {
