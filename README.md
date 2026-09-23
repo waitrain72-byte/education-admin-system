@@ -35,7 +35,7 @@
 - **Web 前端**：Vue 3 + Vite 5 + TypeScript + Element Plus + Pinia + Vue Router + Vue I18n + ECharts + Axios + Vitest + ESLint/Prettier
 - **后端**：Java 8 + Spring Boot 2.7.18 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha + JUnit 5/Mockito
 - **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图 + WebSocket 实时通知
-- **部署**：Docker / docker-compose + nginx + GitHub Actions（CI）
+- **部署**：Docker / docker-compose + nginx
 
 ## 功能总览
 
@@ -114,7 +114,6 @@ manager-vue3
 +-- springboot/                   # 后端（controller/service/mapper/entity/common 等）
 +-- docker-compose.yml            # 三容器编排
 +-- files/                        # 文件上传目录（仅 5 个演示头像）
-+-- .github/workflows/ci.yml      # CI（本地保留，未随仓库分发）
 ```
 
 小程序端（`BISHE-mobile`，独立目录 / `mobile` 分支）结构与构建方式见下文 App 端部署。
@@ -282,8 +281,6 @@ cd vue && npm run build            # 前端产物在 vue/dist/（生产环境接
 cd springboot && mvn clean package # 后端 jar 在 springboot/target/
 java -jar target/springboot-0.0.1-SNAPSHOT.jar
 ```
-
-CI（`.github/workflows/ci.yml`，本地保留未随仓库分发）：前端 lint + test + build，后端 JDK 8 `mvn compile`。需要启用时把 `.github/` 目录推回仓库即可。
 
 ## 部署说明 · App 端（微信小程序）
 
