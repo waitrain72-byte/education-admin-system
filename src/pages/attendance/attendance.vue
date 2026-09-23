@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区：按课程筛选 -->
     <view class="xm-card xm-row">
@@ -229,9 +230,10 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
-import { get } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { getData } from '@/utils/request'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const courseId = ref('')
@@ -320,64 +322,42 @@ const studentNameOf = (id) => {
 }
 
 // 搜索用课程列表：学生按已选课程、管理员按全部课程、教师按所授课程（与 Web 端 loadCourseSearch 一致）
-const loadCourseSearch = () => {
+const loadCourseSearch = async () => {
   if (userStore.role === 'STUDENT') {
-    get('/choice/selectAll', { studentId: userStore.user.id }).then((res) => {
-      if (res.data && res.data.code === '200') {
-        const rows = res.data.data || []
-        rows.forEach((item) => {
-          item.id = item.courseId
-        })
-        courseSearchData.value = rows
-      }
+    // 学生端拿到的是选课记录，下拉要以课程 id 作为值
+    const rows = (await getData('/choice/selectAll', { studentId: userStore.user.id })) || []
+    rows.forEach((item) => {
+      item.id = item.courseId
     })
+    courseSearchData.value = rows
   } else {
     const params = userStore.role === 'ADMIN' ? {} : { teacherId: userStore.user.id }
-    get('/course/selectAll', params).then((res) => {
-      if (res.data && res.data.code === '200') {
-        courseSearchData.value = res.data.data || []
-      } else {
-        uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-      }
-    })
+    courseSearchData.value = (await getData('/course/selectAll', params)) || []
   }
 }
 
 // 教师所授课程列表（与 Web 端 loadCourseByTeacher 一致）
-const loadCourseByTeacher = () => {
-  get('/course/selectAll', { teacherId: userStore.user.id }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      courseData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadCourseByTeacher = async () => {
+  courseData.value = (await getData('/course/selectAll', { teacherId: userStore.user.id })) || []
 }
 
-// 选择课程后联动加载选课学生（与 Web 端 getStudent 一致）
-const getStudent = (cId) => {
-  get('/choice/selectAll', { courseId: cId }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      studentData.value = res.data.data || []
-      studentId.value = null
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+/**
+ * 按课程加载选课学生（与 Web 端 loadStudents 一致）。
+ * openForm 为 true 时用于「编辑」：回显已选学生并打开表单；否则用于新增时切换课程，清空已选学生。
+ */
+const loadStudents = async (cId, openForm = false) => {
+  const rows = await getData('/choice/selectAll', { courseId: cId })
+  if (rows === null) return
+  studentData.value = rows
+  studentId.value = openForm ? form.value.studentId : null
+  if (openForm) formVisible.value = true
 }
 
-// 编辑时按课程加载学生并回显已选学生（与 Web 端 getStudentEdit 一致）
-const getStudentEdit = (cId) => {
-  get('/choice/selectAll', { courseId: cId }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      studentData.value = res.data.data || []
-      studentId.value = form.value.studentId
-      formVisible.value = true
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
-}
+// 选择课程后联动加载选课学生
+const getStudent = (cId) => loadStudents(cId)
+
+// 编辑时按课程加载学生并回显已选学生
+const getStudentEdit = (cId) => loadStudents(cId, true)
 
 const onSearchCourseChange = (e) => {
   const c = courseSearchData.value[e.detail.value]
@@ -425,10 +405,7 @@ const onReset = () => {
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.attendance') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
   loadCourseByTeacher()
   loadCourseSearch()

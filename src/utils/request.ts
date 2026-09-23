@@ -29,6 +29,36 @@ function toast(msg: string): void {
   uni.showToast({ title: msg, icon: 'none' })
 }
 
+/** 错误提示去重窗口：并发请求同时失败时只弹一次，避免 toast 相互覆盖、闪烁 */
+const TOAST_DEDUPE_MS = 2000
+const recentToasts = new Map<string, number>()
+
+function toastOnce(msg: string): void {
+  const now = Date.now()
+  for (const [key, at] of recentToasts) {
+    if (now - at > TOAST_DEDUPE_MS) recentToasts.delete(key)
+  }
+  if (recentToasts.has(msg)) return
+  recentToasts.set(msg, now)
+  toast(msg)
+}
+
+/** 业务错误码（非 200）对应的异常；提示已由请求层统一弹出，调用方一般只需忽略 */
+export class ApiError extends Error {
+  readonly code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.code = code
+  }
+}
+
+/** 是否为后端的 { code, msg, data } 包装 */
+function isApiResult(payload: any): boolean {
+  return payload !== null && typeof payload === 'object' && 'code' in payload
+}
+
 export interface RequestOptions {
   url: string
   data?: Record<string, any>
@@ -46,13 +76,16 @@ function describeFail(err: any): string {
 }
 
 /**
- * 统一请求封装：与 Web 端 axios 封装语义一致
+ * 统一请求封装：与 Web 端 axios 拦截器语义一致
  * - 自动携带 token（自定义 header 'token'）与验证码会话 Cookie
  * - 计数式统一加载动画：并发请求在蒙层上叠加计数，全部结束才收起
+ * - **成功（code 200）直接 resolve 业务数据本身**，调用方拿到的就是 data，
+ *   不必再层层写 res.data.data 与 if (res.data.code === '200')
+ * - **业务失败（非 200）统一弹一次提示并 reject ApiError**，调用方 try/await 后忽略即可
  * - 失败时区分「断网 / 超时 / 其他」给出可读提示
  * - 401 统一提示、复位动画并跳转登录页
  */
-export function request(options: RequestOptions): Promise<any> {
+export function request<T = any>(options: RequestOptions): Promise<T> {
   return new Promise((resolve, reject) => {
     const userStore = useUserStore()
     const header = Object.assign({}, options.header || {})
@@ -85,14 +118,25 @@ export function request(options: RequestOptions): Promise<any> {
           reject(new Error('401'))
           return
         }
-        resolve(res)
+        // 没有 { code, msg, data } 包装的响应（理论上不会出现）原样返回
+        if (!isApiResult(data)) {
+          resolve(data)
+          return
+        }
+        if (data.code === '200') {
+          resolve(data.data)
+          return
+        }
+        const message = apiMessage(data)
+        toastOnce(message)
+        reject(new ApiError(data.code, message))
       },
       fail: (err: any) => {
         uni.getNetworkType({
           success: (net: any) => {
-            toast(net.networkType === 'none' ? t('request.offline') : describeFail(err))
+            toastOnce(net.networkType === 'none' ? t('request.offline') : describeFail(err))
           },
-          fail: () => toast(t('request.failed')),
+          fail: () => toastOnce(t('request.failed')),
         })
         reject(err)
       },
@@ -103,14 +147,14 @@ export function request(options: RequestOptions): Promise<any> {
   })
 }
 
-export const get = (url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
-  request({ ...opts, url, data })
-export const post = (url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
-  request({ ...opts, url, data, method: 'POST' })
-export const put = (url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
-  request({ ...opts, url, data, method: 'PUT' })
-export const del = (url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
-  request({ ...opts, url, data, method: 'DELETE' })
+export const get = <T = any>(url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
+  request<T>({ ...opts, url, data })
+export const post = <T = any>(url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
+  request<T>({ ...opts, url, data, method: 'POST' })
+export const put = <T = any>(url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
+  request<T>({ ...opts, url, data, method: 'PUT' })
+export const del = <T = any>(url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
+  request<T>({ ...opts, url, data, method: 'DELETE' })
 
 /**
  * 文件/头像地址归一化：统一转成「当前 baseUrl + /files/xxx」的完整地址，仅用于展示层。
@@ -135,20 +179,8 @@ export function resolveFileUrl(url?: string): string {
 }
 
 /**
- * 简化取数：code === '200' 时直接返回 data.data，
- * 否则统一 toast 错误信息并返回 null。
- * 适用于"拉取下拉选项/列表数据"这类不需要分支处理的场景，
- * 替代页面里成对的 code 判断 + toast 样板代码。
+ * 「取数或返回 null」：成功返回业务数据，失败返回 null（提示已由请求层统一弹出）。
+ * 适用于拉取下拉选项/列表这类失败时只需兜底为空、不需要分支处理的场景。
  */
-export const getData = async (url: string, data?: Record<string, any>) => {
-  try {
-    const res = await get(url, data)
-    if (res.data && res.data.code === '200') {
-      return res.data.data
-    }
-    uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-  } catch {
-    // 请求层已统一提示
-  }
-  return null
-}
+export const getData = <T = any>(url: string, data?: Record<string, any>): Promise<T | null> =>
+  get<T>(url, data).catch(() => null)

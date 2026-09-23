@@ -84,6 +84,23 @@ export default {
         auto: 'Following system, click to switch',
       },
     },
+    // Keys mirror the Web side (vue/src/locales/en-US.ts, layout.themeColor)
+    themeColor: {
+      title: 'Theme Color',
+      switch: 'Customize theme color',
+      custom: 'Custom',
+      reset: 'Reset to default',
+      preset: {
+        default: 'Default (Indigo)',
+        blue: 'Blue',
+        green: 'Green',
+        teal: 'Teal',
+        red: 'Rose',
+        orange: 'Orange',
+        purple: 'Purple',
+        gray: 'Slate',
+      },
+    },
     lang: {
       label: 'Language',
       zh: '中文',

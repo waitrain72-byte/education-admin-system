@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 列表 -->
     <xm-empty
@@ -119,9 +120,10 @@
 import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { del as delRequest, post } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 
@@ -145,13 +147,9 @@ const onCancel = (row) => {
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await delRequest(`/choice/delete/${row.id}`)
-        if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-          load(true)
-        } else {
-          uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-        }
+        await delRequest(`/choice/delete/${row.id}`)
+        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+        load(true)
       } catch {
         // 请求层已统一提示
       }
@@ -177,22 +175,19 @@ const saveComment = () => {
     student: userStore.user.name,
     content: commentForm.value.content,
   }
-  post('/comment/add', data).then((res) => {
-    if (res.data && res.data.code === '200') {
+  post('/comment/add', data)
+    .then(() => {
       uni.showToast({ title: t('pages.choice.commentSuccess'), icon: 'success' })
       commentVisible.value = false
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+    })
+    .catch(() => {
+      // 重复评教等提示已由请求层统一弹出
+    })
 }
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.choice') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
 })
 

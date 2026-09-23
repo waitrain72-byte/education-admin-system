@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <view class="xm-card xm-row">
@@ -279,9 +280,10 @@
 import { ref, computed, watch } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
-import { get, post } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { get, post, getData } from '@/utils/request'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const keyword = ref('')
@@ -378,7 +380,7 @@ const loadFreeRooms = async () => {
         excludeId: form.value.id || undefined,
       },
       { loading: false },
-    ).then((res) => res.data.data)) || []
+    ).catch(() => null)) || []
 }
 const onRoomChange = (e) => {
   const idx = Number(e.detail.value)
@@ -430,13 +432,13 @@ const {
   beforeSave: async (f) => {
     // 教室留空 = 系统自动分配：按容量最贴近人数取第一间空闲教室/场地并提示
     if (!f.room && f.week && f.segment) {
-      const res = await get('/course/roomFree', {
-        week: f.week,
-        segment: f.segment,
-        num: f.num || undefined,
-        excludeId: f.id || undefined,
-      })
-      const list = (res.data && res.data.data) || []
+      const list =
+        (await get('/course/roomFree', {
+          week: f.week,
+          segment: f.segment,
+          num: f.num || undefined,
+          excludeId: f.id || undefined,
+        })) || []
       if (!list.length) return t('pages.course.noFreeRoom')
       f.room = list[0].code
       uni.showToast({
@@ -482,32 +484,21 @@ const onTeacherChange = (e) => {
 
 // 学生选课（与 Web 端 choiceCourse 接口一致）
 const choiceCourse = (row) => {
-  post('/choice/add', { studentId: userStore.user.id, teacherId: row.teacherId, courseId: row.id }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      uni.showToast({ title: t('pages.course.choiceSuccess'), icon: 'success' })
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+  post('/choice/add', { studentId: userStore.user.id, teacherId: row.teacherId, courseId: row.id })
+    .then(() => uni.showToast({ title: t('pages.course.choiceSuccess'), icon: 'success' }))
+    .catch(() => {
+      // 选课失败（满员 / 时间冲突）的提示已由请求层统一弹出
+    })
 }
 
-const loadTeacher = () => {
-  get('/teacher/selectAll').then((res) => {
-    if (res.data && res.data.code === '200') {
-      teacherData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadTeacher = async () => {
+  teacherData.value = (await getData('/teacher/selectAll')) || []
 }
 
 // 页面入口：所有登录角色可见（与 Web 端路由一致，课程页不限角色）
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.course') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
   // 教师下拉仅表单使用且对非管理员禁用：学生无需加载，避免 teacher:view 403
   if (userStore.role === 'ADMIN') {

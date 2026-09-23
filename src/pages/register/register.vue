@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <view class="xm-card">
       <view class="xm-card-title">{{ $t('register.title') }}</view>
@@ -60,7 +61,7 @@
 <script setup>
 import { ref } from 'vue'
 import { post } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 
 const form = ref({ username: '', password: '', confirmPass: '' })
 
@@ -81,16 +82,12 @@ const register = () => {
     return
   }
   post('/register', { username: form.value.username, password: form.value.password, role: 'STUDENT' })
-    .then((res) => {
-      if (res.data.code === '200') {
-        uni.showToast({ title: t('register.success'), icon: 'success' })
-        setTimeout(() => uni.navigateBack(), 800)
-      } else {
-        uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-      }
+    .then(() => {
+      uni.showToast({ title: t('register.success'), icon: 'success' })
+      setTimeout(() => uni.navigateBack(), 800)
     })
     .catch(() => {
-      uni.showToast({ title: t('register.failedRetry'), icon: 'none' })
+      // 用户名已存在等提示已由请求层统一弹出
     })
 }
 

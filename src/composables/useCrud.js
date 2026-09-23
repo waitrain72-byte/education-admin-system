@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { get, post, put, del as delRequest } from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 /**
  * 通用 CRUD 组合式函数（移动端版，与 Web 端 useCrud 语义对齐）：
@@ -43,30 +43,25 @@ export function useCrud(options) {
         if (v === '' || v === null || v === undefined) delete params[key]
       }
       // 下拉刷新走原生动画反馈；追加分页静默（底部 footer 已有 loading 态）
-      const res = await get(`${options.url}/selectPage`, params, {
+      const page = await get(`${options.url}/selectPage`, params, {
         loading: reset && !fromPullDown,
       })
-      if (res.data && res.data.code === '200') {
-        const rows = (res.data.data && res.data.data.list) || []
-        const count = (res.data.data && res.data.data.total) || 0
-        // 注入当前分页连续行号（跨页累计），供列表展示"序号"用，避免直接显示全局自增 id
-        rows.forEach((r, i) => {
-          r._index = (pageNum.value - 1) * pageSize + i + 1
-        })
-        if (reset) {
-          list.value = rows
-        } else {
-          const seen = new Set(list.value.map((r) => r.id))
-          list.value = list.value.concat(rows.filter((r) => !seen.has(r.id)))
-        }
-        total.value = count
+      const rows = (page && page.list) || []
+      const count = (page && page.total) || 0
+      // 注入当前分页连续行号（跨页累计），供列表展示"序号"用，避免直接显示全局自增 id
+      rows.forEach((r, i) => {
+        r._index = (pageNum.value - 1) * pageSize + i + 1
+      })
+      if (reset) {
+        list.value = rows
       } else {
-        uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-        // 追加失败回滚页码到上一已加载页，否则下次 loadNext 会跳页漏数据
-        if (!reset) pageNum.value = Math.max(1, pageBefore - 1)
+        const seen = new Set(list.value.map((r) => r.id))
+        list.value = list.value.concat(rows.filter((r) => !seen.has(r.id)))
       }
+      total.value = count
     } catch {
-      // 请求层已统一提示；同上回滚页码
+      // 业务错误与网络异常的提示均已由请求层统一弹出；
+      // 追加失败回滚页码到上一已加载页，否则下次 loadNext 会跳页漏数据
       if (!reset) pageNum.value = Math.max(1, pageBefore - 1)
     } finally {
       loading.value = false
@@ -125,17 +120,17 @@ export function useCrud(options) {
         }
       }
       const isEdit = !!form.value.id
-      const res = isEdit ? await put(`${options.url}/update`, form.value) : await post(`${options.url}/add`, form.value)
-      if (res.data && res.data.code === '200') {
-        uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })
-        if (options.afterSave) await options.afterSave(form.value)
-        formVisible.value = false
-        load(true)
+      if (isEdit) {
+        await put(`${options.url}/update`, form.value)
       } else {
-        uni.showToast({ title: apiMessage(res.data), icon: 'none' })
+        await post(`${options.url}/add`, form.value)
       }
+      uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })
+      if (options.afterSave) await options.afterSave(form.value)
+      formVisible.value = false
+      load(true)
     } catch {
-      // 请求层已统一提示
+      // 业务错误与网络异常的提示均已由请求层统一弹出
     } finally {
       saving.value = false
     }
@@ -148,15 +143,11 @@ export function useCrud(options) {
       success: async (res) => {
         if (!res.confirm) return
         try {
-          const r = await action()
-          if (r.data && r.data.code === '200') {
-            uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-            load(true)
-          } else {
-            uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-          }
+          await action()
+          uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+          load(true)
         } catch {
-          // 请求层已统一提示
+          // 业务错误与网络异常的提示均已由请求层统一弹出
         }
       },
     })

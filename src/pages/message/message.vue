@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 操作区 -->
     <view
@@ -63,6 +64,7 @@
 <script setup>
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useMessageStore } from '@/stores/message'
 import { resetWsUnread } from '@/utils/websocket'
 import { t } from '@/i18n'
@@ -89,10 +91,7 @@ const openMessage = (m) => {
 }
 
 onShow(() => {
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   uni.setNavigationBarTitle({ title: t('menu.message') })
   messageStore.loadForUser(userStore.user.id)
   // 打开消息中心即清除「首页」tab 推送角标（单条消息的已读在点击时各自标记）

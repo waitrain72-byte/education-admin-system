@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <view class="xm-card xm-row">
@@ -246,8 +247,9 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
-import { get, put, del as delRequest, resolveFileUrl } from '@/utils/request'
+import { getData, put, del as delRequest, resolveFileUrl } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { t, apiMessage } from '@/i18n'
 
@@ -280,14 +282,8 @@ const fileNameOf = (url) => {
 }
 
 // 学生已选课程列表（与 Web 端 loadCourse 一致）
-const loadCourse = () => {
-  get('/choice/selectAll', { studentId: userStore.user.id }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      courseData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadCourse = async () => {
+  courseData.value = (await getData('/choice/selectAll', { studentId: userStore.user.id })) || []
 }
 
 const onFormCourseChange = (e) => {
@@ -315,15 +311,15 @@ const handleCheck = (row) => {
 
 // 教师打分：与 Web 端 check 一致，直接走 /homework/update
 const check = () => {
-  put('/homework/update', form.value).then((res) => {
-    if (res.data && res.data.code === '200') {
+  put('/homework/update', form.value)
+    .then(() => {
       uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
       load(true)
       checkVisible.value = false
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+    })
+    .catch(() => {
+      // 提示已由请求层统一弹出
+    })
 }
 
 // 附件上传：选图后上传到 /files/upload，成功后保存返回的 URL（与 Web 端 el-upload 一致）
@@ -394,13 +390,9 @@ const del = (id) => {
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await delRequest(`/homework/delete/${id}`)
-        if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-          load(true)
-        } else {
-          uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-        }
+        await delRequest(`/homework/delete/${id}`)
+        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+        load(true)
       } catch {
         // 请求层已统一提示
       }
@@ -415,10 +407,7 @@ const onReset = () => {
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.homework') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
   loadCourse()
 })

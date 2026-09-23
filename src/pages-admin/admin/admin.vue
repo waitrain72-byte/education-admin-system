@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <xm-search-card
@@ -42,6 +43,7 @@
           />
           <image
             v-if="item.avatar"
+            lazy-load
             :src="resolveFileUrl(item.avatar)"
             class="xm-avatar"
             mode="aspectFill"
@@ -160,6 +162,7 @@
 import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { useManage } from '@/composables/useManage'
 import { put, resolveFileUrl } from '@/utils/request'
@@ -223,12 +226,8 @@ const resetPassword = (row) => {
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await put('/admin/resetPassword/' + row.id)
-        if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('pages.admin.resetSuccess'), icon: 'none' })
-        } else {
-          uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-        }
+        await put('/admin/resetPassword/' + row.id)
+        uni.showToast({ title: t('pages.admin.resetSuccess'), icon: 'none' })
       } catch {
         // 请求层已统一提示
       }
@@ -269,10 +268,7 @@ const uploadAvatar = () => {
 // 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.admin') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   if (!['ADMIN'].includes(userStore.role)) {
     uni.showToast({ title: t('forbidden.message'), icon: 'none' })
     setTimeout(() => uni.navigateBack(), 800)

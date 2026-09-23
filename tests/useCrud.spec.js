@@ -16,7 +16,8 @@ const { clearStorage } = await import('./setup')
 
 const uniMock = globalThis.uni
 
-const page = (rows, total) => ({ data: { code: '200', data: { list: rows, total } } })
+// 请求层已统一解包：get/post/put/del 直接 resolve 业务数据本身，不再是完整响应
+const page = (rows, total) => ({ list: rows, total })
 
 beforeEach(() => {
   clearStorage()
@@ -77,7 +78,7 @@ describe('useCrud 通用 CRUD', () => {
 
     const first = crud.save()
     const second = crud.save()
-    resolvePut({ data: { code: '200' } })
+    resolvePut(null)
     await Promise.all([first, second])
 
     expect(putMock).toHaveBeenCalledTimes(1)
@@ -85,7 +86,7 @@ describe('useCrud 通用 CRUD', () => {
   })
 
   it('save：成功后关表单并刷新列表', async () => {
-    putMock.mockResolvedValueOnce({ data: { code: '200' } })
+    putMock.mockResolvedValueOnce(null)
     getMock.mockResolvedValue(page([], 0))
     const crud = useCrud({ url: '/thing' })
     crud.form.value = { id: 5, name: 'x' }
@@ -98,7 +99,7 @@ describe('useCrud 通用 CRUD', () => {
   })
 
   it('del：确认后调用删除接口并刷新', async () => {
-    delMock.mockResolvedValueOnce({ data: { code: '200' } })
+    delMock.mockResolvedValueOnce(null)
     getMock.mockResolvedValue(page([], 0))
     uniMock.showModal.mockImplementationOnce((o) => o.success({ confirm: true }))
     const crud = useCrud({ url: '/thing' })

@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { get, put } from '@/utils/request'
+import { STORAGE_KEY as THEME_COLOR_KEY, nativeChromeColors } from '@/utils/themeColor'
 
 /**
  * 主题偏好（与 Web 端 useTheme 语义一致）：
@@ -40,7 +41,15 @@ const NATIVE_CHROME = {
  * 模块加载、主题切换、App onShow（App.vue 兜底）三个时机都会调用。
  */
 export function syncNativeChrome() {
-  const c = isDark.value ? NATIVE_CHROME.dark : NATIVE_CHROME.light
+  // 叠加自定义主题色：原生层读不到 CSS 变量，只能在这里按主题色覆盖导航栏 / tabBar 选中色。
+  // 从 storage 读取（useThemeColor 总是先写 storage 再调本函数），避免两个模块互相 import 形成循环依赖
+  let brand = ''
+  try {
+    brand = uni.getStorageSync(THEME_COLOR_KEY) || ''
+  } catch {
+    // 存储不可用时按内置配色
+  }
+  const c = { ...(isDark.value ? NATIVE_CHROME.dark : NATIVE_CHROME.light), ...nativeChromeColors(brand, isDark.value) }
   try {
     uni.setNavigationBarColor({ frontColor: '#ffffff', backgroundColor: c.navBg, fail: () => {} })
   } catch {
@@ -100,8 +109,7 @@ export async function pullThemeFromServer() {
   try {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) return
-    const res = await get('/theme')
-    const value = res && res.data && res.data.data
+    const value = await get('/theme', undefined, { loading: false })
     if (value !== 'light' && value !== 'dark' && value !== 'system') return
     serverTheme = value
     const local = value === 'system' ? 'auto' : value

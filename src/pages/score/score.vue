@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区：按课程筛选 -->
     <view class="xm-card xm-row">
@@ -208,9 +209,10 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
-import { get, del as delRequest } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { getData, del as delRequest } from '@/utils/request'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const courseId = ref('')
@@ -260,26 +262,16 @@ const studentNameOf = (id) => {
 }
 
 // 教师所授课程列表（与 Web 端 loadCourse 一致）
-const loadCourse = () => {
-  get('/course/selectAll', { teacherId: userStore.user.id }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      courseData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const loadCourse = async () => {
+  courseData.value = (await getData('/course/selectAll', { teacherId: userStore.user.id })) || []
 }
 
 // 选择课程后联动加载选课学生（与 Web 端 getStudent 一致）
-const getStudent = (cId) => {
-  get('/choice/selectAll', { courseId: cId }).then((res) => {
-    if (res.data && res.data.code === '200') {
-      studentData.value = res.data.data || []
-      studentId.value = null
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+const getStudent = async (cId) => {
+  const rows = await getData('/choice/selectAll', { courseId: cId })
+  if (rows === null) return
+  studentData.value = rows
+  studentId.value = null
 }
 
 const onSearchCourseChange = (e) => {
@@ -313,13 +305,9 @@ const del = (id) => {
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await delRequest(`/score/delete/${id}`)
-        if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-          load(true)
-        } else {
-          uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-        }
+        await delRequest(`/score/delete/${id}`)
+        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+        load(true)
       } catch {
         // 请求层已统一提示
       }
@@ -334,10 +322,7 @@ const onReset = () => {
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.score') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
   loadCourse()
 })

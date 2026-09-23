@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <view class="xm-card">
@@ -101,6 +102,7 @@
 import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { t } from '@/i18n'
 
@@ -121,10 +123,7 @@ const onReset = () => {
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.comment') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
 })
 

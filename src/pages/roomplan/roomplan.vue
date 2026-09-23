@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区：第一行 教室名 + 查询/重置；第二行 状态筛选独占整行（不再挤压换行） -->
     <view
@@ -238,6 +239,7 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { t } from '@/i18n'
 
@@ -336,10 +338,7 @@ const onReset = () => {
 // 页面入口：所有角色可见，仅管理员可管理（与 Web 端逻辑一致）
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.roomplan') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
 })
 

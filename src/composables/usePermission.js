@@ -12,8 +12,8 @@ export function usePermission() {
   async function pullPermissions() {
     if (!store.token) return []
     try {
-      const res = await get('/permission/my')
-      const codes = (res.data && res.data.data) || []
+      // 后台静默同步：不弹加载蒙层
+      const codes = (await get('/permission/my', undefined, { loading: false })) || []
       store.setPermissions(codes)
       return codes
     } catch {

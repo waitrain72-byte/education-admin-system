@@ -51,8 +51,7 @@ export async function pullLocaleFromServer() {
   try {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) return
-    const res = await get('/locale')
-    const value = res && res.data && res.data.data
+    const value = await get('/locale', undefined, { loading: false })
     if (value !== 'zh-CN' && value !== 'en-US') return
     serverLocale = value
     if (locale.value !== value) {

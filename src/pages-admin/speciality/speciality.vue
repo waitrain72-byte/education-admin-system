@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <xm-search-card
@@ -138,10 +139,11 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { useManage } from '@/composables/useManage'
 import { get } from '@/utils/request'
-import { apiMessage, t } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const name = ref('')
@@ -178,12 +180,7 @@ const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
 // 级联下拉：上级学院列表（接口与 Web 端一致），表单打开时加载
 const loadCollege = async () => {
   try {
-    const res = await get('/college/selectAll')
-    if (res.data && res.data.code === '200') {
-      collegeData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
+    collegeData.value = (await get('/college/selectAll')) || []
   } catch {
     // 请求层已统一提示
   }
@@ -219,10 +216,7 @@ const onReset = () => {
 // 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.speciality') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   if (!['ADMIN'].includes(userStore.role)) {
     uni.showToast({ title: t('errors.403'), icon: 'none' })
     setTimeout(() => uni.navigateBack(), 800)

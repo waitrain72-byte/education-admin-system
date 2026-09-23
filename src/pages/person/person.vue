@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <view class="xm-card">
       <!-- 头像：点击更换（管理员/教师/学生共用，与 Web 端一致） -->
@@ -162,14 +163,14 @@ const update = () => {
   const urlByRole = { ADMIN: '/admin/update', TEACHER: '/teacher/update', STUDENT: '/student/update' }
   const url = urlByRole[user.role]
   if (!url) return
-  request({ url, method: 'PUT', data: user }).then((res) => {
-    if (res.data.code === '200') {
+  request({ url, method: 'PUT', data: user })
+    .then(() => {
       userStore.patchUser({ ...user })
       uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+    })
+    .catch(() => {
+      // 提示已由请求层统一弹出
+    })
 }
 </script>
 

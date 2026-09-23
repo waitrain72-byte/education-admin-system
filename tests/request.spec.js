@@ -33,16 +33,42 @@ function trackLoading() {
 }
 
 describe('request 统一请求层', () => {
-  it('成功请求：携带 token header，拼 baseUrl，resolve 原始响应', async () => {
+  it('成功请求：携带 token header，拼 baseUrl，直接 resolve 业务数据', async () => {
     const store = useUserStore()
     store.updateUser({ id: 1, token: 'tk-1', role: 'ADMIN' })
     resolveWith({ code: '200', data: { x: 1 } })
 
-    const res = await request({ url: '/thing/selectPage' })
+    const data = await request({ url: '/thing/selectPage' })
 
     expect(uniMock.request.mock.calls[0][0].url).toContain('/thing/selectPage')
     expect(uniMock.request.mock.calls[0][0].header.token).toBe('tk-1')
-    expect(res.data.code).toBe('200')
+    // 已解包：拿到的就是 data 本身，不再是 { data: { code, data } }
+    expect(data).toEqual({ x: 1 })
+  })
+
+  it('业务失败（非 200）：统一提示后端文案并 reject ApiError，携带错误码', async () => {
+    resolveWith({ code: '5006', msg: '该门课选课人数已满' })
+
+    const err = await request({ url: '/choice/add', method: 'POST' }).catch((e) => e)
+
+    expect(err.name).toBe('ApiError')
+    expect(err.code).toBe('5006')
+    expect(uniMock.showToast).toHaveBeenCalledTimes(1)
+  })
+
+  it('并发请求同时失败：相同提示只弹一次，不相互覆盖闪烁', async () => {
+    resolveWith({ code: '500', msg: '系统异常' })
+    resolveWith({ code: '500', msg: '系统异常' })
+    resolveWith({ code: '500', msg: '系统异常' })
+
+    await Promise.allSettled([request({ url: '/a' }), request({ url: '/b' }), request({ url: '/c' })])
+
+    expect(uniMock.showToast).toHaveBeenCalledTimes(1)
+  })
+
+  it('未包装的响应原样返回（防御性分支）', async () => {
+    resolveWith('plain-text')
+    await expect(request({ url: '/raw' })).resolves.toBe('plain-text')
   })
 
   it('401：提示、断开 WS、清空登录态并跳转登录页', async () => {
@@ -193,7 +219,7 @@ describe('request 统一请求层', () => {
     expect(data).toEqual([{ id: 1 }])
   })
 
-  it('getData：非 200 时提示并返回 null', async () => {
+  it('getData：非 200 时提示并返回 null（不抛出）', async () => {
     resolveWith({ code: '5001', msg: '用户名已存在' })
     const data = await getData('/x')
     expect(data).toBe(null)

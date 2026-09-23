@@ -2,6 +2,7 @@
   <view
     class="login-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 顶部品牌区 -->
     <view class="brand">
@@ -103,9 +104,10 @@ import { useUserStore } from '@/stores/user'
 import { request, saveCookie, clearCookie } from '@/utils/request'
 import { baseUrl } from '@/utils/config'
 import { connectWs } from '@/utils/websocket'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass, pullThemeFromServer } from '@/composables/useTheme'
+import { pullThemeColorFromServer } from '@/composables/useThemeColor'
 import { pullLocaleFromServer } from '@/composables/useLocale'
 import { usePermission } from '@/composables/usePermission'
 
@@ -123,6 +125,9 @@ const onRoleChange = (e) => {
 }
 
 const refreshCaptcha = async () => {
+  // 验证码一码一用（后端读取即失效）：换新图时旧输入必然错误，必须清空，
+  // 否则用户直接再点登录会平白多失败一次
+  form.value.captcha = ''
   try {
     clearCookie()
     const res = await new Promise((resolve, reject) => {
@@ -152,23 +157,20 @@ const login = () => {
   }
   loginBusy.value = true
   request({ url: '/login', method: 'POST', data: form.value })
-    .then((res) => {
-      if (res.data.code === '200') {
-        userStore.updateUser(res.data.data)
-        // 拉取当前用户 RBAC 权限码（与 Web 端一致，供首页菜单按权限过滤）
-        pullPermissions()
-        pullThemeFromServer()
-        pullLocaleFromServer()
-        // 登录成功后建立实时通知连接（成绩发布/作业批改/请假审批/教务通知推送）
-        connectWs()
-        uni.reLaunch({ url: '/pages/home/home' })
-      } else {
-        uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-        refreshCaptcha()
-      }
+    .then((account) => {
+      userStore.updateUser(account)
+      // 拉取当前用户 RBAC 权限码（与 Web 端一致，供首页菜单按权限过滤）
+      pullPermissions()
+      pullThemeFromServer()
+      pullThemeColorFromServer()
+      pullLocaleFromServer()
+      // 登录成功后建立实时通知连接（成绩发布/作业批改/请假审批/教务通知推送）
+      connectWs()
+      uni.reLaunch({ url: '/pages/home/home' })
     })
     .catch(() => {
-      uni.showToast({ title: t('login.loginFailed'), icon: 'none' })
+      // 失败原因（密码错误 / 验证码错误 / 账号锁定 / 断网）的提示已由请求层统一弹出；
+      // 验证码一码一用，无论哪种失败都要换一张
       refreshCaptcha()
     })
     .finally(() => {

@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <xm-empty v-if="!tableData.length" />
 
@@ -55,9 +56,10 @@
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { get } from '@/utils/request'
 import { courseBlockStyle } from '@/utils/courseColor'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const tableData = ref([])
@@ -84,21 +86,18 @@ const todayLabel = computed(() => headers.value[todayIndex + 1])
 const blockStyle = courseBlockStyle
 
 const load = () => {
-  get('/choice/getCurriculum').then((res) => {
-    if (res.data && res.data.code === '200') {
-      tableData.value = res.data.data || []
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+  get('/choice/getCurriculum')
+    .then((rows) => {
+      tableData.value = rows || []
+    })
+    .catch(() => {
+      // 提示已由请求层统一弹出
+    })
 }
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.curriculum') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   // 仅学生可访问（与 Web 端路由 meta.roles 一致）
   if (!['STUDENT'].includes(userStore.role)) {
     uni.showToast({ title: t('forbidden.message'), icon: 'none' })

@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <view class="xm-card">
@@ -248,9 +249,10 @@
 import { ref, computed } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { put, del as delRequest } from '@/utils/request'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const content = ref('')
@@ -325,15 +327,15 @@ const handleCheck = (row) => {
 
 // 审核提交：与 Web 端 check 一致，直接走 /apply/update
 const check = () => {
-  put('/apply/update', form.value).then((res) => {
-    if (res.data && res.data.code === '200') {
+  put('/apply/update', form.value)
+    .then(() => {
       uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
       load(true)
       checkVisible.value = false
-    } else {
-      uni.showToast({ title: apiMessage(res.data), icon: 'none' })
-    }
-  })
+    })
+    .catch(() => {
+      // 提示已由请求层统一弹出
+    })
 }
 
 // 撤销申请确认文案与 Web 端一致
@@ -344,13 +346,9 @@ const onWithdraw = (id) => {
     success: async (res) => {
       if (!res.confirm) return
       try {
-        const r = await delRequest(`/apply/delete/${id}`)
-        if (r.data && r.data.code === '200') {
-          uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-          load(true)
-        } else {
-          uni.showToast({ title: apiMessage(r.data), icon: 'none' })
-        }
+        await delRequest(`/apply/delete/${id}`)
+        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+        load(true)
       } catch {
         // 请求层已统一提示
       }
@@ -366,10 +364,7 @@ const onReset = () => {
 
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.apply') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   load(true)
 })
 

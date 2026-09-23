@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <view class="xm-card">
       <view class="xm-form-item">
@@ -49,7 +50,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { put } from '@/utils/request'
 import { closeWs } from '@/utils/websocket'
 import { useUserStore } from '@/stores/user'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
 const form = ref({ username: '', role: '', password: '', newPassword: '', confirmPassword: '' })
@@ -66,17 +67,17 @@ const update = () => {
   if (!form.value.confirmPassword) return showToast(t('pages.password.ruleConfirmRequired'))
   if (form.value.confirmPassword !== form.value.newPassword) return showToast(t('pages.password.ruleConfirmMismatch'))
 
-  put('/updatePassword', form.value).then((res) => {
-    if (res.data.code === '200') {
+  put('/updatePassword', form.value)
+    .then(() => {
       // 密码已修改，旧 token 即将失效：断开实时通知连接并重新登录
       closeWs()
       userStore.clearUser()
       uni.showToast({ title: t('pages.password.success'), icon: 'success' })
       setTimeout(() => uni.reLaunch({ url: '/pages/login/login' }), 800)
-    } else {
-      showToast(apiMessage(res.data))
-    }
-  })
+    })
+    .catch(() => {
+      // 原密码错误等提示已由请求层统一弹出
+    })
 }
 
 function showToast(msg) {

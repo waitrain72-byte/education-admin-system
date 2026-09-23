@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 搜索区 -->
     <xm-search-card
@@ -100,6 +101,7 @@
 import { ref } from 'vue'
 import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useCrud } from '@/composables/useCrud'
 import { useManage } from '@/composables/useManage'
 import { t } from '@/i18n'
@@ -145,10 +147,7 @@ const onReset = () => {
 // 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
 onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.college') })
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   if (!['ADMIN'].includes(userStore.role)) {
     uni.showToast({ title: t('forbidden.message'), icon: 'none' })
     setTimeout(() => uni.navigateBack(), 800)

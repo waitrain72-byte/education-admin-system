@@ -2,6 +2,7 @@
   <view
     class="xm-page"
     :class="themeClass"
+    :style="themeStyle"
   >
     <!-- 用户卡片：品牌渐变头卡 -->
     <view class="xm-hero user-card">
@@ -80,6 +81,27 @@
           {{ themeMode === 'light' ? '☀' : themeMode === 'dark' ? '☾' : '◐' }}
         </button>
       </view>
+
+      <!-- 主题色：预设色板点选（小程序无原生取色器；Web 端选的任意颜色同样会同步显示） -->
+      <view class="xm-cell color-cell">
+        <text class="xm-cell-icon">🖌</text>
+        <text class="xm-cell-body xm-ellipsis">{{ $t('layout.themeColor.title') }}</text>
+        <text
+          v-if="isCustomOutsidePresets"
+          class="color-custom-tag"
+          >{{ $t('layout.themeColor.custom') }}</text
+        >
+      </view>
+      <view class="color-swatches">
+        <view
+          v-for="preset in PRESET_COLORS"
+          :key="preset.value || 'default'"
+          class="color-swatch"
+          :class="{ 'is-active': themeColor === preset.value, 'is-default': !preset.value }"
+          :style="preset.value ? { background: preset.value } : {}"
+          @click="setThemeColor(preset.value)"
+        ></view>
+      </view>
     </view>
 
     <!-- 退出登录 -->
@@ -99,12 +121,14 @@
 import { computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { useMessageStore } from '@/stores/message'
 import { clearCookie, get, resolveFileUrl } from '@/utils/request'
 import { closeWs } from '@/utils/websocket'
 import { t } from '@/i18n'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
 import { cycleTheme, themeMode, themeClass } from '@/composables/useTheme'
+import { PRESET_COLORS, themeColor, setThemeColor, resetThemeColorOnLogout } from '@/composables/useThemeColor'
 
 const userStore = useUserStore()
 const messageStore = useMessageStore()
@@ -128,6 +152,11 @@ const roleLabel = computed(() => {
   return map[user.value.role] || user.value.role || ''
 })
 
+/** 当前颜色是 Web 端选的、不在预设色板里的任意颜色时，给出「自定义」提示（此时没有色块处于选中态） */
+const isCustomOutsidePresets = computed(
+  () => !!themeColor.value && !PRESET_COLORS.some((p) => p.value === themeColor.value),
+)
+
 const go = (path) => uni.navigateTo({ url: path })
 
 /** 退出登录：清空用户态与验证码会话 Cookie，回到登录页 */
@@ -140,16 +169,15 @@ const logout = () => {
       closeWs()
       userStore.clearUser()
       clearCookie()
+      // 复位主题色：否则下一个在本机登录的账号会先看到上一个账号的配色
+      resetThemeColorOnLogout()
       uni.reLaunch({ url: '/pages/login/login' })
     },
   })
 }
 
 onShow(() => {
-  if (!userStore.isLoggedIn) {
-    uni.reLaunch({ url: '/pages/login/login' })
-    return
-  }
+  if (!ensureLoggedIn()) return
   uni.setNavigationBarTitle({ title: t('menu.mine') })
   // 载入当前用户的推送消息历史（消息中心入口红点）
   messageStore.loadForUser(userStore.user.id)
@@ -160,11 +188,12 @@ onShow(() => {
   const urlByRole = { ADMIN: '/admin', TEACHER: '/teacher', STUDENT: '/student' }
   const base = urlByRole[userStore.role]
   if (base && userStore.user.id) {
-    get(`${base}/selectById/${userStore.user.id}`).then((res) => {
-      if (res.data.code === '200' && res.data.data) {
-        userStore.patchUser({ ...res.data.data, token: userStore.token })
-      }
-    })
+    // 静默同步最新资料（其他终端改过头像等）：失败不打扰用户，保留本地缓存
+    get(`${base}/selectById/${userStore.user.id}`, undefined, { loading: false })
+      .then((profile) => {
+        if (profile) userStore.patchUser({ ...profile, token: userStore.token })
+      })
+      .catch(() => {})
   }
 })
 </script>
@@ -232,5 +261,46 @@ onShow(() => {
 
 .logout-btn {
   margin-top: 8rpx;
+}
+
+/* 主题色：色板一行 8 个，点选即生效 */
+.color-cell {
+  border-bottom: none;
+}
+
+.color-custom-tag {
+  font-size: 22rpx;
+  padding: 2rpx 16rpx;
+  border-radius: 999rpx;
+  color: var(--xm-brand);
+  background: var(--xm-brand-soft);
+  flex-shrink: 0;
+}
+
+.color-swatches {
+  display: flex;
+  justify-content: space-between;
+  padding: 8rpx 4rpx 12rpx;
+}
+
+.color-swatch {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 4rpx solid transparent;
+  box-shadow: 0 0 0 2rpx var(--xm-border);
+  transition: transform 0.15s ease;
+}
+
+.color-swatch.is-active {
+  border-color: var(--xm-bg-card);
+  box-shadow: 0 0 0 4rpx var(--xm-text);
+  transform: scale(1.08);
+}
+
+/* 「默认」色块用内置品牌渐变表示，与各自定义色区分开 */
+.color-swatch.is-default {
+  background: linear-gradient(135deg, #5b6cff 0%, #8b5cf6 100%);
 }
 </style>
