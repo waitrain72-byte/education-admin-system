@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import uni from '@dcloudio/vite-plugin-uni'
+import rpxCapPlugin from './src/utils/rpxCap.js'
 
 /**
  * 发布前的接口地址校验。
@@ -43,4 +44,11 @@ function releaseUrlGuard() {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [uni(), releaseUrlGuard()],
+  css: {
+    postcss: {
+      // 大屏适配：rpx 超过 414px 屏宽后改用固定 px，平板 / 折叠屏 / PC 上不再被放大（见 src/utils/rpxCap.js）。
+      // 与 uni-app 自带的 PostCSS 插件合并执行，后者在最后一步再处理剩余的 rpx（H5 转 rem，小程序保留 rpx）
+      plugins: [rpxCapPlugin()],
+    },
+  },
 })

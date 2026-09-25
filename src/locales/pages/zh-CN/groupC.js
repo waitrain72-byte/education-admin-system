@@ -1,6 +1,6 @@
 /**
- * 分组 C 语言包：我的选课/我的成绩/网上评教/请假申请/作业提交/考勤信息。
- * 键命名空间：pages.choice / pages.score / pages.comment / pages.apply / pages.homework / pages.attendance
+ * 分组 C 语言包：我的选课/我的成绩/学业预警/网上评教/请假申请/作业提交/考勤信息。
+ * 键命名空间：pages.choice / pages.score / pages.warning / pages.comment / pages.apply / pages.homework / pages.attendance
  */
 export default {
   pages: {
@@ -8,6 +8,7 @@ export default {
       cancelChoice: '取消选课',
       comment: '评教',
       dialogTitle: '请填写评教信息',
+      commentTitle: '评教 · {name}',
       contentLabel: '评教内容',
       ruleContentRequired: '请输入评教内容',
       deleteConfirm: '您确定取消选这门课吗？这个老师的课不好选哦！！',
@@ -29,6 +30,7 @@ export default {
       coursePlaceholder: '请选择课程',
       studentPlaceholder: '请选择学生',
       dialogTitle: '信息',
+      entryTitle: '录入成绩',
       selectCourse: '选择课程',
       selectStudent: '选择学生',
       ordinaryScore: '平时分',
@@ -41,6 +43,33 @@ export default {
       courseName: '课程名称',
       teacherName: '授课教师',
       totalScore: '总成绩',
+      // 学生成绩汇总（utils/gpa.js）
+      gpa: '平均学分绩点',
+      weightedAvg: '加权平均分',
+      earnedCredits: '已获学分',
+      failedCount: '不及格门数',
+      gpaRule: '绩点 =（成绩 − 50）÷ 10，60 分为 1.0、不及格为 0，按课程学分加权',
+    },
+
+    // 学业预警（与 Web 端同键；level* / abnormal 为移动端卡片用）
+    warning: {
+      desc: '基于成绩与考勤的多指标加权评分模型：不及格占比（40%）+ 平均分差距（30%）+ 异常考勤率（30%），合成 0~100 的学业风险指数；管理员可见全部，教师可见本人任课学生，学生仅见本人',
+      student: '学生',
+      courseCount: '修读门数',
+      avg: '平均分',
+      failed: '不及格门数',
+      absentRate: '异常考勤率(%)',
+      riskIndex: '风险指数',
+      level: '预警等级',
+      suggestion: '建议',
+      notify: '推送提醒',
+      notifyOk: '预警提醒已实时推送',
+      noData: '暂无预警数据',
+      levelHigh: '高风险',
+      levelMiddle: '中风险',
+      levelLow: '低风险',
+      levelNormal: '正常',
+      abnormal: '异常考勤',
     },
 
     comment: {
@@ -64,6 +93,7 @@ export default {
       withdraw: '撤销申请',
       review: '审核',
       dialogTitle: '请假信息',
+      entity: '请假申请',
       checkDialogTitle: '请假审核',
       contentLabel: '请假说明',
       timeLabel: '请假时间',
@@ -84,7 +114,9 @@ export default {
       grade: '打分',
       download: '下载查看',
       dialogTitle: '作业信息',
-      checkDialogTitle: '作业审核',
+      submitTitle: '提交作业',
+      editTitle: '编辑作业',
+      checkDialogTitle: '作业打分',
       contentLabel: '作业说明',
       selectCourse: '选择课程',
       fileLabel: '作业文件',
@@ -92,6 +124,14 @@ export default {
       descrLabel: '打分说明',
       coursePlaceholder: '请选择课程',
       uploadFile: '上传文件',
+      reupload: '重新上传',
+      uploading: '上传中 {p}%',
+      uploadingWait: '附件还在上传，请稍候',
+      fromAlbum: '从相册选择图片',
+      fromChat: '从微信聊天选择文件',
+      fileTip: '支持图片、PDF、Word / Excel / PPT、压缩包，不超过 {mb}MB',
+      scoreUnit: '{n} 分',
+      pending: '待批改',
       deleteConfirm: '您确定删除作业吗？作业会跟你的平时分强挂钩哦！！',
       ruleCourseRequired: '请选择课程',
       ruleContentRequired: '请输入作业说明',
@@ -108,6 +148,7 @@ export default {
       datePlaceholder: '选择日期',
       addAttendance: '添加考勤',
       dialogTitle: '考勤信息',
+      entity: '考勤记录',
       selectCourse: '选择课程',
       selectStudent: '选择学生',
       timeLabel: '上课时间',
@@ -134,7 +175,20 @@ export default {
       friday: '星期五',
       saturday: '星期六',
       sunday: '星期日',
-      colorTip: '课程块颜色按课程自动区分，今日列高亮显示',
+      mondayShort: '周一',
+      tuesdayShort: '周二',
+      wednesdayShort: '周三',
+      thursdayShort: '周四',
+      fridayShort: '周五',
+      saturdayShort: '周六',
+      sundayShort: '周日',
+      tapTip: '点击课程查看详情，红线为当前时间',
+      showWeekend: '显示周末',
+      hideWeekend: '收起周末',
+      empty: '还没有选课，选课后这里会显示你的课表',
+      goChoose: '去选课',
+      slotCount: '该时段有 {n} 门课',
+      gotIt: '知道了',
     },
   },
 }

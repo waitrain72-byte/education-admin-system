@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('@/utils/websocket', () => ({ closeWs: vi.fn() }))
 
-const { request, get, getData, resolveFileUrl } = await import('@/utils/request')
+const { request, get, orNull, resolveFileUrl } = await import('@/utils/request')
 const { onLoadingChange, resetLoading } = await import('@/utils/loading')
 const { useUserStore } = await import('@/stores/user')
 const { closeWs } = await import('@/utils/websocket')
@@ -213,15 +213,15 @@ describe('request 统一请求层', () => {
     }
   })
 
-  it('getData：200 时直接返回 data.data', async () => {
+  it('orNull：成功时原样返回业务数据', async () => {
     resolveWith({ code: '200', data: [{ id: 1 }] })
-    const data = await getData('/thing/selectAll')
+    const data = await orNull(get('/thing/selectAll'))
     expect(data).toEqual([{ id: 1 }])
   })
 
-  it('getData：非 200 时提示并返回 null（不抛出）', async () => {
+  it('orNull：失败时（提示已由请求层弹出）返回 null，不抛出', async () => {
     resolveWith({ code: '5001', msg: '用户名已存在' })
-    const data = await getData('/x')
+    const data = await orNull(get('/x'))
     expect(data).toBe(null)
     expect(uniMock.showToast).toHaveBeenCalled()
   })

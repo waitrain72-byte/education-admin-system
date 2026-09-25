@@ -7,7 +7,7 @@
     </view>
     <xm-empty
       v-if="!courses.length"
-      icon="🎉"
+      icon="coffee"
       :text="$t('home.noClassToday')"
     />
     <template v-else>
@@ -87,7 +87,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { t, isZh } from '@/i18n'
+import { t } from '@/i18n'
+import { dayText } from '@/utils/dateText'
 import { courseBlockStyle } from '@/utils/courseColor'
 
 /** 今日课程卡：courses 已由 decorateToday 补齐 start/end/status 并按开始时间排好序 */
@@ -105,13 +106,7 @@ const statusText = computed(() => ({
 }))
 
 /** 标题右侧日期：中文「9月18日 周四」/ 英文「9/18 Thu」 */
-const todayTitleText = computed(() => {
-  const d = new Date()
-  if (isZh()) {
-    return `${d.getMonth() + 1}月${d.getDate()}日 周${'日一二三四五六'[d.getDay()]}`
-  }
-  return `${d.getMonth() + 1}/${d.getDate()} ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}`
-})
+const todayTitleText = computed(() => dayText(new Date()))
 const todayCountText = computed(() => t('home.todayCount', { n: props.courses.length }))
 /** 当前正在上的课（进行中） */
 const doingCourse = computed(() => props.courses.find((c) => c.status === 'doing') || null)

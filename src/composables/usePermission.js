@@ -1,5 +1,6 @@
 import { useUserStore } from '@/stores/user'
-import { get } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { accountApi } from '@/api'
 
 /**
  * 权限组合式封装（RBAC，与 Web 端 usePermission 语义一致）：
@@ -13,7 +14,7 @@ export function usePermission() {
     if (!store.token) return []
     try {
       // 后台静默同步：不弹加载蒙层
-      const codes = (await get('/permission/my', undefined, { loading: false })) || []
+      const codes = (await accountApi.getPermissions(SILENT)) || []
       store.setPermissions(codes)
       return codes
     } catch {

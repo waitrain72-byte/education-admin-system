@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import { get } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { choiceApi, courseApi } from '@/api'
 import { WEEKDAY_FIELDS, WEEKDAY_ZH, decorateToday, parseCurriculumCell } from '@/utils/todaySchedule'
 
 /**
@@ -12,7 +13,7 @@ export function useTodayCourses(userStore) {
   const todayCourses = ref([])
 
   const loadStudent = async () => {
-    const rows = (await get('/choice/getCurriculum')) || []
+    const rows = (await choiceApi.getCurriculum(SILENT)) || []
     const field = WEEKDAY_FIELDS[new Date().getDay()]
     let list = rows
       .filter((r) => r[field])
@@ -22,7 +23,7 @@ export function useTodayCourses(userStore) {
       })
     // 单元格不含教室：按「课程名 + 教师」反查课程表补齐 room，第二行组成「教室 · 老师」（与演示稿一致）
     try {
-      const courses = (await get('/course/selectAll')) || []
+      const courses = (await courseApi.selectAll(undefined, SILENT)) || []
       list = list.map((c) => {
         const hit = courses.find((k) => k.name === c.name && (!c.sub || k.teacherName === c.sub))
         return { ...c, sub: [hit && hit.room, c.sub].filter(Boolean).join(' · ') }
@@ -35,7 +36,7 @@ export function useTodayCourses(userStore) {
 
   const loadTeacher = async () => {
     const teacherId = userStore.user.id
-    const page = await get('/course/selectPage', { pageNum: 1, pageSize: 100, teacherId })
+    const page = await courseApi.selectPage({ pageNum: 1, pageSize: 100, teacherId }, SILENT)
     const todayZh = WEEKDAY_ZH[new Date().getDay()]
     return ((page && page.list) || [])
       .filter((c) => c.teacherId === teacherId && c.week === todayZh)

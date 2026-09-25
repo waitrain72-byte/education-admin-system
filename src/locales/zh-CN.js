@@ -32,7 +32,12 @@ export default {
     loading: '加载中…',
     reload: '重新加载',
     all: '全部',
-    manageMode: '批量管理',
+    searchKeyword: '输入关键字搜索',
+    noMatch: '没有匹配的选项',
+    addTitle: '新增{name}',
+    editTitle: '编辑{name}',
+    totalCount: '共 {n} 条',
+    selectedCount: '已选 {n} 项',
   },
 
   menu: {
@@ -47,6 +52,7 @@ export default {
     choice: '我的选课',
     curriculum: '我的课表',
     score: '我的成绩',
+    warning: '学业预警',
     comment: '网上评教',
     apply: '请假申请',
     homework: '作业提交',
@@ -108,8 +114,6 @@ export default {
       en: 'English',
       switch: '切换语言',
     },
-    about: '关于系统',
-    aboutContent: '教务管理系统小程序版：支持管理员/教师/学生三种角色、深浅色主题与中英文切换。',
   },
 
   login: {
@@ -182,6 +186,10 @@ export default {
     nextClass: '下一节',
     expand: '展开',
     collapse: '收起',
+    greetMorning: '早上好，{name}',
+    greetNoon: '中午好，{name}',
+    greetAfternoon: '下午好，{name}',
+    greetEvening: '晚上好，{name}',
   },
 
   notFound: {
@@ -196,6 +204,8 @@ export default {
     failed: '请求失败',
     timeout: '连接超时，请稍后重试',
     offline: '网络不可用，请检查网络连接',
+    tooLarge: '文件不能超过 {mb}MB',
+    uploadFailed: '上传失败，请重试',
   },
 
   message: {
@@ -203,6 +213,13 @@ export default {
     clear: '清空',
     clearConfirm: '确定要清空所有消息吗？',
     empty: '暂无消息',
+  },
+
+  // 小程序新版本提示（utils/appUpdate.js）
+  update: {
+    title: '更新提示',
+    readyContent: '新版本已经准备好，是否重启应用使用新版本？',
+    failedContent: '新版本下载失败，请删除当前小程序后重新搜索打开',
   },
 
   errors: {
@@ -250,7 +267,6 @@ export default {
       creditLabel: '学分',
       roleLabel: '角色',
       titleLabel: '职称',
-      avatar: '头像',
       avatarTip: '点击更换头像',
     },
 

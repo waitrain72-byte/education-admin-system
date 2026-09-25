@@ -4,7 +4,7 @@
     :class="themeClass"
     :style="themeStyle"
   >
-    <home-hero />
+    <home-hero :now="now" />
     <home-quick-entry />
 
     <!-- 骨架屏：无缓存首次加载时的占位（有缓存则秒开，不经过此分支） -->
@@ -63,7 +63,9 @@ import { ensureLoggedIn } from '@/utils/authGuard'
 import { useMessageStore } from '@/stores/message'
 import { usePermission } from '@/composables/usePermission'
 import { useTodayCourses } from '@/composables/useTodayCourses'
-import { get } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { readUserCache, writeUserCache } from '@/utils/userCache'
+import { noticeApi, examplanApi, attendanceApi, scoreApi, courseApi } from '@/api'
 import { resetWsUnread } from '@/utils/websocket'
 import { t } from '@/i18n'
 import { themeClass } from '@/composables/useTheme'
@@ -83,6 +85,9 @@ const messageStore = useMessageStore()
 const { pullPermissions } = usePermission()
 const { todayCourses, loadTodayCourses } = useTodayCourses(userStore)
 
+// 当前时间：每次回到首页刷新，头卡问候语（早上好 / 下午好…）与日期随之更新
+const now = ref(Date.now())
+
 // 首页压缩（方案 B）：动态 / 统计 分组标签页
 const homeTab = ref('feed')
 
@@ -95,20 +100,20 @@ const scoreStats = ref({ excellent: 0, good: 0, fail: 0 })
 
 // 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用（返回 Promise 供缓存写回时机使用）
 const loadNotices = () =>
-  get('/notice/selectAll').then((rows) => {
+  noticeApi.selectAll(undefined, SILENT).then((rows) => {
     notices.value = rows || []
   })
 const onWsPush = () => loadNotices().catch(() => {})
 
 const loadExamplans = () =>
-  get('/examplan/selectAll').then((rows) => {
+  examplanApi.selectAll(undefined, SILENT).then((rows) => {
     examplans.value = rows || []
   })
 
 // 后端按中文状态分组统计，这里按中文键匹配（数据库存储值为中文）
 const ATTENDANCE_KEYS = { 迟到: 'late', 缺勤: 'absent', 早退: 'earlyLeave', 正常: 'normal' }
 const loadAttendanceStats = () =>
-  get('/attendance/getPie').then((pie) => {
+  attendanceApi.getPie(SILENT).then((pie) => {
     const stats = { late: 0, absent: 0, earlyLeave: 0, normal: 0 }
     ;((pie && pie.data) || []).forEach((item) => {
       const key = ATTENDANCE_KEYS[item.name]
@@ -118,7 +123,7 @@ const loadAttendanceStats = () =>
   })
 
 const loadScoreStats = () =>
-  get('/score/getLine').then((line) => {
+  scoreApi.getLine(SILENT).then((line) => {
     const yAxis = (line && line.yAxis) || []
     if (yAxis.length >= 5) {
       scoreStats.value = {
@@ -130,18 +135,17 @@ const loadScoreStats = () =>
   })
 
 const loadRecommends = () =>
-  get('/course/recommend', { limit: 4 }).then((rows) => {
+  courseApi.recommend({ limit: 4 }, SILENT).then((rows) => {
     recommends.value = rows || []
   })
 
-// 首页数据本地缓存（按用户 ID 隔离，防止切换账号闪现他人数据）：
+// 首页数据本地缓存（按账号隔离，防止切换账号闪现他人数据）：
 // 进入首页先渲染缓存（秒开不白屏），静默刷新完成后写回；无缓存时显示骨架屏
-const HOME_CACHE_KEY = 'xm-home-cache-'
 const firstLoading = ref(true)
 
 const applyCache = () => {
   try {
-    const cached = uni.getStorageSync(HOME_CACHE_KEY + userStore.user.id)
+    const cached = readUserCache('home', userStore.accountKey)
     if (cached && typeof cached === 'object' && Array.isArray(cached.notices)) {
       notices.value = cached.notices || []
       examplans.value = cached.examplans || []
@@ -155,24 +159,23 @@ const applyCache = () => {
 }
 
 const saveCache = () => {
-  try {
-    uni.setStorageSync(HOME_CACHE_KEY + userStore.user.id, {
-      notices: notices.value,
-      examplans: examplans.value,
-      attendanceStats: attendanceStats.value,
-      scoreStats: scoreStats.value,
-      recommends: recommends.value,
-    })
-  } catch {}
+  writeUserCache('home', userStore.accountKey, {
+    notices: notices.value,
+    examplans: examplans.value,
+    attendanceStats: attendanceStats.value,
+    scoreStats: scoreStats.value,
+    recommends: recommends.value,
+  })
 }
 
 onShow(() => {
   if (!ensureLoggedIn()) return
+  now.value = Date.now()
   // 动态设置导航栏标题，跟随语言切换
   uni.setNavigationBarTitle({ title: t('menu.home') })
 
   // 载入当前用户的推送消息历史（铃铛未读角标）
-  messageStore.loadForUser(userStore.user.id)
+  messageStore.loadForUser(userStore.accountKey)
   // 回到首页即视为已读：清掉推送未读角标
   resetWsUnread()
   // 收到 WebSocket 推送时实时刷新首页通知列表（先解绑再绑定，防止页面反复进出后重复触发）
@@ -185,6 +188,7 @@ onShow(() => {
   }
 
   // 首页数据：先渲染缓存（秒开），再静默刷新；无缓存时显示骨架屏。
+  // 请求全部走 SILENT：占位由缓存/骨架屏负责，切回首页 tab 不再弹全屏加载蒙层。
   // 每个请求单独 catch（网络失败不应打断其它请求），全部结束后写缓存并撤骨架屏
   firstLoading.value = !applyCache()
   const tasks = [loadNotices(), loadExamplans(), loadAttendanceStats(), loadScoreStats(), loadTodayCourses()]

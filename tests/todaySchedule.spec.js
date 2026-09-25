@@ -5,6 +5,10 @@ import {
   classStatus,
   parseCurriculumCell,
   decorateToday,
+  buildWeekGrid,
+  hasWeekendClass,
+  nowRowPosition,
+  SEGMENTS,
 } from '../src/utils/todaySchedule'
 
 /** 构造当天某时刻 */
@@ -86,5 +90,51 @@ describe('decorateToday', () => {
     const input = [{ key: 'a', segment: '第一大节（08:30 ~ 10:10）', name: 'A' }]
     decorateToday(input, at(9, 0))
     expect(input[0].status).toBeUndefined()
+  })
+})
+
+describe('buildWeekGrid 周课表网格', () => {
+  const choices = [
+    { name: '数据结构', week: '星期一', segment: '第一大节（08:30 ~ 10:10）', room: 'A101' },
+    { name: '体育', week: '星期六', segment: '第三大节（14:00 ~ 15:40）', room: '操场' },
+    { name: '冲突课', week: '星期一', segment: '第一大节（08:30 ~ 10:10）' },
+    { name: '夜课', week: '星期三', segment: '第六大节（21:00 ~ 21:45）' },
+  ]
+
+  it('固定五个大节行，按星期落格，同格多门课保留为数组', () => {
+    const rows = buildWeekGrid(choices)
+    expect(rows.slice(0, 5).map((r) => r.segment)).toEqual(SEGMENTS)
+    expect(rows[0].start).toBe('08:30')
+    expect(rows[0].cells.monday.map((c) => c.name)).toEqual(['数据结构', '冲突课'])
+    expect(rows[2].cells.saturday[0].room).toBe('操场')
+    expect(rows[1].cells.monday).toEqual([])
+  })
+
+  it('未知大节追加在末尾；空数据也返回完整空网格', () => {
+    const rows = buildWeekGrid(choices)
+    expect(rows).toHaveLength(6)
+    expect(rows[5].cells.wednesday[0].name).toBe('夜课')
+    expect(buildWeekGrid(null)).toHaveLength(5)
+  })
+
+  it('hasWeekendClass：只有工作日课时为 false', () => {
+    expect(hasWeekendClass(buildWeekGrid(choices))).toBe(true)
+    expect(hasWeekendClass(buildWeekGrid(choices.filter((c) => c.week !== '星期六')))).toBe(false)
+  })
+})
+
+describe('nowRowPosition 当前时间线位置', () => {
+  const rows = buildWeekGrid([])
+
+  it('上课中按已上比例落在行内', () => {
+    // 第一大节 08:30~10:10 共 100 分钟，09:20 已上 50 分钟
+    expect(nowRowPosition(rows, at(9, 20))).toBeCloseTo(0.5)
+    expect(nowRowPosition(rows, at(14, 0))).toBe(2)
+  })
+
+  it('课间停在下一节行首；首节前与末节后不画线', () => {
+    expect(nowRowPosition(rows, at(10, 20))).toBe(1)
+    expect(nowRowPosition(rows, at(7, 0))).toBe(-1)
+    expect(nowRowPosition(rows, at(21, 0))).toBe(-1)
   })
 })

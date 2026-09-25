@@ -9,7 +9,12 @@
         class="xm-grid-item"
         @click="go(item.path)"
       >
-        <text class="xm-grid-item-emoji">{{ item.icon }}</text>
+        <view class="xm-grid-item-icon">
+          <xm-icon
+            :name="item.icon"
+            :size="44"
+          />
+        </view>
         <view class="xm-grid-item-label">{{ $t(item.name) }}</view>
       </view>
     </view>
@@ -26,35 +31,55 @@ const userStore = useUserStore()
 // perm 为 RBAC 权限码：权限已拉取时按码过滤；未拉取到（空）时退化为仅按 roles 过滤
 // 管理类页面位于 pages-admin 分包；个人中心/修改密码入口移至「我的」Tab
 const allMenus = [
-  { path: '/pages/notice/notice', name: 'menu.notice', icon: '📢', perm: 'notice:view' },
-  { path: '/pages/examplan/examplan', name: 'menu.examplan', icon: '📝', perm: 'examplan:view' },
-  { path: '/pages/roomplan/roomplan', name: 'menu.roomplan', icon: '🏫', perm: 'roomplan:view' },
-  { path: '/pages-admin/college/college', name: 'menu.college', icon: '🏛', roles: ['ADMIN'], perm: 'college:view' },
+  { path: '/pages/notice/notice', name: 'menu.notice', icon: 'megaphone', perm: 'notice:view' },
+  { path: '/pages/examplan/examplan', name: 'menu.examplan', icon: 'clipboard', perm: 'examplan:view' },
+  { path: '/pages/roomplan/roomplan', name: 'menu.roomplan', icon: 'building', perm: 'roomplan:view' },
+  {
+    path: '/pages-admin/college/college',
+    name: 'menu.college',
+    icon: 'landmark',
+    roles: ['ADMIN'],
+    perm: 'college:view',
+  },
   {
     path: '/pages-admin/speciality/speciality',
     name: 'menu.speciality',
-    icon: '📚',
+    icon: 'book',
     roles: ['ADMIN'],
     perm: 'speciality:view',
   },
-  { path: '/pages-admin/classes/classes', name: 'menu.classes', icon: '👨‍👩‍👧', roles: ['ADMIN'], perm: 'classes:view' },
-  { path: '/pages/course/course', name: 'menu.course', icon: '📖', perm: 'course:view' },
-  { path: '/pages/choice/choice', name: 'menu.choice', icon: '🧾', perm: 'choice:view' },
+  { path: '/pages-admin/classes/classes', name: 'menu.classes', icon: 'users', roles: ['ADMIN'], perm: 'classes:view' },
+  { path: '/pages/course/course', name: 'menu.course', icon: 'book-open', perm: 'course:view' },
+  { path: '/pages/choice/choice', name: 'menu.choice', icon: 'list-check', perm: 'choice:view' },
   {
     path: '/pages/curriculum/curriculum',
     name: 'menu.curriculum',
-    icon: '🗓',
+    icon: 'calendar',
     roles: ['STUDENT'],
     perm: 'curriculum:view',
   },
-  { path: '/pages/score/score', name: 'menu.score', icon: '💯', perm: 'score:view' },
-  { path: '/pages/comment/comment', name: 'menu.comment', icon: '⭐', perm: 'comment:view' },
-  { path: '/pages/apply/apply', name: 'menu.apply', icon: '📮', perm: 'apply:view' },
-  { path: '/pages/homework/homework', name: 'menu.homework', icon: '📒', perm: 'homework:view' },
-  { path: '/pages/attendance/attendance', name: 'menu.attendance', icon: '🕐', perm: 'attendance:view' },
-  { path: '/pages-admin/admin/admin', name: 'menu.admin', icon: '👤', roles: ['ADMIN'], perm: 'admin:view' },
-  { path: '/pages-admin/teacher/teacher', name: 'menu.teacher', icon: '👨‍🏫', roles: ['ADMIN'], perm: 'teacher:view' },
-  { path: '/pages-admin/student/student', name: 'menu.student', icon: '🎓', roles: ['ADMIN'], perm: 'student:view' },
+  { path: '/pages/score/score', name: 'menu.score', icon: 'award', perm: 'score:view' },
+  // 学业预警：接口按 score:view 授权，三种角色都能看（范围由后端按角色限定）
+  { path: '/pages/warning/warning', name: 'menu.warning', icon: 'alert-triangle', perm: 'score:view' },
+  { path: '/pages/comment/comment', name: 'menu.comment', icon: 'star', perm: 'comment:view' },
+  { path: '/pages/apply/apply', name: 'menu.apply', icon: 'send', perm: 'apply:view' },
+  { path: '/pages/homework/homework', name: 'menu.homework', icon: 'pen', perm: 'homework:view' },
+  { path: '/pages/attendance/attendance', name: 'menu.attendance', icon: 'user-check', perm: 'attendance:view' },
+  { path: '/pages-admin/admin/admin', name: 'menu.admin', icon: 'shield', roles: ['ADMIN'], perm: 'admin:view' },
+  {
+    path: '/pages-admin/teacher/teacher',
+    name: 'menu.teacher',
+    icon: 'briefcase',
+    roles: ['ADMIN'],
+    perm: 'teacher:view',
+  },
+  {
+    path: '/pages-admin/student/student',
+    name: 'menu.student',
+    icon: 'graduation',
+    roles: ['ADMIN'],
+    perm: 'student:view',
+  },
 ]
 
 const menuItems = computed(() => {

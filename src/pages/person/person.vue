@@ -1,6 +1,6 @@
 <template>
   <view
-    class="xm-page"
+    class="xm-page xm-page-narrow"
     :class="themeClass"
     :style="themeStyle"
   >
@@ -71,6 +71,8 @@
         <input
           class="xm-input"
           v-model="user.phone"
+          type="number"
+          maxlength="11"
         />
       </view>
       <view
@@ -109,10 +111,11 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { request, resolveFileUrl } from '@/utils/request'
-import { baseUrl } from '@/utils/config'
+import { resolveFileUrl } from '@/utils/request'
+import { userApiOf } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { t, apiMessage } from '@/i18n'
+import { t } from '@/i18n'
+import { chooseImage, uploadFile } from '@/utils/upload'
 
 const userStore = useUserStore()
 const user = reactive({ ...userStore.user })
@@ -128,42 +131,23 @@ onShow(() => {
   uni.setNavigationBarTitle({ title: t('menu.person') })
 })
 
-const chooseAvatar = () => {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      const filePath = res.tempFilePaths[0]
-      uni.uploadFile({
-        url: `${baseUrl}/files/upload`,
-        filePath,
-        name: 'file',
-        header: { token: userStore.token },
-        success: (up) => {
-          try {
-            const data = typeof up.data === 'string' ? JSON.parse(up.data) : up.data
-            if (data.code === '200') {
-              user.avatar = data.data
-              uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-            } else {
-              uni.showToast({ title: apiMessage(data), icon: 'none' })
-            }
-          } catch {
-            uni.showToast({ title: t('request.failed'), icon: 'none' })
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: t('request.failed'), icon: 'none' })
-        },
-      })
-    },
-  })
+// 头像：选图（压缩图、超限本地拦截）后上传，失败提示由上传层统一弹出
+const chooseAvatar = async () => {
+  const picked = await chooseImage()
+  if (!picked) return
+  try {
+    user.avatar = await uploadFile(picked.path)
+    uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+  } catch {
+    // 提示已由上传层统一弹出
+  }
 }
 
 const update = () => {
-  const urlByRole = { ADMIN: '/admin/update', TEACHER: '/teacher/update', STUDENT: '/student/update' }
-  const url = urlByRole[user.role]
-  if (!url) return
-  request({ url, method: 'PUT', data: user })
+  const api = userApiOf(user.role)
+  if (!api) return
+  api
+    .update(user)
     .then(() => {
       userStore.patchUser({ ...user })
       uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })

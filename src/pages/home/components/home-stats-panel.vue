@@ -5,7 +5,7 @@
       <view class="xm-card-title">{{ $t('home.attendanceStats') }}</view>
       <xm-empty
         v-if="!attendanceTotal"
-        icon="🕐"
+        icon="clock"
       />
       <template v-else>
         <view class="donut-wrap">
@@ -45,7 +45,7 @@
       <view class="xm-card-title">{{ $t('home.scoreStats') }}</view>
       <xm-empty
         v-if="!scoreRows.length"
-        icon="💯"
+        icon="bar-chart"
       />
       <view
         v-else

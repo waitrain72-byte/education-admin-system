@@ -6,83 +6,109 @@
   >
     <!-- 搜索区 -->
     <xm-search-card
-      v-model="keyword"
+      v-model="query.username"
       :placeholder="$t('pages.teacher.searchPlaceholder')"
       @search="search"
-      @reset="onReset"
+      @reset="resetQuery"
     />
 
     <!-- 操作区：新增 / 批量管理 -->
     <xm-action-bar
       :manage-mode="manageMode"
-      @add="onAdd"
+      :total="total"
+      :selected-count="selectedIds.length"
+      @add="handleAdd()"
       @toggle-manage="toggleManage"
       @del-batch="delBatch"
     />
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="search"
+    />
 
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view class="xm-row">
-          <!-- 批量管理模式下显示勾选框 -->
-          <checkbox
-            v-if="manageMode"
-            :checked="selectedIds.includes(item.id)"
-            style="transform: scale(0.8)"
-            @click.stop="toggleSelect(item.id)"
-          />
-          <image
-            v-if="item.avatar"
-            lazy-load
-            :src="resolveFileUrl(item.avatar)"
-            class="xm-avatar"
-            mode="aspectFill"
-          />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.username }}</view
-          >
-        </view>
-        <view class="xm-label">{{ $t('pages.teacher.id') }}: {{ item._index }}</view>
-      </view>
-      <view class="xm-label">{{ $t('pages.teacher.name') }}: {{ item.name }}</view>
-      <view class="xm-label">{{ $t('pages.teacher.phone') }}: {{ item.phone }}</view>
-      <view class="xm-label">{{ $t('pages.teacher.email') }}: {{ item.email }}</view>
-      <view class="xm-label">{{ $t('pages.teacher.role') }}: {{ item.role }}</view>
-      <view class="xm-label">{{ $t('pages.teacher.title') }}: {{ item.title }}</view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
       <view
-        class="xm-actions"
-        v-if="!manageMode"
+        v-for="item in list"
+        :key="item.id"
+        class="xm-card"
       >
-        <button
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(item)"
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <!-- 批量管理模式下显示勾选框 -->
+            <checkbox
+              v-if="manageMode"
+              :checked="selectedIds.includes(item.id)"
+              style="transform: scale(0.8)"
+              @click.stop="toggleSelect(item.id)"
+            />
+            <image
+              v-if="item.avatar"
+              lazy-load
+              :src="resolveFileUrl(item.avatar)"
+              class="xm-avatar"
+              mode="aspectFill"
+            />
+            <view
+              v-else
+              class="xm-avatar xm-avatar-text"
+              >{{ (item.name || item.username || '?').slice(0, 1) }}</view
+            >
+            <view class="xm-card-head">
+              <view class="xm-card-name xm-ellipsis">{{ item.name || item.username }}</view>
+              <view class="xm-card-sub xm-ellipsis">{{ item.username }}</view>
+            </view>
+          </view>
+          <text class="xm-card-no">#{{ item._index }}</text>
+        </view>
+        <view
+          v-if="item.title"
+          class="xm-tags"
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-plain"
-          @click="resetPassword(item)"
+          <text class="xm-tag xm-tag-brand">{{ item.title }}</text>
+        </view>
+        <view class="xm-meta">
+          <view class="xm-meta-item">
+            <xm-icon
+              name="phone"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.phone || '-' }}</text>
+          </view>
+          <view class="xm-meta-item">
+            <xm-icon
+              name="mail"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.email || '-' }}</text>
+          </view>
+        </view>
+        <view
+          class="xm-actions"
+          v-if="!manageMode"
         >
-          {{ $t('common.resetPassword') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-danger"
-          @click="del(item.id)"
-        >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            @click="handleEdit(item)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            @click="resetPassword(item)"
+          >
+            {{ $t('common.resetPassword') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            @click="del(item.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -97,7 +123,7 @@
     <xm-form-popup
       :visible="formVisible"
       :saving="saving"
-      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.teacher.dialogTitle')"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.teacher.entity') })"
       @close="closeForm"
       @save="save"
     >
@@ -141,6 +167,8 @@
         <input
           class="xm-input"
           v-model="form.phone"
+          type="number"
+          maxlength="11"
           :placeholder="$t('pages.teacher.phone')"
         />
       </view>
@@ -167,133 +195,47 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
-import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { useManage } from '@/composables/useManage'
-import { put, resolveFileUrl } from '@/utils/request'
-import { baseUrl } from '@/utils/config'
-import { t, apiMessage } from '@/i18n'
+import { useListPage } from '@/composables/useListPage'
+import { teacherApi } from '@/api'
+import { useResetPassword } from '@/composables/useResetPassword'
+import { useAvatarUpload, syncCurrentUser } from '@/composables/useUserForm'
+import { resolveFileUrl } from '@/utils/request'
+import { t } from '@/i18n'
 
-const userStore = useUserStore()
-const keyword = ref('')
-
+// 仅管理员可见（与 Web 端路由 meta.roles 一致）
 const {
   list,
   loading,
-  saving,
   finished,
+  total,
   form,
   formVisible,
+  saving,
   selectedIds,
-  load,
+  query,
+  manageMode,
   loadNext,
   search,
+  resetQuery,
+  toggleManage,
+  toggleSelect,
   handleAdd,
   handleEdit,
   closeForm,
   save,
   del,
   delBatch,
-} = useCrud({
-  url: '/teacher',
-  getParams: () => ({ username: keyword.value }),
-  validate: (f) => {
-    if (!f.username) return t('pages.teacher.ruleUsernameRequired')
-    return ''
-  },
-  afterSave: (formData) => {
-    // 如果修改的是当前登录用户自己的信息，同步全局状态
-    if (formData.id === userStore.user.id) {
-      userStore.patchUser({
-        avatar: formData.avatar,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-      })
-    }
-  },
+} = useListPage({
+  api: teacherApi,
+  title: 'menu.teacher',
+  roles: ['ADMIN'],
+  query: { username: '' },
+  validate: (f) => (f.username ? '' : t('pages.teacher.ruleUsernameRequired')),
+  // 改的是当前登录账号自己时，同步头像 / 姓名 / 联系方式
+  afterSave: syncCurrentUser('TEACHER', ['avatar', 'name', 'phone', 'email']),
 })
 
-const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
-
-const onAdd = () => handleAdd({})
-const onEdit = (row) => handleEdit(row)
-const onReset = () => {
-  keyword.value = ''
-  search()
-}
-
-// 重置密码为 123456
-const resetPassword = (row) => {
-  uni.showModal({
-    title: t('common.resetPassword'),
-    content: t('pages.teacher.resetConfirm', { username: row.username }),
-    success: async (res) => {
-      if (!res.confirm) return
-      try {
-        await put('/teacher/resetPassword/' + row.id)
-        uni.showToast({ title: t('pages.teacher.resetSuccess'), icon: 'none' })
-      } catch {
-        // 请求层已统一提示
-      }
-    },
-  })
-}
-
-// 上传头像（与 Web 端 el-upload + /files/upload 一致）
-const uploadAvatar = () => {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      uni.uploadFile({
-        url: `${baseUrl}/files/upload`,
-        filePath: res.tempFilePaths[0],
-        name: 'file',
-        header: { token: userStore.token },
-        success: (up) => {
-          try {
-            const data = typeof up.data === 'string' ? JSON.parse(up.data) : up.data
-            if (data.code === '200') {
-              form.value.avatar = data.data
-            } else {
-              uni.showToast({ title: apiMessage(data), icon: 'none' })
-            }
-          } catch {
-            uni.showToast({ title: t('request.failed'), icon: 'none' })
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: t('request.failed'), icon: 'none' })
-        },
-      })
-    },
-  })
-}
-
-// 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.teacher') })
-  if (!ensureLoggedIn()) return
-  if (!['ADMIN'].includes(userStore.role)) {
-    uni.showToast({ title: t('forbidden.message'), icon: 'none' })
-    setTimeout(() => uni.navigateBack(), 800)
-    return
-  }
-  load(true)
-})
-
-onReachBottom(() => loadNext())
+// 重置为默认密码
+const resetPassword = useResetPassword(teacherApi, 'teacher')
+const uploadAvatar = useAvatarUpload(form)
 </script>
-
-<style lang="scss" scoped>
-.xm-avatar {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: var(--xm-bg-input);
-  flex-shrink: 0;
-}
-</style>

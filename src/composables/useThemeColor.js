@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { get, put } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { accountApi } from '@/api'
 import { isDark, syncNativeChrome } from './useTheme'
 import { STORAGE_KEY, normalizeColor, buildThemeStyle, PRESET_COLORS } from '@/utils/themeColor'
 
@@ -31,9 +32,6 @@ export const themeColor = ref(readStored())
 /** 供全局混入绑定到页面根节点的样式字符串（空串 = 不覆盖） */
 export const themeStyle = computed(() => buildThemeStyle(themeColor.value, isDark.value))
 
-/** 当前颜色是否为自定义（非默认），用于「恢复默认」按钮的禁用态 */
-export const isCustomThemeColor = computed(() => themeColor.value !== '')
-
 /** 最近一次与后端一致的值，用于防止「拉取回显 → 触发推送」的回环 */
 let serverThemeColor = ''
 let pushTimer = null
@@ -55,7 +53,8 @@ function pushThemeColor() {
     if (pushTimer) clearTimeout(pushTimer)
     const next = themeColor.value
     pushTimer = setTimeout(() => {
-      put('/themeColor', { themeColor: next }, { loading: false })
+      accountApi
+        .updateThemeColor(next, SILENT)
         .then(() => {
           serverThemeColor = next
         })
@@ -82,7 +81,7 @@ export async function pullThemeColorFromServer() {
   try {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) return
-    const next = normalizeColor(await get('/themeColor', undefined, { loading: false }))
+    const next = normalizeColor(await accountApi.getThemeColor(SILENT))
     serverThemeColor = next
     if (themeColor.value !== next) {
       themeColor.value = next

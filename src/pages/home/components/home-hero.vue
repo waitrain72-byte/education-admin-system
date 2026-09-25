@@ -1,38 +1,27 @@
 <template>
-  <!-- 欢迎 + 偏好切换：品牌渐变头卡 -->
+  <!-- 首页头卡：头像字 + 按时段问候 + 日期角色，右侧消息铃铛（语言 / 主题切换在「我的」页） -->
   <view class="xm-hero">
-    <view class="xm-between">
-      <view class="xm-row hero-left">
-        <view class="hero-avatar">{{ avatarLetter }}</view>
-        <view class="hero-meta">
-          <view class="xm-hero-title xm-ellipsis">{{ $t('home.welcome', { name: userName }) }}</view>
-          <view class="xm-hero-sub">{{ todayText }} · {{ roleLabel }}</view>
-        </view>
+    <view class="xm-row hero-row">
+      <view class="hero-avatar">{{ avatarLetter }}</view>
+      <view class="hero-meta">
+        <view class="xm-hero-title xm-ellipsis">{{ $t(greetingKey(nowDate), { name: userName }) }}</view>
+        <view class="xm-hero-sub xm-ellipsis">{{ dayText(nowDate) }} · {{ roleLabel }}</view>
       </view>
-      <view class="xm-row hero-prefs">
-        <button
-          class="hero-btn hero-bell"
-          @click="go('/pages/message/message')"
+      <view
+        class="hero-bell"
+        aria-role="button"
+        :aria-label="$t('menu.message')"
+        @click="go('/pages/message/message')"
+      >
+        <xm-icon
+          name="bell"
+          :size="36"
+        />
+        <view
+          v-if="unreadCount"
+          class="bell-badge"
+          >{{ unreadCount > 99 ? '99+' : unreadCount }}</view
         >
-          🔔
-          <view
-            v-if="unreadCount"
-            class="bell-badge"
-            >{{ unreadCount > 99 ? '99+' : unreadCount }}</view
-          >
-        </button>
-        <button
-          class="hero-btn"
-          @click="toggleLocale"
-        >
-          {{ isZhLocale() ? 'EN' : '中' }}
-        </button>
-        <button
-          class="hero-btn"
-          @click="cycleTheme"
-        >
-          {{ themeMode === 'light' ? '☀' : themeMode === 'dark' ? '☾' : '◐' }}
-        </button>
       </view>
     </view>
   </view>
@@ -43,10 +32,22 @@ import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useMessageStore } from '@/stores/message'
 import { t } from '@/i18n'
-import { isZhLocale, toggleLocale } from '@/composables/useLocale'
-import { cycleTheme, themeMode } from '@/composables/useTheme'
+import { enumLabel } from '@/utils/enums'
+import { dayText, greetingKey } from '@/utils/dateText'
 
-/** 首页头卡：头像字 + 欢迎语 + 日期角色，右侧消息铃铛 / 语言 / 主题快捷切换 */
+/**
+ * 首页头卡：问候语用「早上好 / 下午好，姓名」短句，任何屏宽都不会被右侧按钮挤成省略号；
+ * 原先头卡里的语言 / 主题快捷按钮与「我的」页重复，已收敛到「我的」页。
+ */
+const props = defineProps({
+  /**
+   * 当前时间戳（毫秒）：由首页每次 onShow 刷新，问候语与日期随之更新（跨时段回到首页不会停留在旧问候）。
+   * 传数字而非 Date：小程序组件间传参走数据序列化，数字最稳妥
+   */
+  now: { type: Number, default: () => Date.now() },
+})
+const nowDate = computed(() => new Date(props.now))
+
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 
@@ -56,35 +57,22 @@ const avatarLetter = computed(() => (userName.value || '?').slice(0, 1))
 /** 消息中心未读数（本地持久化的推送历史，入口在头卡铃铛与「我的」页） */
 const unreadCount = computed(() => messageStore.unreadCount)
 
-/** 角色码转展示名（与「我的」页一致） */
-const roleLabel = computed(() => {
-  const map = {
-    ADMIN: t('login.roleAdmin'),
-    TEACHER: t('login.roleTeacher'),
-    STUDENT: t('login.roleStudent'),
-  }
-  return map[userStore.role] || userStore.role || ''
-})
-
-const todayText = computed(() => {
-  const d = new Date()
-  return `${d.getMonth() + 1}/${d.getDate()}`
-})
+/** 角色码转展示名（统一枚举表，与「我的」页一致） */
+const roleLabel = computed(() => enumLabel('role', userStore.role))
 
 const go = (path) => uni.navigateTo({ url: path })
 </script>
 
 <style lang="scss" scoped>
-/* 渐变头卡内部：左侧内容可收缩省略，右侧按钮固定不被挤压 */
-.hero-left {
-  flex: 1;
-  min-width: 0;
+/* 头像 + 文案 + 铃铛一行：文案区可收缩省略，头像与铃铛固定尺寸不被挤压 */
+.hero-row {
+  gap: 20rpx;
 }
 
 .hero-avatar {
-  width: 84rpx;
-  height: 84rpx;
-  line-height: 84rpx;
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 88rpx;
   text-align: center;
   border-radius: 50%;
   font-size: 36rpx;
@@ -99,51 +87,38 @@ const go = (path) => uni.navigateTo({ url: path })
   min-width: 0;
 }
 
-/* 头卡上的毛玻璃胶囊小按钮（脱离 xm-btn 体系：白字透明底融入渐变） */
-.hero-btn {
-  height: 60rpx;
-  line-height: 60rpx;
-  padding: 0 22rpx;
-  margin: 0;
-  font-size: 24rpx;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 999rpx;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero-btn::after {
-  border: none;
-}
-
-.hero-btn:active {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* 消息铃铛：相对定位承载未读角标 */
+/* 消息铃铛：毛玻璃圆形按钮，右上角未读角标 */
 .hero-bell {
   position: relative;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.hero-bell:active {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .bell-badge {
   position: absolute;
-  top: -8rpx;
+  top: -6rpx;
   right: -6rpx;
-  min-width: 30rpx;
-  height: 30rpx;
-  line-height: 30rpx;
-  padding: 0 6rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
   border-radius: 999rpx;
-  font-size: 18rpx;
+  font-size: 20rpx;
   text-align: center;
   color: #ffffff;
   background: #f0555f;
-}
-
-.hero-prefs {
-  flex-shrink: 0;
+  border: 2rpx solid rgba(255, 255, 255, 0.9);
 }
 </style>

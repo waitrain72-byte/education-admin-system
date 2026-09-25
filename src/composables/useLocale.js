@@ -1,6 +1,7 @@
-import { locale, setLocale, t } from '@/i18n'
+import { locale, setLocale } from '@/i18n'
 import { useUserStore } from '@/stores/user'
-import { get, put } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { accountApi } from '@/api'
 
 /**
  * 语言偏好（与 Web 端 useLocale 语义一致）：
@@ -8,12 +9,6 @@ import { get, put } from '@/utils/request'
  */
 let serverLocale = ''
 let pushTimer = null
-
-export { locale, setLocale, t }
-
-export function currentLocale() {
-  return locale.value
-}
 
 export function isZhLocale() {
   return locale.value === 'zh-CN'
@@ -24,8 +19,10 @@ function pushLocale(next) {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn || next === serverLocale) return
     if (pushTimer) clearTimeout(pushTimer)
+    // 后台静默同步：不弹加载蒙层（否则切换后半秒会闪一下全屏「加载中」）
     pushTimer = setTimeout(() => {
-      put('/locale', { locale: next })
+      accountApi
+        .updateLocale(next, SILENT)
         .then(() => {
           serverLocale = next
         })
@@ -51,7 +48,7 @@ export async function pullLocaleFromServer() {
   try {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) return
-    const value = await get('/locale', undefined, { loading: false })
+    const value = await accountApi.getLocale(SILENT)
     if (value !== 'zh-CN' && value !== 'en-US') return
     serverLocale = value
     if (locale.value !== value) {

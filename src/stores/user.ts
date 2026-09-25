@@ -39,6 +39,11 @@ export const useUserStore = defineStore('user', {
     token: (state) => state.user.token || '',
     /** RBAC 权限码集合（登录后从 /permission/my 拉取，随 user 持久化） */
     permissions: (state) => state.user.permissions || [],
+    /**
+     * 账号标识「角色-id」，用作本地缓存 / 消息历史的键。
+     * 管理员、教师、学生分表存储，id 只在同一角色内唯一：只用 id 会让 1 号管理员和 1 号学生共用本地数据。
+     */
+    accountKey: (state) => (state.user.id ? `${state.user.role || ''}-${state.user.id}` : ''),
   },
   actions: {
     updateUser(newUser: UserInfo | null) {

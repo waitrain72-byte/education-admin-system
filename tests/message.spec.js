@@ -50,6 +50,23 @@ describe('message store 消息中心', () => {
     expect(store.messages[0].read).toBe(true)
   })
 
+  it('open：学业预警推送跳预警页（建议文字里含「成绩」也不会误跳成绩页）', () => {
+    const store = useMessageStore()
+    store.loadForUser('STUDENT-1')
+    store.push({ title: '学业预警提醒', content: '你的学业风险指数 42（中风险）：成绩或出勤存在明显波动' })
+    expect(store.open(store.messages[0])).toBe('/pages/warning/warning')
+  })
+
+  it('按账号（角色-id）隔离：1 号管理员看不到 1 号学生的推送', () => {
+    const store = useMessageStore()
+    store.loadForUser('STUDENT-1')
+    store.push({ title: '学业预警提醒', content: '' })
+    store.loadForUser('ADMIN-1')
+    expect(store.messages.length).toBe(0)
+    store.loadForUser('STUDENT-1')
+    expect(store.messages.length).toBe(1)
+  })
+
   it('open：无匹配关键词返回 null', () => {
     const store = useMessageStore()
     store.loadForUser(1)

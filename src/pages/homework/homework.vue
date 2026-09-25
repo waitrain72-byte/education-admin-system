@@ -5,38 +5,25 @@
     :style="themeStyle"
   >
     <!-- 搜索区 -->
-    <view class="xm-card xm-row">
-      <input
-        class="xm-input"
-        style="flex: 1"
-        v-model="content"
-        :placeholder="$t('pages.homework.contentPlaceholder')"
-      />
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="search"
-      >
-        {{ $t('common.search') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="onReset"
-      >
-        {{ $t('common.reset') }}
-      </button>
-    </view>
+    <xm-search-card
+      v-model="query.content"
+      :placeholder="$t('pages.homework.contentPlaceholder')"
+      @search="search"
+      @reset="resetQuery"
+    />
 
-    <!-- 操作区：学生可提交作业 -->
+    <!-- 新增：右下角悬浮按钮（与各列表页一致，避让 Home 条，样式见 theme.scss .xm-fab） -->
     <view
-      class="xm-card"
       v-if="userStore.role === 'STUDENT'"
+      class="xm-fab"
+      :aria-label="$t('pages.homework.submitHomework')"
+      aria-role="button"
+      @click="onAdd"
     >
-      <button
-        class="xm-btn xm-btn-primary xm-btn-block"
-        @click="onAdd"
-      >
-        {{ $t('pages.homework.submitHomework') }}
-      </button>
+      <xm-icon
+        name="plus"
+        :size="48"
+      />
     </view>
 
     <!-- 列表 -->
@@ -46,70 +33,71 @@
       @action="load(true)"
     />
 
-    <view
-      v-for="row in list"
-      :key="row.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <!-- 主标题：作业内容；右侧批改状态语义化（已批改绿/待批改橙） -->
-        <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
+      <view
+        v-for="row in list"
+        :key="row.id"
+        class="xm-card"
+      >
+        <view class="xm-between">
+          <!-- 主标题：作业内容；右侧批改状态语义化（已批改绿/待批改橙） -->
+          <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
+          <view
+            class="xm-tag status-tag"
+            :class="row.score ? 'xm-tag-success' : 'xm-tag-warning'"
+            >{{ row.score ? $t('pages.homework.scoreUnit', { n: row.score }) : $t('pages.homework.pending') }}</view
+          >
+        </view>
+        <view class="item-meta">
+          <text>{{ row.courseName }} · </text>
+          <text>{{ userStore.role === 'TEACHER' ? row.studentName : row.teacherName }}</text>
+        </view>
         <view
-          class="xm-tag status-tag"
-          :class="row.score ? 'xm-tag-success' : 'xm-tag-warning'"
-          >{{ row.score ? row.score + ' 分' : '待批改' }}</view
+          v-if="row.file"
+          class="xm-between file-row"
         >
-      </view>
-      <view class="item-meta">
-        <text>{{ row.courseName }} · </text>
-        <text>{{ userStore.role === 'TEACHER' ? row.studentName : row.teacherName }}</text>
-      </view>
-      <view
-        v-if="row.file"
-        class="xm-between"
-        style="margin-top: 12rpx"
-      >
-        <view class="xm-label file-name xm-ellipsis">{{ fileNameOf(row.file) }}</view>
-        <button
-          class="xm-btn xm-btn-plain"
-          style="height: 56rpx; line-height: 56rpx; flex-shrink: 0"
-          @click="down(row.file)"
+          <view class="xm-label file-name xm-ellipsis">{{ fileNameOf(row.file) }}</view>
+          <button
+            class="xm-btn xm-btn-plain file-btn"
+            @click="openAttachment(row.file)"
+          >
+            {{ $t('pages.homework.download') }}
+          </button>
+        </view>
+        <view
+          v-if="row.score && row.descr"
+          class="item-descr"
+          >{{ row.descr }}</view
         >
-          {{ $t('pages.homework.download') }}
-        </button>
-      </view>
-      <view
-        v-if="row.score && row.descr"
-        class="item-descr"
-        >{{ row.descr }}</view
-      >
 
-      <!-- 操作：学生（未打分可编辑/可删除）、教师（打分），与 Web 端一致 -->
-      <view
-        class="xm-actions"
-        v-if="userStore.role !== 'ADMIN'"
-      >
-        <button
-          v-if="userStore.role === 'STUDENT' && !row.score"
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(row)"
+        <!-- 操作：学生（未打分可编辑/可删除）、教师（打分），与 Web 端一致 -->
+        <view
+          class="xm-actions"
+          v-if="userStore.role !== 'ADMIN'"
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          v-if="userStore.role === 'STUDENT'"
-          class="xm-btn xm-btn-danger"
-          @click="del(row.id)"
-        >
-          {{ $t('common.delete') }}
-        </button>
-        <button
-          v-if="userStore.role === 'TEACHER'"
-          class="xm-btn xm-btn-primary"
-          @click="handleCheck(row)"
-        >
-          {{ $t('pages.homework.grade') }}
-        </button>
+          <button
+            v-if="userStore.role === 'STUDENT' && !row.score"
+            class="xm-btn xm-btn-plain"
+            @click="onEdit(row)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            v-if="userStore.role === 'STUDENT'"
+            class="xm-btn xm-btn-danger"
+            @click="del(row.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+          <button
+            v-if="userStore.role === 'TEACHER'"
+            class="xm-btn xm-btn-primary"
+            @click="handleCheck(row)"
+          >
+            {{ $t('pages.homework.grade') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -120,90 +108,25 @@
       @load-more="loadNext"
     />
 
-    <!-- 作业提交/编辑表单（底部弹层，学生） -->
-    <view
-      v-if="formVisible"
-      class="xm-mask"
-      @click="closeForm"
-    ></view>
-
-    <view
-      v-if="formVisible"
-      class="xm-popup"
-    >
-      <view class="xm-popup-title">{{ $t('pages.homework.dialogTitle') }}</view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.homework.contentLabel') }}</view>
-        <textarea
-          class="xm-textarea"
-          v-model="form.content"
-          :placeholder="$t('pages.homework.contentPlaceholder')"
-        />
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.homework.selectCourse') }}</view>
-        <picker
-          :range="courseData"
-          range-key="name"
-          :value="formCourseIndex"
-          @change="onFormCourseChange"
-        >
-          <view
-            class="xm-input picker-display"
-            :class="{ 'picker-placeholder': !form.courseId }"
-          >
-            {{ form.courseId ? courseNameOf(form.courseId) : $t('pages.homework.coursePlaceholder') }}
-          </view>
-        </picker>
-      </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.homework.fileLabel') }}</view>
-        <button
-          class="xm-btn xm-btn-primary"
-          @click="chooseFile"
-        >
-          {{ $t('pages.homework.uploadFile') }}
-        </button>
-        <view
-          class="xm-label file-name"
-          v-if="form.file"
-          style="margin-top: 8rpx"
-          >{{ fileNameOf(form.file) }}</view
-        >
-      </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="closeForm"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="save"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    <!-- 作业提交 / 编辑表单（学生，含附件上传） -->
+    <homework-form
+      v-model:form="form"
+      v-model:uploading="uploading"
+      :visible="formVisible"
+      :saving="saving"
+      :courses="courseData"
+      @close="closeForm"
+      @save="save"
+    />
 
     <!-- 打分弹层（教师） -->
-    <view
-      v-if="checkVisible"
-      class="xm-mask"
-      @click="checkVisible = false"
-    ></view>
-
-    <view
-      v-if="checkVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="checkVisible"
+      :saving="checking"
+      :title="$t('pages.homework.checkDialogTitle')"
+      @close="checkVisible = false"
+      @save="check"
     >
-      <view class="xm-popup-title">{{ $t('pages.homework.checkDialogTitle') }}</view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.homework.scoreLabel') }}</view>
         <input
@@ -219,90 +142,69 @@
           v-model="form.descr"
         />
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="checkVisible = false"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="check"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
     <xm-loader />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
+import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { getData, put, del as delRequest, resolveFileUrl } from '@/utils/request'
-import { baseUrl } from '@/utils/config'
-import { t, apiMessage } from '@/i18n'
+import { useListPage } from '@/composables/useListPage'
+import { homeworkApi, choiceApi } from '@/api'
+import { orNull, SILENT } from '@/utils/request'
+import { t } from '@/i18n'
+import { fileNameOf, openAttachment } from '@/utils/attachment'
+import HomeworkForm from './components/homework-form.vue'
 
 const userStore = useUserStore()
-const content = ref('')
 const checkVisible = ref(false)
+// 审核/打分提交中：确定按钮转圈禁用，防止连点重复提交
+const checking = ref(false)
+// 附件上传中（由表单组件回传）：未传完时拦截保存
+const uploading = ref(false)
 const courseData = ref([])
 
-const { list, loading, finished, form, formVisible, load, loadNext, search, save, closeForm } = useCrud({
-  url: '/homework',
-  getParams: () => ({ content: content.value }),
+// 删除确认文案与 Web 端一致；学生已选课程随列表一起加载（作业表单的课程下拉）
+const {
+  list,
+  loading,
+  finished,
+  form,
+  formVisible,
+  saving,
+  query,
+  load,
+  loadNext,
+  search,
+  resetQuery,
+  handleAdd,
+  handleEdit,
+  save,
+  closeForm,
+  del,
+} = useListPage({
+  api: homeworkApi,
+  title: 'menu.homework',
+  query: { content: '' },
+  deleteConfirm: 'pages.homework.deleteConfirm',
+  loadExtras: () => loadCourse(),
   validate: (f) => {
+    if (uploading.value) return t('pages.homework.uploadingWait')
     if (!f.courseId) return t('pages.homework.ruleCourseRequired')
     if (!f.content) return t('pages.homework.ruleContentRequired')
     return ''
   },
 })
 
-const formCourseIndex = computed(() => courseData.value.findIndex((c) => c.courseId === form.value.courseId))
-
-const courseNameOf = (id) => {
-  const c = courseData.value.find((item) => item.courseId === id)
-  return c ? c.name : ''
-}
-
-const fileNameOf = (url) => {
-  if (!url) return ''
-  const path = String(url).split('?')[0]
-  return decodeURIComponent(path.slice(path.lastIndexOf('/') + 1)) || url
-}
-
 // 学生已选课程列表（与 Web 端 loadCourse 一致）
 const loadCourse = async () => {
-  courseData.value = (await getData('/choice/selectAll', { studentId: userStore.user.id })) || []
+  courseData.value = (await orNull(choiceApi.selectAll({ studentId: userStore.user.id }, SILENT))) || []
 }
 
-const onFormCourseChange = (e) => {
-  const c = courseData.value[e.detail.value]
-  if (c) form.value.courseId = c.courseId
-}
-
-const onAdd = () => {
-  form.value = { studentId: userStore.user.id }
-  formVisible.value = true
-}
-
+const onAdd = () => handleAdd({ studentId: userStore.user.id })
 // 学生编辑：重置回待审核并清空打分说明（与 Web 端 handleEdit 一致）
-const onEdit = (row) => {
-  form.value = JSON.parse(JSON.stringify(row))
-  form.value.status = '待审核'
-  form.value.descr = ''
-  formVisible.value = true
-}
+const onEdit = (row) => handleEdit(row, { status: '待审核', descr: '' })
 
 const handleCheck = (row) => {
   form.value = JSON.parse(JSON.stringify(row))
@@ -311,7 +213,10 @@ const handleCheck = (row) => {
 
 // 教师打分：与 Web 端 check 一致，直接走 /homework/update
 const check = () => {
-  put('/homework/update', form.value)
+  if (checking.value) return
+  checking.value = true
+  homeworkApi
+    .update(form.value)
     .then(() => {
       uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
       load(true)
@@ -320,99 +225,10 @@ const check = () => {
     .catch(() => {
       // 提示已由请求层统一弹出
     })
+    .finally(() => {
+      checking.value = false
+    })
 }
-
-// 附件上传：选图后上传到 /files/upload，成功后保存返回的 URL（与 Web 端 el-upload 一致）
-const chooseFile = () => {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      const filePath = res.tempFilePaths[0]
-      uni.uploadFile({
-        url: `${baseUrl}/files/upload`,
-        filePath,
-        name: 'file',
-        header: { token: userStore.token },
-        success: (up) => {
-          try {
-            const data = typeof up.data === 'string' ? JSON.parse(up.data) : up.data
-            if (data.code === '200') {
-              form.value.file = data.data
-              uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-            } else {
-              uni.showToast({ title: apiMessage(data), icon: 'none' })
-            }
-          } catch {
-            uni.showToast({ title: t('request.failed'), icon: 'none' })
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: t('request.failed'), icon: 'none' })
-        },
-      })
-    },
-  })
-}
-
-// 附件下载查看：图片直接预览，其余走下载后打开
-const down = (rawUrl) => {
-  // 历史数据存的是老绝对地址：先归一成当前 baseUrl 的完整地址（真机才能访问）
-  const url = resolveFileUrl(rawUrl)
-  if (!url) return
-  if (/\.(png|jpe?g|gif|webp|bmp)(\?.*)?$/i.test(url)) {
-    uni.previewImage({ urls: [url] })
-    return
-  }
-  uni.downloadFile({
-    url,
-    success: (res) => {
-      if (res.statusCode === 200) {
-        uni.openDocument({
-          filePath: res.tempFilePath,
-          showMenu: true,
-          fail: () => uni.setClipboardData({ data: url }),
-        })
-      } else {
-        uni.setClipboardData({ data: url })
-      }
-    },
-    fail: () => {
-      uni.setClipboardData({ data: url })
-    },
-  })
-}
-
-// 删除确认文案与 Web 端一致
-const del = (id) => {
-  uni.showModal({
-    title: t('common.confirmDeleteTitle'),
-    content: t('pages.homework.deleteConfirm'),
-    success: async (res) => {
-      if (!res.confirm) return
-      try {
-        await delRequest(`/homework/delete/${id}`)
-        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-        load(true)
-      } catch {
-        // 请求层已统一提示
-      }
-    },
-  })
-}
-
-const onReset = () => {
-  content.value = ''
-  search()
-}
-
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.homework') })
-  if (!ensureLoggedIn()) return
-  load(true)
-  loadCourse()
-})
-
-onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
@@ -446,18 +262,20 @@ onReachBottom(() => loadNext())
   margin-top: 12rpx;
 }
 
-.picker-display {
-  display: flex;
-  align-items: center;
-}
-
-.picker-placeholder {
-  color: var(--xm-text-2);
-}
-
 .file-name {
   flex: 1;
   word-break: break-all;
   margin-right: 12rpx;
+}
+
+/* 列表里的附件行：文件名 + 小号下载按钮 */
+.file-row {
+  margin-top: 12rpx;
+}
+
+.file-btn {
+  height: 56rpx;
+  line-height: 56rpx;
+  flex-shrink: 0;
 }
 </style>

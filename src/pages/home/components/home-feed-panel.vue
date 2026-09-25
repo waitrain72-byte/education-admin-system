@@ -25,7 +25,7 @@
       <view class="xm-card-title">{{ $t('home.notice') }}</view>
       <xm-empty
         v-if="!notices.length"
-        icon="📢"
+        icon="megaphone"
       />
       <view
         v-for="item in noticeList"
@@ -47,7 +47,7 @@
       <view class="xm-card-title">{{ $t('home.examplan') }}</view>
       <xm-empty
         v-if="!examplans.length"
-        icon="📝"
+        icon="clipboard"
       />
       <view
         v-for="item in examplanList"

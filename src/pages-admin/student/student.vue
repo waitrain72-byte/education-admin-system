@@ -6,87 +6,118 @@
   >
     <!-- 搜索区 -->
     <xm-search-card
-      v-model="keyword"
+      v-model="query.username"
       :placeholder="$t('pages.student.searchPlaceholder')"
       @search="search"
-      @reset="onReset"
+      @reset="resetQuery"
     />
 
     <!-- 操作区：新增 / 批量管理 -->
     <xm-action-bar
       :manage-mode="manageMode"
-      @add="onAdd"
+      :total="total"
+      :selected-count="selectedIds.length"
+      @add="handleAdd()"
       @toggle-manage="toggleManage"
       @del-batch="delBatch"
     />
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="search"
+    />
 
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view class="xm-row">
-          <!-- 批量管理模式下显示勾选框 -->
-          <checkbox
-            v-if="manageMode"
-            :checked="selectedIds.includes(item.id)"
-            style="transform: scale(0.8)"
-            @click.stop="toggleSelect(item.id)"
-          />
-          <image
-            v-if="item.avatar"
-            lazy-load
-            :src="resolveFileUrl(item.avatar)"
-            class="xm-avatar"
-            mode="aspectFill"
-          />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.username }}</view
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="xm-card"
+      >
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <!-- 批量管理模式下显示勾选框 -->
+            <checkbox
+              v-if="manageMode"
+              :checked="selectedIds.includes(item.id)"
+              style="transform: scale(0.8)"
+              @click.stop="toggleSelect(item.id)"
+            />
+            <image
+              v-if="item.avatar"
+              lazy-load
+              :src="resolveFileUrl(item.avatar)"
+              class="xm-avatar"
+              mode="aspectFill"
+            />
+            <view
+              v-else
+              class="xm-avatar xm-avatar-text"
+              >{{ (item.name || item.username || '?').slice(0, 1) }}</view
+            >
+            <view class="xm-card-head">
+              <view class="xm-card-name xm-ellipsis">{{ item.name || item.username }}</view>
+              <view class="xm-card-sub xm-ellipsis">{{ item.username }}</view>
+            </view>
+          </view>
+          <text class="xm-card-no">#{{ item._index }}</text>
+        </view>
+        <view class="xm-tags">
+          <text
+            v-if="item.className"
+            class="xm-tag xm-tag-brand"
+            >{{ item.className }}</text
+          >
+          <text
+            v-if="item.score != null && item.score !== ''"
+            class="xm-tag"
+            >{{ $t('pages.course.credit', { n: item.score }) }}</text
           >
         </view>
-        <view class="xm-label">{{ $t('pages.student.id') }}: {{ item._index }}</view>
-      </view>
-      <view class="xm-label">{{ $t('pages.student.name') }}: {{ item.name }}</view>
-      <view class="xm-label">{{ $t('pages.student.role') }}: {{ item.role }}</view>
-      <view class="xm-label">{{ $t('pages.student.college') }}: {{ item.collegeName }}</view>
-      <view class="xm-label">{{ $t('pages.student.speciality') }}: {{ item.specialityName }}</view>
-      <view class="xm-label">{{ $t('pages.student.classes') }}: {{ item.className }}</view>
-      <view class="xm-label">{{ $t('pages.student.score') }}: {{ item.score }}</view>
-      <view
-        class="xm-actions"
-        v-if="!manageMode"
-      >
-        <button
-          v-if="isAdminOrTeacher"
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(item)"
+        <view class="xm-meta">
+          <view class="xm-meta-item">
+            <xm-icon
+              name="landmark"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.collegeName || '-' }}</text>
+          </view>
+          <view class="xm-meta-item">
+            <xm-icon
+              name="book"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.specialityName || '-' }}</text>
+          </view>
+        </view>
+        <view
+          class="xm-actions"
+          v-if="!manageMode"
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          v-if="isAdmin"
-          class="xm-btn xm-btn-plain"
-          @click="resetPassword(item)"
-        >
-          {{ $t('common.resetPassword') }}
-        </button>
-        <button
-          v-if="isAdminOrTeacher"
-          class="xm-btn xm-btn-danger"
-          @click="del(item.id)"
-        >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            v-if="isAdminOrTeacher"
+            class="xm-btn xm-btn-plain"
+            @click="handleEdit(item)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            v-if="isAdmin"
+            class="xm-btn xm-btn-plain"
+            @click="resetPassword(item)"
+          >
+            {{ $t('common.resetPassword') }}
+          </button>
+          <button
+            v-if="isAdminOrTeacher"
+            class="xm-btn xm-btn-danger"
+            @click="del(item.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -101,7 +132,7 @@
     <xm-form-popup
       :visible="formVisible"
       :saving="saving"
-      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.student.dialogTitle')"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.student.entity') })"
       @close="closeForm"
       @save="save"
     >
@@ -142,47 +173,33 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.student.college') }}</view>
-        <picker
-          :range="collegeLabels"
-          @change="onCollegeChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.collegeId == null }"
-          >
-            {{ form.collegeId != null ? collegeLabels[collegeIndex] : $t('pages.student.collegePlaceholder') }}
-          </view>
-        </picker>
+        <xm-picker
+          v-model="form.collegeId"
+          :options="collegeData"
+          label-key="name"
+          value-key="id"
+          :placeholder="$t('pages.student.collegePlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.student.speciality') }}</view>
-        <picker
-          :range="specialityLabels"
-          @change="onSpecialityChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.specialityId == null }"
-          >
-            {{
-              form.specialityId != null ? specialityLabels[specialityIndex] : $t('pages.student.specialityPlaceholder')
-            }}
-          </view>
-        </picker>
+        <xm-picker
+          v-model="form.specialityId"
+          :options="specialityData"
+          label-key="name"
+          value-key="id"
+          :placeholder="$t('pages.student.specialityPlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.student.classes') }}</view>
-        <picker
-          :range="classesLabels"
-          @change="onClassesChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': form.classId == null }"
-          >
-            {{ form.classId != null ? classesLabels[classesIndex] : $t('pages.student.classesPlaceholder') }}
-          </view>
-        </picker>
+        <xm-picker
+          v-model="form.classId"
+          :options="classesData"
+          label-key="name"
+          value-key="id"
+          :placeholder="$t('pages.student.classesPlaceholder')"
+        />
       </view>
     </xm-form-popup>
 
@@ -192,17 +209,16 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { useManage } from '@/composables/useManage'
-import { getData, put, resolveFileUrl } from '@/utils/request'
-import { baseUrl } from '@/utils/config'
-import { t, apiMessage } from '@/i18n'
+import { useListPage } from '@/composables/useListPage'
+import { studentApi, collegeApi, specialityApi, classesApi } from '@/api'
+import { useResetPassword } from '@/composables/useResetPassword'
+import { useAvatarUpload, syncCurrentUser } from '@/composables/useUserForm'
+import { orNull, resolveFileUrl, SILENT } from '@/utils/request'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
-const keyword = ref('')
+// 学院 / 专业 / 班级下拉数据
 const collegeData = ref([])
 const specialityData = ref([])
 const classesData = ref([])
@@ -211,165 +227,48 @@ const isAdmin = computed(() => userStore.role === 'ADMIN')
 // Web 端 Student.vue 的编辑/删除按钮为 v-permission="['ADMIN', 'TEACHER']"
 const isAdminOrTeacher = computed(() => userStore.role === 'ADMIN' || userStore.role === 'TEACHER')
 
+// 仅管理员可见（与 Web 端路由 meta.roles 一致）；下拉选项随列表一起加载
 const {
   list,
   loading,
-  saving,
   finished,
+  total,
   form,
   formVisible,
+  saving,
   selectedIds,
-  load,
+  query,
+  manageMode,
   loadNext,
   search,
+  resetQuery,
+  toggleManage,
+  toggleSelect,
   handleAdd,
   handleEdit,
   closeForm,
   save,
   del,
   delBatch,
-} = useCrud({
-  url: '/student',
-  getParams: () => ({ username: keyword.value }),
-  validate: (f) => {
-    if (!f.username) return t('pages.student.ruleUsernameRequired')
-    return ''
+} = useListPage({
+  api: studentApi,
+  title: 'menu.student',
+  roles: ['ADMIN'],
+  query: { username: '' },
+  loadExtras: () => {
+    loadOptions(collegeApi, collegeData)
+    loadOptions(specialityApi, specialityData)
+    loadOptions(classesApi, classesData)
   },
-  afterSave: (formData) => {
-    // 如果修改的是当前登录学生自己的信息，同步全局状态
-    if (formData.id === userStore.user.id) {
-      userStore.patchUser({
-        avatar: formData.avatar,
-        name: formData.name,
-      })
-    }
-  },
+  validate: (f) => (f.username ? '' : t('pages.student.ruleUsernameRequired')),
+  // 改的是当前登录学生自己时，同步头像 / 姓名
+  afterSave: syncCurrentUser('STUDENT', ['avatar', 'name']),
 })
 
-const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
-
-const onAdd = () => handleAdd({})
-const onEdit = (row) => handleEdit(row)
-const onReset = () => {
-  keyword.value = ''
-  search()
+const loadOptions = async (api, target) => {
+  target.value = (await orNull(api.selectAll(undefined, SILENT))) || []
 }
 
-// 学院/专业/班级下拉数据
-const loadCollege = async () => {
-  collegeData.value = (await getData('/college/selectAll')) || []
-}
-
-const loadSpeciality = async () => {
-  specialityData.value = (await getData('/speciality/selectAll')) || []
-}
-
-const loadClasses = async () => {
-  classesData.value = (await getData('/classes/selectAll')) || []
-}
-
-const collegeLabels = computed(() => collegeData.value.map((i) => i.name))
-const collegeIndex = computed(() => collegeData.value.findIndex((i) => i.id === form.value.collegeId))
-const onCollegeChange = (e) => {
-  const item = collegeData.value[Number(e.detail.value)]
-  if (item) form.value.collegeId = item.id
-}
-
-const specialityLabels = computed(() => specialityData.value.map((i) => i.name))
-const specialityIndex = computed(() => specialityData.value.findIndex((i) => i.id === form.value.specialityId))
-const onSpecialityChange = (e) => {
-  const item = specialityData.value[Number(e.detail.value)]
-  if (item) form.value.specialityId = item.id
-}
-
-const classesLabels = computed(() => classesData.value.map((i) => i.name))
-const classesIndex = computed(() => classesData.value.findIndex((i) => i.id === form.value.classId))
-const onClassesChange = (e) => {
-  const item = classesData.value[Number(e.detail.value)]
-  if (item) form.value.classId = item.id
-}
-
-// 重置密码为 123456
-const resetPassword = (row) => {
-  uni.showModal({
-    title: t('common.resetPassword'),
-    content: t('pages.student.resetConfirm', { username: row.username }),
-    success: async (res) => {
-      if (!res.confirm) return
-      try {
-        await put('/student/resetPassword/' + row.id)
-        uni.showToast({ title: t('pages.student.resetSuccess'), icon: 'none' })
-      } catch {
-        // 请求层已统一提示
-      }
-    },
-  })
-}
-
-// 上传头像（与 Web 端 el-upload + /files/upload 一致）
-const uploadAvatar = () => {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      uni.uploadFile({
-        url: `${baseUrl}/files/upload`,
-        filePath: res.tempFilePaths[0],
-        name: 'file',
-        header: { token: userStore.token },
-        success: (up) => {
-          try {
-            const data = typeof up.data === 'string' ? JSON.parse(up.data) : up.data
-            if (data.code === '200') {
-              form.value.avatar = data.data
-            } else {
-              uni.showToast({ title: apiMessage(data), icon: 'none' })
-            }
-          } catch {
-            uni.showToast({ title: t('request.failed'), icon: 'none' })
-          }
-        },
-        fail: () => {
-          uni.showToast({ title: t('request.failed'), icon: 'none' })
-        },
-      })
-    },
-  })
-}
-
-// 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.student') })
-  if (!ensureLoggedIn()) return
-  if (!['ADMIN'].includes(userStore.role)) {
-    uni.showToast({ title: t('forbidden.message'), icon: 'none' })
-    setTimeout(() => uni.navigateBack(), 800)
-    return
-  }
-  load(true)
-  loadCollege()
-  loadSpeciality()
-  loadClasses()
-})
-
-onReachBottom(() => loadNext())
+const resetPassword = useResetPassword(studentApi, 'student')
+const uploadAvatar = useAvatarUpload(form)
 </script>
-
-<style lang="scss" scoped>
-.xm-avatar {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: var(--xm-bg-input);
-  flex-shrink: 0;
-}
-
-.picker-text {
-  display: flex;
-  align-items: center;
-  line-height: 76rpx;
-}
-
-.picker-placeholder {
-  color: var(--xm-text-2);
-}
-</style>

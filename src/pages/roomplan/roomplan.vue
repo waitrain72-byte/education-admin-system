@@ -12,8 +12,10 @@
       <input
         class="xm-input"
         style="flex: 1 1 0; min-width: 0"
-        v-model="name"
+        v-model="query.name"
         :placeholder="$t('pages.roomplan.searchPlaceholder')"
+        confirm-type="search"
+        @confirm="search"
       />
       <button
         class="xm-btn xm-btn-primary"
@@ -25,49 +27,29 @@
       <button
         class="xm-btn xm-btn-plain"
         style="flex-shrink: 0"
-        @click="onReset"
+        @click="resetQuery"
       >
         {{ $t('common.reset') }}
       </button>
-      <picker
-        style="flex: 1 1 100%"
-        :range="statusLabels"
-        @change="onSearchStatusChange"
-      >
-        <!-- 普通 view 不会像原生 input 那样自动垂直居中文字，需显式 flex 居中 -->
-        <view
-          class="xm-input"
-          style="display: flex; align-items: center"
-          >{{ status ? statusLabel(status) : $t('pages.roomplan.statusPlaceholder') }}</view
-        >
-      </picker>
+      <view class="search-status">
+        <xm-picker
+          v-model="query.status"
+          :options="enumOptions('roomStatus')"
+          :placeholder="$t('pages.roomplan.statusPlaceholder')"
+        />
+      </view>
     </view>
 
     <!-- 操作区：仅管理员可新增/批量管理（与 Web 端 user.role === 'ADMIN' 一致） -->
-    <view
-      class="xm-card xm-row"
+    <xm-action-bar
       v-if="canManage"
-    >
-      <button
-        class="xm-btn xm-btn-primary"
-        @click="onAdd"
-      >
-        {{ $t('common.add') }}
-      </button>
-      <button
-        class="xm-btn xm-btn-plain"
-        @click="toggleManage"
-      >
-        {{ manageMode ? $t('common.done') : $t('common.manage') }}
-      </button>
-      <button
-        v-if="manageMode"
-        class="xm-btn xm-btn-danger"
-        @click="delBatch"
-      >
-        {{ $t('common.batchDelete') }}
-      </button>
-    </view>
+      :manage-mode="manageMode"
+      :total="total"
+      :selected-count="selectedIds.length"
+      @add="handleAdd()"
+      @toggle-manage="toggleManage"
+      @del-batch="delBatch"
+    />
 
     <!-- 列表 -->
     <xm-empty
@@ -76,63 +58,72 @@
       @action="load(true)"
     />
 
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view class="xm-row">
-          <!-- 批量管理模式下显示勾选框 -->
-          <checkbox
-            v-if="manageMode"
-            :checked="selectedIds.includes(item.id)"
-            style="transform: scale(0.8)"
-            @click.stop="toggleSelect(item.id)"
-          />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.name }}</view
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="xm-card"
+      >
+        <!-- 标题行：名称 + 空闲/占用；标签行：编号 / 类型 / 容量；说明最多两行 -->
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <!-- 批量管理模式下显示勾选框 -->
+            <checkbox
+              v-if="manageMode"
+              :checked="selectedIds.includes(item.id)"
+              style="transform: scale(0.8)"
+              @click.stop="toggleSelect(item.id)"
+            />
+            <text class="xm-card-name xm-ellipsis">{{ item.name }}</text>
+          </view>
+          <text
+            v-if="item.status"
+            class="xm-tag"
+            :class="enumTag('roomStatus', item.status)"
+            >{{ enumLabel('roomStatus', item.status) }}</text
           >
         </view>
-        <view class="xm-label">{{ $t('pages.roomplan.id') }}: {{ item._index }}</view>
-      </view>
-      <view
-        class="xm-row"
-        style="margin-top: 8rpx"
-      >
-        <view class="xm-label">{{ $t('pages.roomplan.code') }}: {{ item.code }}</view>
-        <view class="xm-label">{{ $t('pages.roomplan.type') }}: {{ typeLabel(item.type) }}</view>
-      </view>
-      <view
-        class="xm-row"
-        style="margin-top: 8rpx"
-      >
-        <view class="xm-label">{{ $t('pages.roomplan.status') }}: {{ statusLabel(item.status) }}</view>
-        <view class="xm-label">{{ $t('pages.roomplan.num') }}: {{ item.num }}</view>
-      </view>
-      <view
-        class="xm-label"
-        style="margin-top: 8rpx"
-        >{{ $t('pages.roomplan.description') }}: {{ item.content }}</view
-      >
-      <view
-        class="xm-actions"
-        v-if="!manageMode && canManage"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(item)"
+        <view class="xm-tags">
+          <text
+            v-if="item.code"
+            class="xm-tag xm-tag-brand"
+            >{{ item.code }}</text
+          >
+          <text
+            v-if="item.type"
+            class="xm-tag"
+            >{{ enumLabel('roomType', item.type) }}</text
+          >
+          <text
+            v-if="item.num"
+            class="xm-tag"
+            >{{ $t('pages.course.capacity', { n: item.num }) }}</text
+          >
+          <text class="xm-tags-end">#{{ item._index }}</text>
+        </view>
+        <view
+          v-if="item.content"
+          class="xm-card-desc xm-clamp-2"
+          >{{ item.content }}</view
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-danger"
-          @click="del(item.id)"
+        <view
+          class="xm-actions"
+          v-if="!manageMode && canManage"
         >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            @click="handleEdit(item)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            @click="del(item.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -144,19 +135,13 @@
     />
 
     <!-- 新增/编辑表单（底部弹层） -->
-    <view
-      v-if="formVisible"
-      class="xm-mask"
-      @click="closeForm"
-    ></view>
-
-    <view
-      v-if="formVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="formVisible"
+      :saving="saving"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.roomplan.entity') })"
+      @close="closeForm"
+      @save="save"
     >
-      <view class="xm-popup-title"
-        >{{ form.id ? $t('common.edit') : $t('common.add') }} - {{ $t('pages.roomplan.dialogTitle') }}</view
-      >
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.code') }}</view>
         <input
@@ -167,13 +152,11 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.type') }}</view>
-        <picker
-          :range="typeLabels"
-          :value="formTypeIndex"
-          @change="onFormTypeChange"
-        >
-          <view class="xm-input">{{ form.type ? typeLabel(form.type) : $t('pages.roomplan.typePlaceholder') }}</view>
-        </picker>
+        <xm-picker
+          v-model="form.type"
+          :options="enumOptions('roomType')"
+          :placeholder="$t('pages.roomplan.typePlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.name') }}</view>
@@ -185,21 +168,18 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.status') }}</view>
-        <picker
-          :range="statusLabels"
-          :value="formStatusIndex"
-          @change="onFormStatusChange"
-        >
-          <view class="xm-input">{{
-            form.status ? statusLabel(form.status) : $t('pages.roomplan.statusPlaceholder')
-          }}</view>
-        </picker>
+        <xm-picker
+          v-model="form.status"
+          :options="enumOptions('roomStatus')"
+          :placeholder="$t('pages.roomplan.statusPlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.roomplan.num') }}</view>
         <input
           class="xm-input"
           v-model="form.num"
+          type="number"
           :placeholder="$t('pages.roomplan.ruleNumRequired')"
         />
       </view>
@@ -211,71 +191,50 @@
           :placeholder="$t('pages.roomplan.ruleContentRequired')"
         />
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="closeForm"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="save"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
     <xm-loader />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
+import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
+import { useListPage } from '@/composables/useListPage'
+import { roomplanApi } from '@/api'
 import { t } from '@/i18n'
+import { enumLabel, enumTag, enumOptions } from '@/utils/enums'
 
 const userStore = useUserStore()
-const name = ref('')
-const status = ref('')
-const manageMode = ref(false)
+// 所有角色可看，仅管理员可管理（与 Web 端逻辑一致）
 const canManage = computed(() => userStore.role === 'ADMIN')
-
-// 数据库存的是中文枚举值（空闲/占用），只翻译显示 label
-const statusValues = ['空闲', '占用']
-const statusLabels = computed(() => [t('pages.roomplan.free'), t('pages.roomplan.occupied')])
-const statusLabel = (value) => {
-  const idx = statusValues.indexOf(value)
-  return idx >= 0 ? statusLabels.value[idx] : value
-}
 
 const {
   list,
   loading,
   finished,
+  total,
   form,
   formVisible,
+  saving,
   selectedIds,
+  query,
+  manageMode,
   load,
   loadNext,
   search,
+  resetQuery,
+  toggleManage,
+  toggleSelect,
   handleAdd,
   handleEdit,
   closeForm,
   save,
   del,
   delBatch,
-} = useCrud({
-  url: '/roomplan',
-  getParams: () => ({ name: name.value, status: status.value }),
+} = useListPage({
+  api: roomplanApi,
+  title: 'menu.roomplan',
+  query: { name: '', status: '' },
   validate: (f) => {
     if (!f.code) return t('pages.roomplan.ruleCodeRequired')
     if (!f.name) return t('pages.roomplan.ruleNameRequired')
@@ -286,61 +245,11 @@ const {
     return ''
   },
 })
-
-const onSearchStatusChange = (e) => {
-  status.value = statusValues[Number(e.detail.value)] || ''
-}
-const formStatusIndex = computed(() =>
-  statusValues.indexOf(form.value.status) >= 0 ? statusValues.indexOf(form.value.status) : 0,
-)
-const onFormStatusChange = (e) => {
-  form.value.status = statusValues[Number(e.detail.value)] || ''
-}
-
-// 教室类型：授课教室/运动场馆可参与排课，固定占用（办公/器材/杂物）不参与
-const typeValues = ['授课教室', '运动场馆', '固定占用']
-const typeLabels = computed(() => [
-  t('pages.roomplan.typeTeaching'),
-  t('pages.roomplan.typeVenue'),
-  t('pages.roomplan.typeFixed'),
-])
-const typeLabel = (value) => {
-  const idx = typeValues.indexOf(value)
-  return idx >= 0 ? typeLabels.value[idx] : value
-}
-const formTypeIndex = computed(() => {
-  const idx = typeValues.indexOf(form.value.type)
-  return idx >= 0 ? idx : 0
-})
-const onFormTypeChange = (e) => {
-  form.value.type = typeValues[Number(e.detail.value)] || ''
-}
-
-const toggleManage = () => {
-  manageMode.value = !manageMode.value
-  if (!manageMode.value) selectedIds.value = []
-}
-
-const toggleSelect = (id) => {
-  const idx = selectedIds.value.indexOf(id)
-  if (idx >= 0) selectedIds.value.splice(idx, 1)
-  else selectedIds.value.push(id)
-}
-
-const onAdd = () => handleAdd({})
-const onEdit = (row) => handleEdit(row)
-const onReset = () => {
-  name.value = ''
-  status.value = ''
-  search()
-}
-
-// 页面入口：所有角色可见，仅管理员可管理（与 Web 端逻辑一致）
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.roomplan') })
-  if (!ensureLoggedIn()) return
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>
+
+<style lang="scss" scoped>
+/* 状态筛选在搜索卡第二行独占整行（第一行是教室名 + 查询 / 重置） */
+.search-status {
+  flex: 1 1 100%;
+}
+</style>

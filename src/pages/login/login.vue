@@ -6,7 +6,12 @@
   >
     <!-- 顶部品牌区 -->
     <view class="brand">
-      <view class="brand-logo">🎓</view>
+      <view class="brand-logo">
+        <xm-icon
+          name="graduation"
+          :size="68"
+        />
+      </view>
       <view class="brand-title">{{ $t('login.systemName') }}</view>
       <view class="brand-sub">{{ $t('login.systemSub') }}</view>
       <view class="brand-slogan">{{ $t('login.slogan') }}</view>
@@ -24,7 +29,10 @@
         class="xm-btn xm-btn-plain pref-btn"
         @click="cycleTheme"
       >
-        {{ themeMode === 'light' ? '☀' : themeMode === 'dark' ? '☾' : '◐' }}
+        <xm-icon
+          :name="themeModeIcon"
+          :size="32"
+        />
       </button>
     </view>
 
@@ -33,11 +41,26 @@
       <view class="login-title">{{ $t('login.title') }}</view>
       <view class="login-subtitle">{{ $t('login.subtitle') }}</view>
 
+      <!-- 角色：三选一分段控件，一次点击完成（替代需要滚动确认的原生 picker） -->
+      <view class="xm-form-item role-seg">
+        <view
+          v-for="opt in roleOptions"
+          :key="opt.value"
+          class="role-seg-item"
+          :class="{ on: form.role === opt.value }"
+          @click="form.role = opt.value"
+          >{{ opt.label }}</view
+        >
+      </view>
+
+      <!-- 键盘「下一项」依次跳到密码、验证码，验证码处按「完成」直接登录 -->
       <view class="xm-form-item">
         <input
           class="xm-input"
           v-model="form.username"
           :placeholder="$t('login.usernamePlaceholder')"
+          confirm-type="next"
+          @confirm="focusTo('password')"
         />
       </view>
       <view class="xm-form-item">
@@ -46,6 +69,10 @@
           v-model="form.password"
           password
           :placeholder="$t('login.passwordPlaceholder')"
+          :focus="focused === 'password'"
+          confirm-type="next"
+          @confirm="focusTo('captcha')"
+          @blur="onBlur('password')"
         />
       </view>
       <view class="xm-form-item captcha-row">
@@ -53,6 +80,10 @@
           class="xm-input captcha-input"
           v-model="form.captcha"
           :placeholder="$t('login.captchaPlaceholder')"
+          :focus="focused === 'captcha'"
+          confirm-type="done"
+          @confirm="login"
+          @blur="onBlur('captcha')"
         />
         <image
           v-if="captchaUrl"
@@ -62,20 +93,6 @@
           @click="refreshCaptcha"
         />
       </view>
-      <view class="xm-form-item">
-        <picker
-          :range="roleLabels"
-          @change="onRoleChange"
-        >
-          <view
-            class="xm-input picker-text"
-            :class="{ 'picker-placeholder': !form.role }"
-          >
-            {{ form.role ? roleLabels[roleIndex] : $t('login.rolePlaceholder') }}
-          </view>
-        </picker>
-      </view>
-
       <button
         class="xm-btn xm-btn-primary xm-btn-block login-btn"
         :loading="loginBusy"
@@ -101,27 +118,41 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { request, saveCookie, clearCookie } from '@/utils/request'
-import { baseUrl } from '@/utils/config'
+import { accountApi } from '@/api'
 import { connectWs } from '@/utils/websocket'
 import { t } from '@/i18n'
-import { isZhLocale, toggleLocale } from '@/composables/useLocale'
-import { cycleTheme, themeMode, themeClass, pullThemeFromServer } from '@/composables/useTheme'
+import { enumOptions } from '@/utils/enums'
+import { isZhLocale, toggleLocale, pullLocaleFromServer } from '@/composables/useLocale'
+import { cycleTheme, themeModeIcon, pullThemeFromServer } from '@/composables/useTheme'
 import { pullThemeColorFromServer } from '@/composables/useThemeColor'
-import { pullLocaleFromServer } from '@/composables/useLocale'
 import { usePermission } from '@/composables/usePermission'
+import { useFocusChain } from '@/composables/useFocusChain'
 
 const userStore = useUserStore()
 const { pullPermissions } = usePermission()
+const { focused, focusTo, onBlur } = useFocusChain()
 const captchaUrl = ref('')
 const form = ref({ username: '', password: '', captcha: '', role: '' })
 
-const roleLabels = computed(() => [t('login.roleAdmin'), t('login.roleTeacher'), t('login.roleStudent')])
-const roleValues = ['ADMIN', 'TEACHER', 'STUDENT']
-const roleIndex = computed(() => roleValues.indexOf(form.value.role))
+const roleOptions = computed(() => enumOptions('role'))
 
-const onRoleChange = (e) => {
-  form.value.role = roleValues[Number(e.detail.value)] || ''
+// 记住上次登录的账号与角色（不存密码）：再次登录只需输入密码和验证码；退出登录不清除
+const LAST_LOGIN_KEY = 'xm-last-login'
+try {
+  const last = uni.getStorageSync(LAST_LOGIN_KEY)
+  if (last && typeof last === 'object') {
+    form.value.username = last.username || ''
+    form.value.role = roleOptions.value.some((o) => o.value === last.role) ? last.role : ''
+  }
+} catch {}
+
+// 缺哪项提示哪项（替代笼统的「参数缺失」）
+const missingFieldTip = () => {
+  if (!form.value.role) return t('login.rolePlaceholder')
+  if (!form.value.username) return t('login.usernamePlaceholder')
+  if (!form.value.password) return t('login.passwordPlaceholder')
+  if (!form.value.captcha) return t('login.captchaPlaceholder')
+  return ''
 }
 
 const refreshCaptcha = async () => {
@@ -129,18 +160,7 @@ const refreshCaptcha = async () => {
   // 否则用户直接再点登录会平白多失败一次
   form.value.captcha = ''
   try {
-    clearCookie()
-    const res = await new Promise((resolve, reject) => {
-      uni.request({
-        url: `${baseUrl}/captcha?t=${Date.now()}`,
-        method: 'GET',
-        responseType: 'arraybuffer',
-        success: resolve,
-        fail: reject,
-      })
-    })
-    saveCookie(res)
-    captchaUrl.value = 'data:image/gif;base64,' + uni.arrayBufferToBase64(res.data)
+    captchaUrl.value = await accountApi.captcha()
   } catch {
     uni.showToast({ title: t('login.captchaFailed'), icon: 'none' })
   }
@@ -151,13 +171,18 @@ const loginBusy = ref(false)
 
 const login = () => {
   if (loginBusy.value) return
-  if (!form.value.username || !form.value.password || !form.value.captcha || !form.value.role) {
-    uni.showToast({ title: t('errors.4001'), icon: 'none' })
+  const tip = missingFieldTip()
+  if (tip) {
+    uni.showToast({ title: tip, icon: 'none' })
     return
   }
   loginBusy.value = true
-  request({ url: '/login', method: 'POST', data: form.value })
+  accountApi
+    .login(form.value)
     .then((account) => {
+      try {
+        uni.setStorageSync(LAST_LOGIN_KEY, { username: form.value.username, role: form.value.role })
+      } catch {}
       userStore.updateUser(account)
       // 拉取当前用户 RBAC 权限码（与 Web 端一致，供首页菜单按权限过滤）
       pullPermissions()
@@ -204,10 +229,10 @@ refreshCaptcha()
 .brand-logo {
   width: 128rpx;
   height: 128rpx;
-  line-height: 128rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto 24rpx;
-  font-size: 64rpx;
-  text-align: center;
   border-radius: 36rpx;
   background: rgba(255, 255, 255, 0.16);
   border: 1rpx solid rgba(255, 255, 255, 0.25);
@@ -281,14 +306,32 @@ refreshCaptcha()
   background: #ffffff;
 }
 
-.picker-text {
+/* 角色分段控件：输入框同款底色的槽 + 选中项主色填充 */
+.role-seg {
   display: flex;
-  align-items: center;
-  line-height: 78rpx;
+  gap: 8rpx;
+  padding: 8rpx;
+  border-radius: 16rpx;
+  background: var(--xm-bg-input);
 }
 
-.picker-placeholder {
+.role-seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 12rpx;
+  font-size: 26rpx;
   color: var(--xm-text-2);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.role-seg-item.on {
+  background: var(--xm-brand);
+  color: #ffffff;
+  font-weight: bold;
+  box-shadow: var(--xm-shadow);
 }
 
 /* 登录按钮：胶囊大按钮 + 主色投影，与高星项目表单收尾一致 */
@@ -309,5 +352,13 @@ refreshCaptcha()
 
 .link {
   color: var(--xm-brand);
+}
+
+/* 平板 / PC：品牌区与登录卡片居中，内容宽 440px */
+@media (min-width: 720px) {
+  .login-page {
+    padding-left: calc((100% - 440px) / 2);
+    padding-right: calc((100% - 440px) / 2);
+  }
 }
 </style>

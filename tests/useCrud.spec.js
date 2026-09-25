@@ -1,16 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getMock, postMock, putMock, delMock } = vi.hoisted(() => ({
+const { getMock, postMock, putMock, delMock, hooks } = vi.hoisted(() => ({
   getMock: vi.fn(),
   postMock: vi.fn(),
   putMock: vi.fn(),
   delMock: vi.fn(),
+  // 记录最近一次注册的页面生命周期回调，测试里手动触发
+  hooks: { onHide: null },
 }))
 
 vi.mock('@/utils/request', () => ({ get: getMock, post: postMock, put: putMock, del: delMock }))
-vi.mock('@dcloudio/uni-app', () => ({ onPullDownRefresh: vi.fn() }))
+vi.mock('@dcloudio/uni-app', () => ({
+  onPullDownRefresh: vi.fn(),
+  onHide: (fn) => {
+    hooks.onHide = fn
+  },
+}))
 
-const { useCrud } = await import('@/composables/useCrud')
+const { useCrud, STALE_MS } = await import('@/composables/useCrud')
+const { createCrudApi } = await import('@/api/crud')
 const { useManage } = await import('@/composables/useManage')
 const { clearStorage } = await import('./setup')
 
@@ -27,7 +35,7 @@ beforeEach(() => {
 describe('useCrud 通用 CRUD', () => {
   it('load(true)：重置第一页、注入跨页行号 _index', async () => {
     getMock.mockResolvedValueOnce(page([{ id: 11 }, { id: 12 }], 15))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
 
     await crud.load(true)
 
@@ -42,7 +50,7 @@ describe('useCrud 通用 CRUD', () => {
 
   it('loadNext：追加分页并按 id 去重，静默加载', async () => {
     getMock.mockResolvedValueOnce(page([{ id: 1 }, { id: 2 }], 5))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
     await crud.load(true)
 
     getMock.mockResolvedValueOnce(page([{ id: 2 }, { id: 3 }], 5))
@@ -56,7 +64,10 @@ describe('useCrud 通用 CRUD', () => {
 
   it('空过滤条件不传给后端', async () => {
     getMock.mockResolvedValueOnce(page([], 0))
-    const crud = useCrud({ url: '/thing', getParams: () => ({ name: '', age: null, flag: undefined, ok: 'y' }) })
+    const crud = useCrud({
+      api: createCrudApi('/thing'),
+      getParams: () => ({ name: '', age: null, flag: undefined, ok: 'y' }),
+    })
 
     await crud.load(true)
 
@@ -64,7 +75,7 @@ describe('useCrud 通用 CRUD', () => {
   })
 
   it('save：校验失败时提示且不发请求', async () => {
-    const crud = useCrud({ url: '/thing', validate: () => '名称必填' })
+    const crud = useCrud({ api: createCrudApi('/thing'), validate: () => '名称必填' })
     await crud.save()
     expect(uniMock.showToast).toHaveBeenCalledWith(expect.objectContaining({ title: '名称必填' }))
     expect(postMock).not.toHaveBeenCalled()
@@ -73,7 +84,7 @@ describe('useCrud 通用 CRUD', () => {
   it('save：防重复提交——保存进行中忽略再次调用', async () => {
     let resolvePut
     putMock.mockReturnValue(new Promise((resolve) => (resolvePut = resolve)))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
     crud.form.value = { id: 5, name: 'x' }
 
     const first = crud.save()
@@ -88,7 +99,7 @@ describe('useCrud 通用 CRUD', () => {
   it('save：成功后关表单并刷新列表', async () => {
     putMock.mockResolvedValueOnce(null)
     getMock.mockResolvedValue(page([], 0))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
     crud.form.value = { id: 5, name: 'x' }
     crud.formVisible.value = true
 
@@ -102,16 +113,63 @@ describe('useCrud 通用 CRUD', () => {
     delMock.mockResolvedValueOnce(null)
     getMock.mockResolvedValue(page([], 0))
     uniMock.showModal.mockImplementationOnce((o) => o.success({ confirm: true }))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
 
     crud.del(9)
-    await vi.waitFor(() => expect(delMock).toHaveBeenCalledWith('/thing/delete/9'))
+    await vi.waitFor(() => expect(delMock.mock.calls[0][0]).toBe('/thing/delete/9'))
     await vi.waitFor(() => expect(getMock).toHaveBeenCalled())
+  })
+
+  it('loadOnShow：首次加载走蒙层，返回页面（选图/预览）不再重复请求', async () => {
+    getMock.mockResolvedValue(page([{ id: 1 }], 1))
+    const crud = useCrud({ api: createCrudApi('/thing') })
+
+    expect(crud.loadOnShow()).toBe(true)
+    await vi.waitFor(() => expect(crud.list.value.length).toBe(1))
+    expect(getMock.mock.calls[0][2]).toEqual({ loading: true })
+
+    hooks.onHide()
+    expect(crud.loadOnShow()).toBe(false)
+    expect(getMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('loadOnShow：首次加载失败时下次进入重试', async () => {
+    getMock.mockRejectedValueOnce(new Error('offline'))
+    const crud = useCrud({ api: createCrudApi('/thing') })
+    crud.loadOnShow()
+    await vi.waitFor(() => expect(crud.loading.value).toBe(false))
+
+    getMock.mockResolvedValueOnce(page([{ id: 1 }], 1))
+    expect(crud.loadOnShow()).toBe(true)
+    await vi.waitFor(() => expect(crud.list.value.length).toBe(1))
+  })
+
+  it('loadOnShow：离开超过 STALE_MS 回来静默刷新；表单打开时不刷新', async () => {
+    const now = vi.spyOn(Date, 'now')
+    getMock.mockResolvedValue(page([{ id: 1 }], 1))
+    const crud = useCrud({ api: createCrudApi('/thing') })
+    crud.loadOnShow()
+    await vi.waitFor(() => expect(crud.list.value.length).toBe(1))
+
+    // 正在填表单（如选附件回来）：即使离开很久也不动列表
+    now.mockReturnValue(1_000)
+    hooks.onHide()
+    now.mockReturnValue(1_000 + STALE_MS + 1)
+    crud.formVisible.value = true
+    expect(crud.loadOnShow()).toBe(false)
+
+    crud.formVisible.value = false
+    now.mockReturnValue(2_000)
+    hooks.onHide()
+    now.mockReturnValue(2_000 + STALE_MS + 1)
+    expect(crud.loadOnShow()).toBe(true)
+    expect(getMock.mock.calls[1][2]).toEqual({ loading: false })
+    now.mockRestore()
   })
 
   it('del：取消确认不发请求', async () => {
     uniMock.showModal.mockImplementationOnce((o) => o.success({ confirm: false }))
-    const crud = useCrud({ url: '/thing' })
+    const crud = useCrud({ api: createCrudApi('/thing') })
 
     crud.del(9)
     await new Promise((r) => setTimeout(r, 0))

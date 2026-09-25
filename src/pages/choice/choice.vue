@@ -11,57 +11,96 @@
       @action="load(true)"
     />
 
-    <view
-      v-for="row in list"
-      :key="row.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view
-          class="xm-value"
-          style="font-weight: bold"
-          >{{ row.name }}</view
-        >
-        <view
-          class="xm-tag"
-          :class="statusTagClass(row.status)"
-          >{{ row.status }}</view
-        >
-      </view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
       <view
-        class="xm-row"
-        style="flex-wrap: wrap; margin-top: 12rpx"
+        v-for="row in list"
+        :key="row.id"
+        class="xm-card"
       >
-        <view class="xm-label field">{{ $t('pages.choice.id') }}: {{ row._index }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.courseType') }}: {{ row.type }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.teacherName') }}: {{ row.teacherName }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.credit') }}: {{ row.score }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.studentCount') }}: {{ row.num }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.room') }}: {{ row.room }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.week') }}: {{ row.week }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.segment') }}: {{ row.segment }}</view>
-        <view class="xm-label field">{{ $t('pages.choice.studentName') }}: {{ row.studentName }}</view>
-      </view>
+        <!-- 与课程页同一版式：标题行 + 标签行 + 图标信息栅格；枚举值按当前语言翻译 -->
+        <view class="xm-between">
+          <text class="xm-card-name xm-ellipsis">{{ row.name }}</text>
+          <text
+            v-if="row.status"
+            class="xm-tag"
+            :class="enumTag('courseStatus', row.status)"
+            >{{ enumLabel('courseStatus', row.status) }}</text
+          >
+        </view>
+        <view class="xm-tags">
+          <text
+            v-if="row.type"
+            class="xm-tag xm-tag-brand"
+            >{{ enumLabel('courseType', row.type) }}</text
+          >
+          <text
+            v-if="row.score != null && row.score !== ''"
+            class="xm-tag"
+            >{{ $t('pages.course.credit', { n: row.score }) }}</text
+          >
+          <text
+            v-if="row.num"
+            class="xm-tag"
+            >{{ $t('pages.course.people', { n: row.num }) }}</text
+          >
+          <text class="xm-tags-end">#{{ row._index }}</text>
+        </view>
+        <view class="xm-meta">
+          <view class="xm-meta-item">
+            <xm-icon
+              name="briefcase"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ row.teacherName || '-' }}</text>
+          </view>
+          <view class="xm-meta-item">
+            <xm-icon
+              name="map-pin"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ row.room || '-' }}</text>
+          </view>
+          <view class="xm-meta-item full">
+            <xm-icon
+              name="clock"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ scheduleText(row.week, row.segment) || '-' }}</text>
+          </view>
+          <!-- 教师 / 管理员视角才需要看是哪位学生选的课 -->
+          <view
+            v-if="userStore.role !== 'STUDENT'"
+            class="xm-meta-item full"
+          >
+            <xm-icon
+              name="user"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ row.studentName || '-' }}</text>
+          </view>
+        </view>
 
-      <!-- 操作：仅学生可见（与 Web 端 show-actions 一致） -->
-      <view
-        class="xm-actions"
-        v-if="userStore.role === 'STUDENT'"
-      >
-        <button
-          class="xm-btn xm-btn-danger"
-          :disabled="row.status !== '未开课'"
-          @click="onCancel(row)"
+        <!-- 操作：仅学生可见（与 Web 端 show-actions 一致） -->
+        <view
+          class="xm-actions"
+          v-if="userStore.role === 'STUDENT'"
         >
-          {{ $t('pages.choice.cancelChoice') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-plain"
-          :disabled="row.status !== '已结课'"
-          @click="initComment(row)"
-        >
-          {{ $t('pages.choice.comment') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            :disabled="row.status !== '未开课'"
+            @click="del(row.id)"
+          >
+            {{ $t('pages.choice.cancelChoice') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            :disabled="row.status !== '已结课'"
+            @click="initComment(row)"
+          >
+            {{ $t('pages.choice.comment') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -73,17 +112,13 @@
     />
 
     <!-- 评教表单（底部弹层） -->
-    <view
-      v-if="commentVisible"
-      class="xm-mask"
-      @click="commentVisible = false"
-    ></view>
-
-    <view
-      v-if="commentVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="commentVisible"
+      :saving="commenting"
+      :title="$t('pages.choice.commentTitle', { name: commentForm.name || '' })"
+      @close="commentVisible = false"
+      @save="saveComment"
     >
-      <view class="xm-popup-title">{{ $t('pages.choice.dialogTitle') }}</view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.choice.contentLabel') }}</view>
         <textarea
@@ -92,70 +127,32 @@
           :placeholder="$t('pages.choice.ruleContentRequired')"
         />
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="commentVisible = false"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="saveComment"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
     <xm-loader />
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { del as delRequest, post } from '@/utils/request'
+import { useListPage } from '@/composables/useListPage'
+import { choiceApi, commentApi } from '@/api'
 import { t } from '@/i18n'
+import { enumLabel, enumTag, scheduleText } from '@/utils/enums'
 
 const userStore = useUserStore()
 
-// 分页复用通用 CRUD；取消选课确认文案自定义（与 Web 端一致）
-const { list, loading, finished, load, loadNext } = useCrud({ url: '/choice' })
+// 分页复用列表骨架；取消选课即删除选课记录，确认文案与 Web 端一致（仅未开课可取消，按钮已按状态禁用）
+const { list, loading, finished, load, loadNext, del } = useListPage({
+  api: choiceApi,
+  title: 'menu.choice',
+  deleteConfirm: 'pages.choice.deleteConfirm',
+})
 
 const commentVisible = ref(false)
 const commentForm = ref({})
-
-const statusTagClass = (status) => {
-  if (status === '已结课') return 'xm-tag-success'
-  if (status === '未开课') return 'xm-tag-warning'
-  return ''
-}
-
-// 取消选课：确认文案与 Web 端一致（仅未开课可取消，disabled 已在按钮上控制）
-const onCancel = (row) => {
-  uni.showModal({
-    title: t('common.confirmDeleteTitle'),
-    content: t('pages.choice.deleteConfirm'),
-    success: async (res) => {
-      if (!res.confirm) return
-      try {
-        await delRequest(`/choice/delete/${row.id}`)
-        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-        load(true)
-      } catch {
-        // 请求层已统一提示
-      }
-    },
-  })
-}
+// 评教提交中：确定按钮转圈禁用，防止连点重复评教
+const commenting = ref(false)
 
 // 评教：与 Web 端 initComment 一致，携带整行课程信息
 const initComment = (row) => {
@@ -175,7 +172,10 @@ const saveComment = () => {
     student: userStore.user.name,
     content: commentForm.value.content,
   }
-  post('/comment/add', data)
+  if (commenting.value) return
+  commenting.value = true
+  commentApi
+    .add(data)
     .then(() => {
       uni.showToast({ title: t('pages.choice.commentSuccess'), icon: 'success' })
       commentVisible.value = false
@@ -183,20 +183,8 @@ const saveComment = () => {
     .catch(() => {
       // 重复评教等提示已由请求层统一弹出
     })
+    .finally(() => {
+      commenting.value = false
+    })
 }
-
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.choice') })
-  if (!ensureLoggedIn()) return
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>
-
-<style lang="scss" scoped>
-.field {
-  width: 50%;
-  margin-bottom: 8rpx;
-}
-</style>

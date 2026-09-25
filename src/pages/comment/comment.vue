@@ -6,22 +6,23 @@
   >
     <!-- 搜索区 -->
     <view class="xm-card">
-      <view
-        class="xm-form-item"
-        style="margin-bottom: 16rpx"
-      >
+      <view class="xm-form-item search-item">
         <input
           class="xm-input"
-          v-model="teacher"
+          v-model="query.teacher"
           :placeholder="$t('pages.comment.teacherPlaceholder')"
+          confirm-type="search"
+          @confirm="search"
         />
       </view>
       <view class="xm-row">
         <input
           class="xm-input"
           style="flex: 1"
-          v-model="content"
+          v-model="query.content"
           :placeholder="$t('pages.comment.contentPlaceholder')"
+          confirm-type="search"
+          @confirm="search"
         />
         <button
           class="xm-btn xm-btn-primary"
@@ -31,7 +32,7 @@
         </button>
         <button
           class="xm-btn xm-btn-plain"
-          @click="onReset"
+          @click="resetQuery"
         >
           {{ $t('common.reset') }}
         </button>
@@ -45,46 +46,51 @@
       @action="load(true)"
     />
 
-    <view
-      v-for="row in list"
-      :key="row.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view
-          class="xm-value"
-          style="font-weight: bold"
-          >{{ row.name }}</view
-        >
-        <view class="xm-label">{{ $t('pages.comment.id') }}: {{ row._index }}</view>
-      </view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
       <view
-        class="xm-row"
-        style="flex-wrap: wrap; margin-top: 12rpx"
+        v-for="row in list"
+        :key="row.id"
+        class="xm-card"
       >
-        <view class="xm-label field">{{ $t('pages.comment.teacherName') }}: {{ row.teacher }}</view>
-        <view class="xm-label field">{{ $t('pages.comment.time') }}: {{ row.time }}</view>
-      </view>
-      <view style="margin-top: 8rpx">
-        <view class="xm-label">{{ $t('pages.comment.content') }}</view>
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <text class="xm-card-name xm-ellipsis">{{ row.name }}</text>
+          </view>
+          <text class="xm-card-no">#{{ row._index }}</text>
+        </view>
+        <view class="xm-meta">
+          <view class="xm-meta-item">
+            <xm-icon
+              name="briefcase"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ row.teacher || '-' }}</text>
+          </view>
+          <view class="xm-meta-item">
+            <xm-icon
+              name="clock"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ row.time || '-' }}</text>
+          </view>
+        </view>
         <view
-          class="xm-value"
-          style="margin-top: 4rpx"
+          v-if="row.content"
+          class="xm-quote"
           >{{ row.content }}</view
         >
-      </view>
-
-      <!-- 操作：仅管理员可删除（与 Web 端一致） -->
-      <view
-        class="xm-actions"
-        v-if="userStore.role === 'ADMIN'"
-      >
-        <button
-          class="xm-btn xm-btn-danger"
-          @click="del(row.id)"
+        <view
+          class="xm-actions"
+          v-if="userStore.role === 'ADMIN'"
         >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            @click="del(row.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -99,40 +105,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { t } from '@/i18n'
+import { useListPage } from '@/composables/useListPage'
+import { commentApi } from '@/api'
 
 const userStore = useUserStore()
-const teacher = ref('')
-const content = ref('')
 
-const { list, loading, finished, load, loadNext, search, del } = useCrud({
-  url: '/comment',
-  getParams: () => ({ teacher: teacher.value, content: content.value }),
+// 评教记录只读，管理员可删除（与 Web 端一致）
+const { list, loading, finished, query, load, loadNext, search, resetQuery, del } = useListPage({
+  api: commentApi,
+  title: 'menu.comment',
+  query: { teacher: '', content: '' },
 })
-
-const onReset = () => {
-  teacher.value = ''
-  content.value = ''
-  search()
-}
-
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.comment') })
-  if (!ensureLoggedIn()) return
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
-.field {
-  width: 50%;
-  margin-bottom: 8rpx;
+/* 搜索区第一行输入框与第二行的间距 */
+.search-item {
+  margin-bottom: 16rpx;
 }
 </style>

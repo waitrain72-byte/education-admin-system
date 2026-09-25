@@ -31,7 +31,12 @@ export default {
     loading: 'Loading…',
     reload: 'Reload',
     all: 'All',
-    manageMode: 'Batch manage',
+    searchKeyword: 'Type to search',
+    noMatch: 'No matching options',
+    addTitle: 'New {name}',
+    editTitle: 'Edit {name}',
+    totalCount: '{n} items',
+    selectedCount: '{n} selected',
   },
 
   menu: {
@@ -46,6 +51,7 @@ export default {
     choice: 'My Enrollments',
     curriculum: 'My Timetable',
     score: 'My Scores',
+    warning: 'Academic Warning',
     comment: 'Course Evaluation',
     apply: 'Leave Requests',
     homework: 'Homework',
@@ -107,8 +113,6 @@ export default {
       en: 'English',
       switch: 'Switch language',
     },
-    about: 'About',
-    aboutContent: 'Mini program of the Educational Management System: three roles, dark/light theme and bilingual UI.',
   },
 
   login: {
@@ -181,6 +185,10 @@ export default {
     nextClass: 'Next',
     expand: 'Expand',
     collapse: 'Collapse',
+    greetMorning: 'Good morning, {name}',
+    greetNoon: 'Good afternoon, {name}',
+    greetAfternoon: 'Good afternoon, {name}',
+    greetEvening: 'Good evening, {name}',
   },
 
   notFound: {
@@ -195,6 +203,8 @@ export default {
     failed: 'Request failed',
     timeout: 'Connection timed out, please try again',
     offline: 'Network unavailable, please check your connection',
+    tooLarge: 'File must be {mb}MB or smaller',
+    uploadFailed: 'Upload failed, please try again',
   },
 
   message: {
@@ -202,6 +212,13 @@ export default {
     clear: 'Clear',
     clearConfirm: 'Clear all messages?',
     empty: 'No messages yet',
+  },
+
+  // Mini program update prompt (utils/appUpdate.js)
+  update: {
+    title: 'Update',
+    readyContent: 'A new version is ready. Restart now to use it?',
+    failedContent: 'Failed to download the new version. Please delete the mini program and open it again.',
   },
 
   errors: {
@@ -249,7 +266,6 @@ export default {
       creditLabel: 'Credits',
       roleLabel: 'Role',
       titleLabel: 'Professional Title',
-      avatar: 'Avatar',
       avatarTip: 'Tap to change avatar',
     },
 

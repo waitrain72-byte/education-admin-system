@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { get, put } from '@/utils/request'
+import { SILENT } from '@/utils/request'
+import { accountApi } from '@/api'
 import { STORAGE_KEY as THEME_COLOR_KEY, nativeChromeColors } from '@/utils/themeColor'
 
 /**
@@ -13,7 +14,22 @@ import { STORAGE_KEY as THEME_COLOR_KEY, nativeChromeColors } from '@/utils/them
 const STORAGE_KEY = 'xm-color-mode'
 
 export const themeMode = ref(uni.getStorageSync(STORAGE_KEY) || 'auto')
-const systemDark = ref(false)
+
+/**
+ * 冷启动时读取一次系统当前深浅色：onThemeChange 只在「切换」时回调，
+ * 不读初值的话，手机本来就是深色模式时「跟随系统」会一直显示浅色。
+ * 微信小程序需 app.json 开启 darkmode（manifest.json mp-weixin.darkmode）才会返回 theme。
+ */
+export function readSystemDark() {
+  try {
+    const info = typeof uni.getAppBaseInfo === 'function' ? uni.getAppBaseInfo() : uni.getSystemInfoSync()
+    return !!info && info.theme === 'dark'
+  } catch {
+    return false
+  }
+}
+
+const systemDark = ref(readSystemDark())
 
 if (typeof uni.onThemeChange === 'function') {
   uni.onThemeChange((res) => {
@@ -28,6 +44,9 @@ export const isDark = computed(() => {
 })
 
 export const themeClass = computed(() => (isDark.value ? 'theme-dark' : 'theme-light'))
+
+/** 三档切换按钮的图标名（xm-icon）：浅色 / 深色 / 跟随系统 */
+export const themeModeIcon = computed(() => ({ light: 'sun', dark: 'moon' })[themeMode.value] || 'theme-auto')
 
 /** 与 useTheme 原生层取值一致：导航栏 / tabBar 的深浅两套配色 */
 const NATIVE_CHROME = {
@@ -81,8 +100,10 @@ function pushTheme() {
     const next = themeMode.value === 'auto' ? 'system' : themeMode.value
     if (next === serverTheme) return
     if (pushTimer) clearTimeout(pushTimer)
+    // 后台静默同步：不弹加载蒙层（否则切换后半秒会闪一下全屏「加载中」）
     pushTimer = setTimeout(() => {
-      put('/theme', { theme: next })
+      accountApi
+        .updateTheme(next, SILENT)
         .then(() => {
           serverTheme = next
         })
@@ -109,7 +130,7 @@ export async function pullThemeFromServer() {
   try {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) return
-    const value = await get('/theme', undefined, { loading: false })
+    const value = await accountApi.getTheme(SILENT)
     if (value !== 'light' && value !== 'dark' && value !== 'system') return
     serverTheme = value
     const local = value === 'system' ? 'auto' : value

@@ -6,65 +6,66 @@
   >
     <!-- 搜索区 -->
     <xm-search-card
-      v-model="keyword"
+      v-model="query.name"
       :placeholder="$t('pages.college.namePlaceholder')"
       @search="search"
-      @reset="onReset"
+      @reset="resetQuery"
     />
 
     <!-- 操作区：新增 / 批量管理 -->
     <xm-action-bar
       :manage-mode="manageMode"
-      @add="onAdd"
+      :total="total"
+      :selected-count="selectedIds.length"
+      @add="handleAdd()"
       @toggle-manage="toggleManage"
       @del-batch="delBatch"
     />
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="search"
+    />
 
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view class="xm-row">
-          <!-- 批量管理模式下显示勾选框 -->
-          <checkbox
-            v-if="manageMode"
-            :checked="selectedIds.includes(item.id)"
-            style="transform: scale(0.8)"
-            @click.stop="toggleSelect(item.id)"
-          />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.name }}</view
-          >
-        </view>
-        <view class="xm-label">{{ $t('pages.college.id') }}: {{ item._index }}</view>
-      </view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
       <view
-        class="xm-actions"
-        v-if="!manageMode"
+        v-for="item in list"
+        :key="item.id"
+        class="xm-card"
       >
-        <button
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(item)"
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <!-- 批量管理模式下显示勾选框 -->
+            <checkbox
+              v-if="manageMode"
+              :checked="selectedIds.includes(item.id)"
+              style="transform: scale(0.8)"
+              @click.stop="toggleSelect(item.id)"
+            />
+            <text class="xm-card-name xm-ellipsis">{{ item.name }}</text>
+          </view>
+          <text class="xm-card-no">#{{ item._index }}</text>
+        </view>
+        <view
+          class="xm-actions"
+          v-if="!manageMode"
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-danger"
-          @click="del(item.id)"
-        >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            @click="handleEdit(item)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            @click="del(item.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -79,7 +80,7 @@
     <xm-form-popup
       :visible="formVisible"
       :saving="saving"
-      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.college.dialogTitle')"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.college.entity') })"
       @close="closeForm"
       @save="save"
     >
@@ -98,63 +99,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
-import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { useManage } from '@/composables/useManage'
+import { useListPage } from '@/composables/useListPage'
+import { collegeApi } from '@/api'
 import { t } from '@/i18n'
 
-const userStore = useUserStore()
-const keyword = ref('')
-
+// 仅管理员可见（与 Web 端路由 meta.roles 一致）
 const {
   list,
   loading,
   saving,
   finished,
+  total,
   form,
   formVisible,
   selectedIds,
-  load,
+  query,
+  manageMode,
   loadNext,
   search,
+  resetQuery,
+  toggleManage,
+  toggleSelect,
   handleAdd,
   handleEdit,
   closeForm,
   save,
   del,
   delBatch,
-} = useCrud({
-  url: '/college',
-  getParams: () => ({ name: keyword.value }),
-  validate: (f) => {
-    if (!f.name) return t('pages.college.ruleNameRequired')
-    return ''
-  },
+} = useListPage({
+  api: collegeApi,
+  title: 'menu.college',
+  roles: ['ADMIN'],
+  query: { name: '' },
+  validate: (f) => (f.name ? '' : t('pages.college.ruleNameRequired')),
 })
-
-const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
-
-const onAdd = () => handleAdd({})
-const onEdit = (row) => handleEdit(row)
-const onReset = () => {
-  keyword.value = ''
-  search()
-}
-
-// 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.college') })
-  if (!ensureLoggedIn()) return
-  if (!['ADMIN'].includes(userStore.role)) {
-    uni.showToast({ title: t('forbidden.message'), icon: 'none' })
-    setTimeout(() => uni.navigateBack(), 800)
-    return
-  }
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>

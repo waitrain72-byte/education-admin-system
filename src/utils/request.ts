@@ -75,6 +75,40 @@ function describeFail(err: any): string {
   return t('request.failed')
 }
 
+/** 网络层失败（未拿到响应）的统一提示：区分断网 / 超时 / 其他（请求与上传共用） */
+export function toastRequestFail(err: any): void {
+  uni.getNetworkType({
+    success: (net: any) => {
+      toastOnce(net.networkType === 'none' ? t('request.offline') : describeFail(err))
+    },
+    fail: () => toastOnce(t('request.failed')),
+  })
+}
+
+/**
+ * 登录态失效（401）的统一处理（请求与上传共用）：提示、复位加载动画、断开实时通知并回登录页。
+ * 并发请求同时 401 时只处理一次，避免重复 toast 与多次 reLaunch。
+ */
+export function handleUnauthorized(data: any): void {
+  if (handling401) return
+  handling401 = true
+  toast(apiMessage(data))
+  resetLoading()
+  closeWs()
+  useUserStore().clearUser()
+  uni.reLaunch({ url: '/pages/login/login' })
+  setTimeout(() => {
+    handling401 = false
+  }, 3000)
+}
+
+/** 业务失败（非 200）：提示一次并返回对应的 ApiError（请求与上传共用） */
+export function toApiError(data: any): ApiError {
+  const message = apiMessage(data)
+  toastOnce(message)
+  return new ApiError(data.code, message)
+}
+
 /**
  * 统一请求封装：与 Web 端 axios 拦截器语义一致
  * - 自动携带 token（自定义 header 'token'）与验证码会话 Cookie
@@ -102,19 +136,7 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
       success: (res: any) => {
         const data = res.data
         if (data && data.code === '401') {
-          // 并发请求同时 401 时只处理一次，避免重复 toast 与多次 reLaunch
-          if (!handling401) {
-            handling401 = true
-            toast(apiMessage(data))
-            // 登录态已失效：复位加载动画，断开实时通知连接后回登录页
-            resetLoading()
-            closeWs()
-            userStore.clearUser()
-            uni.reLaunch({ url: '/pages/login/login' })
-            setTimeout(() => {
-              handling401 = false
-            }, 3000)
-          }
+          handleUnauthorized(data)
           reject(new Error('401'))
           return
         }
@@ -127,17 +149,10 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
           resolve(data.data)
           return
         }
-        const message = apiMessage(data)
-        toastOnce(message)
-        reject(new ApiError(data.code, message))
+        reject(toApiError(data))
       },
       fail: (err: any) => {
-        uni.getNetworkType({
-          success: (net: any) => {
-            toastOnce(net.networkType === 'none' ? t('request.offline') : describeFail(err))
-          },
-          fail: () => toastOnce(t('request.failed')),
-        })
+        toastRequestFail(err)
         reject(err)
       },
       complete: () => {
@@ -146,6 +161,9 @@ export function request<T = any>(options: RequestOptions): Promise<T> {
     })
   })
 }
+
+/** 静默请求：不唤起全屏加载蒙层（后台刷新、下拉选项等不阻塞用户操作的请求） */
+export const SILENT: Partial<RequestOptions> = Object.freeze({ loading: false })
 
 export const get = <T = any>(url: string, data?: Record<string, any>, opts?: Partial<RequestOptions>) =>
   request<T>({ ...opts, url, data })
@@ -180,7 +198,7 @@ export function resolveFileUrl(url?: string): string {
 
 /**
  * 「取数或返回 null」：成功返回业务数据，失败返回 null（提示已由请求层统一弹出）。
- * 适用于拉取下拉选项/列表这类失败时只需兜底为空、不需要分支处理的场景。
+ * 适用于拉取下拉选项/列表这类失败时只需兜底为空、不需要分支处理的场景：
+ *   courseData.value = (await orNull(courseApi.selectAll(undefined, SILENT))) || []
  */
-export const getData = <T = any>(url: string, data?: Record<string, any>): Promise<T | null> =>
-  get<T>(url, data).catch(() => null)
+export const orNull = <T>(promise: Promise<T>): Promise<T | null> => promise.catch(() => null)

@@ -5,59 +5,38 @@
     :style="themeStyle"
   >
     <!-- 搜索区 -->
-    <view class="xm-card">
-      <view
-        class="xm-form-item"
-        style="margin-bottom: 16rpx"
-      >
-        <input
-          class="xm-input"
-          v-model="content"
-          :placeholder="$t('pages.apply.contentPlaceholder')"
-        />
-      </view>
-      <view class="xm-row">
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="search"
-        >
-          {{ $t('common.search') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1; margin-left: 16rpx"
-          @click="onReset"
-        >
-          {{ $t('common.reset') }}
-        </button>
-      </view>
-    </view>
+    <xm-search-card
+      v-model="query.content"
+      :placeholder="$t('pages.apply.contentPlaceholder')"
+      @search="search"
+      @reset="resetQuery"
+    />
 
     <!-- 状态快捷筛选 Tab：全部/待审核/审核通过/审核不通过（点击即筛选） -->
-    <view class="xm-card status-tabs">
+    <view class="xm-card xm-tabs">
       <view
         v-for="tab in statusTabs"
         :key="tab.value"
-        class="status-tab"
-        :class="{ active: status === tab.value }"
+        class="xm-tab"
+        :class="{ active: query.status === tab.value }"
         @click="onTabChange(tab.value)"
       >
         {{ tab.label }}
       </view>
     </view>
 
-    <!-- 操作区：学生可提交请假申请 -->
+    <!-- 新增：右下角悬浮按钮（与各列表页一致，避让 Home 条，样式见 theme.scss .xm-fab） -->
     <view
-      class="xm-card"
       v-if="userStore.role === 'STUDENT'"
+      class="xm-fab"
+      :aria-label="$t('pages.apply.applyLeave')"
+      aria-role="button"
+      @click="onAdd"
     >
-      <button
-        class="xm-btn xm-btn-primary xm-btn-block"
-        @click="onAdd"
-      >
-        {{ $t('pages.apply.applyLeave') }}
-      </button>
+      <xm-icon
+        name="plus"
+        :size="48"
+      />
     </view>
 
     <!-- 列表 -->
@@ -67,52 +46,55 @@
       @action="load(true)"
     />
 
-    <view
-      v-for="row in list"
-      :key="row.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <!-- 主标题：请假缘由；右侧审核状态语义化标签 -->
-        <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
-        <view
-          class="xm-tag status-tag"
-          :class="statusTagClass(row.status)"
-          >{{ statusLabelOf(row.status) }}</view
-        >
-      </view>
-      <view class="item-meta">
-        <text v-if="userStore.role !== 'STUDENT'">{{ row.studentName }} · </text>
-        <text>{{ row.time }} · {{ $t('pages.apply.dayLabel') }} {{ row.day }}</text>
-      </view>
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
       <view
-        v-if="row.descr"
-        class="item-descr"
-        >{{ row.descr }}</view
+        v-for="row in list"
+        :key="row.id"
+        class="xm-card"
       >
+        <view class="xm-between">
+          <!-- 主标题：请假缘由；右侧审核状态语义化标签 -->
+          <view class="xm-value xm-ellipsis item-title">{{ row.content }}</view>
+          <view
+            class="xm-tag status-tag"
+            :class="enumTag('applyStatus', row.status)"
+            >{{ enumLabel('applyStatus', row.status) }}</view
+          >
+        </view>
+        <view class="item-meta">
+          <text v-if="userStore.role !== 'STUDENT'">{{ row.studentName }} · </text>
+          <text>{{ row.time }} · {{ $t('pages.apply.dayLabel') }} {{ row.day }}</text>
+        </view>
+        <view
+          v-if="row.descr"
+          class="item-descr"
+          >{{ row.descr }}</view
+        >
 
-      <view class="xm-actions">
-        <button
-          v-if="userStore.role === 'STUDENT' && row.status !== '审核通过'"
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(row)"
-        >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          v-if="userStore.role === 'ADMIN' && row.status === '待审核'"
-          class="xm-btn xm-btn-primary"
-          @click="handleCheck(row)"
-        >
-          {{ $t('pages.apply.review') }}
-        </button>
-        <button
-          v-if="userStore.role === 'STUDENT' && row.status === '待审核'"
-          class="xm-btn xm-btn-danger"
-          @click="onWithdraw(row.id)"
-        >
-          {{ $t('pages.apply.withdraw') }}
-        </button>
+        <view class="xm-actions">
+          <button
+            v-if="userStore.role === 'STUDENT' && row.status !== '审核通过'"
+            class="xm-btn xm-btn-plain"
+            @click="onEdit(row)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            v-if="userStore.role === 'ADMIN' && row.status === '待审核'"
+            class="xm-btn xm-btn-primary"
+            @click="handleCheck(row)"
+          >
+            {{ $t('pages.apply.review') }}
+          </button>
+          <button
+            v-if="userStore.role === 'STUDENT' && row.status === '待审核'"
+            class="xm-btn xm-btn-danger"
+            @click="del(row.id)"
+          >
+            {{ $t('pages.apply.withdraw') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -124,17 +106,13 @@
     />
 
     <!-- 请假申请/编辑表单（底部弹层，学生） -->
-    <view
-      v-if="formVisible"
-      class="xm-mask"
-      @click="closeForm"
-    ></view>
-
-    <view
-      v-if="formVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="formVisible"
+      :saving="saving"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.apply.entity') })"
+      @close="closeForm"
+      @save="save"
     >
-      <view class="xm-popup-title">{{ $t('pages.apply.dialogTitle') }}</view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.contentLabel') }}</view>
         <textarea
@@ -145,18 +123,11 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.timeLabel') }}</view>
-        <picker
+        <xm-picker
+          v-model="form.time"
           mode="date"
-          :value="form.time"
-          @change="onTimeChange"
-        >
-          <view
-            class="xm-input picker-display"
-            :class="{ 'picker-placeholder': !form.time }"
-          >
-            {{ form.time || $t('pages.apply.datePlaceholder') }}
-          </view>
-        </picker>
+          :placeholder="$t('pages.apply.datePlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.dayLabel') }}</view>
@@ -166,53 +137,23 @@
           type="number"
         />
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="closeForm"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="save"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
 
     <!-- 审核弹层（管理员） -->
-    <view
-      v-if="checkVisible"
-      class="xm-mask"
-      @click="checkVisible = false"
-    ></view>
-
-    <view
-      v-if="checkVisible"
-      class="xm-popup"
+    <xm-form-popup
+      :visible="checkVisible"
+      :saving="checking"
+      :title="$t('pages.apply.checkDialogTitle')"
+      @close="checkVisible = false"
+      @save="check"
     >
-      <view class="xm-popup-title">{{ $t('pages.apply.checkDialogTitle') }}</view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.statusLabel') }}</view>
-        <picker
-          :range="statusLabels"
-          :value="checkStatusIndex"
-          @change="onCheckStatusChange"
-        >
-          <view
-            class="xm-input picker-display"
-            :class="{ 'picker-placeholder': !form.status }"
-          >
-            {{ form.status ? statusLabelOf(form.status) : $t('pages.apply.statusPlaceholder') }}
-          </view>
-        </picker>
+        <xm-picker
+          v-model="form.status"
+          :options="enumOptions('applyStatus')"
+          :placeholder="$t('pages.apply.statusPlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.apply.descrLabel') }}</view>
@@ -221,47 +162,47 @@
           v-model="form.descr"
         />
       </view>
-      <view
-        class="xm-row"
-        style="margin-top: 16rpx"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          style="flex: 1"
-          @click="checkVisible = false"
-        >
-          {{ $t('common.cancel') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-primary"
-          style="flex: 1"
-          @click="check"
-        >
-          {{ $t('common.ok') }}
-        </button>
-      </view>
-    </view>
+    </xm-form-popup>
     <xm-loader />
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { put, del as delRequest } from '@/utils/request'
+import { useListPage } from '@/composables/useListPage'
+import { applyApi } from '@/api'
 import { t } from '@/i18n'
+import { enumLabel, enumTag, enumOptions } from '@/utils/enums'
 
 const userStore = useUserStore()
-const content = ref('')
-const status = ref('')
 const checkVisible = ref(false)
+// 审核提交中：确定按钮转圈禁用，防止连点重复提交
+const checking = ref(false)
 
-const { list, loading, finished, form, formVisible, load, loadNext, search, save, closeForm } = useCrud({
-  url: '/apply',
-  getParams: () => ({ status: status.value, content: content.value }),
+// 撤销申请即删除该条请假记录，确认文案与 Web 端一致
+const {
+  list,
+  loading,
+  finished,
+  form,
+  formVisible,
+  saving,
+  query,
+  load,
+  loadNext,
+  search,
+  resetQuery,
+  handleAdd,
+  handleEdit,
+  save,
+  closeForm,
+  del,
+} = useListPage({
+  api: applyApi,
+  title: 'menu.apply',
+  query: { status: '', content: '' },
+  deleteConfirm: 'pages.apply.deleteConfirm',
   validate: (f) => {
     if (!f.time) return t('pages.apply.ruleTimeRequired')
     if (!f.content) return t('pages.apply.ruleContentRequired')
@@ -270,55 +211,17 @@ const { list, loading, finished, form, formVisible, load, loadNext, search, save
   },
 })
 
-// 状态枚举值保持中文入库，仅翻译显示文案（与 Web 端一致）
-const statusOptions = computed(() => [
-  { label: t('pages.apply.statusPending'), value: '待审核' },
-  { label: t('pages.apply.statusApproved'), value: '审核通过' },
-  { label: t('pages.apply.statusRejected'), value: '审核不通过' },
-])
-const statusLabels = computed(() => statusOptions.value.map((o) => o.label))
-const statusLabelOf = (value) => {
-  const opt = statusOptions.value.find((o) => o.value === value)
-  return opt ? opt.label : value
-}
-const statusTagClass = (value) => {
-  if (value === '审核通过') return 'xm-tag-success'
-  if (value === '审核不通过') return 'xm-tag-danger'
-  return 'xm-tag-warning'
-}
-
-const checkStatusIndex = computed(() => statusOptions.value.findIndex((o) => o.value === form.value.status))
-
-// 顶部状态筛选 Tab：'' = 全部（useCrud 会剔除空参数，后端不加 status 条件）
-const statusTabs = computed(() => [{ label: t('common.all'), value: '' }, ...statusOptions.value])
+// 顶部状态筛选 Tab：'' = 全部（空参数不传给后端，不加 status 条件）
+const statusTabs = computed(() => [{ label: t('common.all'), value: '' }, ...enumOptions('applyStatus')])
 const onTabChange = (value) => {
-  if (status.value === value) return
-  status.value = value
+  if (query.status === value) return
+  query.status = value
   search()
 }
 
-const onCheckStatusChange = (e) => {
-  const opt = statusOptions.value[e.detail.value]
-  if (opt) form.value.status = opt.value
-}
-
-// 请假日期：日期选择器（YYYY-MM-DD，后端仍按字符串存储）
-const onTimeChange = (e) => {
-  form.value.time = e.detail.value
-}
-
-const onAdd = () => {
-  form.value = { studentId: userStore.user.id, status: '待审核' }
-  formVisible.value = true
-}
-
-// 学生编辑：重置回待审核并清空审核说明（与 Web 端 handleEdit 一致）
-const onEdit = (row) => {
-  form.value = JSON.parse(JSON.stringify(row))
-  form.value.status = '待审核'
-  form.value.descr = ''
-  formVisible.value = true
-}
+// 学生新增 / 编辑：编辑时重置回待审核并清空审核说明（与 Web 端 handleEdit 一致）
+const onAdd = () => handleAdd({ studentId: userStore.user.id, status: '待审核' })
+const onEdit = (row) => handleEdit(row, { status: '待审核', descr: '' })
 
 const handleCheck = (row) => {
   form.value = JSON.parse(JSON.stringify(row))
@@ -327,7 +230,10 @@ const handleCheck = (row) => {
 
 // 审核提交：与 Web 端 check 一致，直接走 /apply/update
 const check = () => {
-  put('/apply/update', form.value)
+  if (checking.value) return
+  checking.value = true
+  applyApi
+    .update(form.value)
     .then(() => {
       uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
       load(true)
@@ -336,39 +242,10 @@ const check = () => {
     .catch(() => {
       // 提示已由请求层统一弹出
     })
+    .finally(() => {
+      checking.value = false
+    })
 }
-
-// 撤销申请确认文案与 Web 端一致
-const onWithdraw = (id) => {
-  uni.showModal({
-    title: t('common.confirmDeleteTitle'),
-    content: t('pages.apply.deleteConfirm'),
-    success: async (res) => {
-      if (!res.confirm) return
-      try {
-        await delRequest(`/apply/delete/${id}`)
-        uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
-        load(true)
-      } catch {
-        // 请求层已统一提示
-      }
-    },
-  })
-}
-
-const onReset = () => {
-  status.value = ''
-  content.value = ''
-  search()
-}
-
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.apply') })
-  if (!ensureLoggedIn()) return
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>
 
 <style lang="scss" scoped>
@@ -400,37 +277,5 @@ onReachBottom(() => loadNext())
   border-radius: 12rpx;
   padding: 16rpx 20rpx;
   margin-top: 12rpx;
-}
-
-.picker-display {
-  display: flex;
-  align-items: center;
-}
-
-.picker-placeholder {
-  color: var(--xm-text-2);
-}
-
-/* 顶部状态筛选 Tab */
-.status-tabs {
-  display: flex;
-  gap: 12rpx;
-  padding: 16rpx 20rpx;
-}
-
-.status-tab {
-  flex: 1;
-  text-align: center;
-  padding: 12rpx 0;
-  border-radius: 10rpx;
-  font-size: 26rpx;
-  color: var(--xm-text-2);
-  background: var(--xm-bg-hover);
-}
-
-.status-tab.active {
-  background: var(--xm-brand);
-  color: #ffffff;
-  font-weight: 600;
 }
 </style>

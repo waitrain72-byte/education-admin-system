@@ -46,7 +46,10 @@ export const useMessageStore = defineStore('message', {
     unreadCount: (state) => state.messages.filter((m) => !m.read).length,
   },
   actions: {
-    /** 确认当前用户后载入其历史消息（同一用户只载入一次，切号自动重载） */
+    /**
+     * 确认当前用户后载入其历史消息（同一用户只载入一次，切号自动重载）。
+     * 传 userStore.accountKey（「角色-id」）：三类账号 id 会重复，只用 id 会让 1 号管理员看到 1 号学生的推送。
+     */
     loadForUser(userId: unknown) {
       if (this.ownerId === userId) return
       this.ownerId = userId
@@ -95,6 +98,8 @@ export const useMessageStore = defineStore('message', {
         this.persist()
       }
       const text = `${msg.title}${msg.content}`
+      // 预警推送的建议文字里可能含「成绩」，必须先于成绩匹配
+      if (/预警/.test(text)) return '/pages/warning/warning'
       if (/成绩/.test(text)) return '/pages/score/score'
       if (/作业/.test(text)) return '/pages/homework/homework'
       if (/请假/.test(text)) return '/pages/apply/apply'

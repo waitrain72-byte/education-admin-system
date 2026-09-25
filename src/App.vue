@@ -4,6 +4,7 @@ import { useUserStore } from '@/stores/user'
 import { syncNativeChrome } from '@/composables/useTheme'
 import { installAuthInterceptor } from '@/utils/authGuard'
 import { reportError } from '@/utils/errorReport'
+import { checkAppUpdate } from '@/utils/appUpdate'
 
 export default {
   onLaunch() {
@@ -12,6 +13,8 @@ export default {
     // 应用启动：主题与语言偏好由各模块自行从本地存储恢复
     // 注册网络状态监听（仅一次），网络恢复时自动补连实时通知
     initWs()
+    // 发布新版本后提示用户重启（否则要等下次冷启动才生效）
+    checkAppUpdate()
   },
   onShow() {
     // 冷启动带登录态 / 切回前台时恢复实时通知连接（connectWs 幂等，无 token 不连）

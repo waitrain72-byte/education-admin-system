@@ -33,7 +33,10 @@
             "urlCheck": false
         },
         "usingComponents": true,
-        "lazyCodeLoading": "requiredComponents"
+        "lazyCodeLoading": "requiredComponents",
+        "resizable": true,
+        "darkmode": true,
+        "themeLocation": "theme.json"
     },
     "mp-alipay": {
         "usingComponents": true

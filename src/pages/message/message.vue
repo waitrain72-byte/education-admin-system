@@ -1,6 +1,6 @@
 <template>
   <view
-    class="xm-page"
+    class="xm-page xm-page-narrow"
     :class="themeClass"
     :style="themeStyle"
   >
@@ -17,8 +17,7 @@
         {{ $t('message.markAllRead') }}
       </button>
       <button
-        class="xm-btn xm-btn-danger"
-        style="flex: 1; margin-left: 16rpx"
+        class="xm-btn xm-btn-danger clear-btn"
         @click="clearAll"
       >
         {{ $t('message.clear') }}
@@ -27,7 +26,7 @@
 
     <xm-empty
       v-if="!messageStore.messages.length"
-      icon="🔔"
+      icon="bell"
       :text="$t('message.empty')"
     />
 
@@ -68,6 +67,7 @@ import { ensureLoggedIn } from '@/utils/authGuard'
 import { useMessageStore } from '@/stores/message'
 import { resetWsUnread } from '@/utils/websocket'
 import { t } from '@/i18n'
+import { confirm } from '@/utils/confirm'
 
 const userStore = useUserStore()
 const messageStore = useMessageStore()
@@ -75,13 +75,7 @@ const messageStore = useMessageStore()
 const markAllRead = () => messageStore.markAllRead()
 
 const clearAll = () => {
-  uni.showModal({
-    title: t('message.clear'),
-    content: t('message.clearConfirm'),
-    success: (res) => {
-      if (res.confirm) messageStore.clear()
-    },
-  })
+  confirm(t('message.clearConfirm'), { title: t('message.clear') }).then((ok) => ok && messageStore.clear())
 }
 
 // 点击消息：按标题关键词跳转对应功能页（无匹配停留原页）
@@ -93,7 +87,7 @@ const openMessage = (m) => {
 onShow(() => {
   if (!ensureLoggedIn()) return
   uni.setNavigationBarTitle({ title: t('menu.message') })
-  messageStore.loadForUser(userStore.user.id)
+  messageStore.loadForUser(userStore.accountKey)
   // 打开消息中心即清除「首页」tab 推送角标（单条消息的已读在点击时各自标记）
   resetWsUnread()
 })
@@ -129,5 +123,10 @@ onShow(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.clear-btn {
+  flex: 1;
+  margin-left: 16rpx;
 }
 </style>

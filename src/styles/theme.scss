@@ -67,6 +67,8 @@ page {
   background: var(--xm-bg-page);
   color: var(--xm-text);
   padding: 24rpx;
+  /* 刘海屏底部安全区：内容滚到最底不被 Home 条遮挡（无安全区的机型 env() 为 0） */
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -134,22 +136,6 @@ page {
   font-size: 28rpx;
   color: var(--xm-text);
   word-break: break-all;
-}
-
-/* 空状态：emoji 图标 + 文案（z-paging / uview 空态样式），全站自动生效 */
-.xm-empty {
-  text-align: center;
-  color: var(--xm-text-2);
-  font-size: 26rpx;
-  padding: 80rpx 0;
-}
-
-.xm-empty::before {
-  content: '📭';
-  display: block;
-  font-size: 80rpx;
-  margin-bottom: 16rpx;
-  opacity: 0.6;
 }
 
 /* 按钮：覆盖小程序原生 button 样式 */
@@ -276,33 +262,183 @@ page {
   background: var(--xm-brand-soft);
 }
 
+/* ================= 信息卡片版式（课程 / 选课 / 教室等字段多的列表） =================
+ * 标题行（名称 + 状态标签）→ 标签行（类型 / 学分 / 人数等短信息）→ 图标信息栅格（教师 / 地点 / 时间）
+ * 替代逐行平铺的「字段名: 值」，一眼能扫到关键信息
+ */
+.xm-card-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: var(--xm-text);
+}
+
+.xm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+/* 序号等弱信息：标签行最右侧的小灰字 */
+.xm-tags-end {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: var(--xm-text-2);
+}
+
+.xm-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx 24rpx;
+  margin-top: 16rpx;
+}
+
+.xm-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+  font-size: 24rpx;
+  color: var(--xm-text-2);
+}
+
+.xm-meta-item.full {
+  grid-column: 1 / -1;
+}
+
+.xm-meta-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 标题行右侧的序号（没有标签行的卡片用） */
+.xm-card-no {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--xm-text-2);
+}
+
+/* 标题行左侧：勾选框 + 头像 + 名称，名称过长省略、不挤压右侧内容 */
+.xm-card-head {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 列表头像：有图显示图片，无图显示姓名首字 */
+.xm-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--xm-bg-input);
+}
+
+.xm-avatar-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: var(--xm-brand);
+  background: var(--xm-brand-soft);
+}
+
+/* 标题下方的副标题（如账号） */
+.xm-card-sub {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--xm-text-2);
+}
+
+/* 卡片说明文字：弱化小字，配合 .xm-clamp-2 控制行数 */
+.xm-card-desc {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--xm-text-2);
+  word-break: break-all;
+}
+
+/* 信息栅格里右对齐的末项（如序号） */
+.xm-meta-end {
+  justify-content: flex-end;
+}
+
+/* 引用块：评教内容、评语、说明等正文 */
+.xm-quote {
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: var(--xm-text);
+  background: var(--xm-bg-input);
+  word-break: break-all;
+}
+
+/* 最多两行，超出省略（点开卡片展开全文的场景配合去掉此类） */
+.xm-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 悬浮新增按钮：右下角、避让 Home 条；层级低于弹层（99+）与加载蒙层（999） */
+.xm-fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: calc(64rpx + env(safe-area-inset-bottom));
+  z-index: 90;
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: var(--xm-brand-grad);
+  box-shadow: var(--xm-shadow-brand);
+  transition: transform 0.15s ease;
+}
+
+.xm-fab:active {
+  transform: scale(0.92);
+}
+/* 分段筛选标签（请假状态、预警等级等快捷筛选）：<view class="xm-card xm-tabs"><view class="xm-tab" :class="{ active }"> */
+.xm-tabs {
+  display: flex;
+  gap: 12rpx;
+  padding: 16rpx 20rpx;
+}
+
+.xm-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  border-radius: 10rpx;
+  font-size: 26rpx;
+  color: var(--xm-text-2);
+  background: var(--xm-bg-hover);
+}
+
+.xm-tab.active {
+  background: var(--xm-brand);
+  color: #ffffff;
+  font-weight: 600;
+}
+
 /* 操作行 */
 .xm-actions {
   display: flex;
   gap: 20rpx;
   margin-top: 20rpx;
-}
-
-.xm-link-btn {
-  font-size: 26rpx;
-  color: var(--xm-brand);
-  background: transparent;
-  padding: 0;
-  margin: 0;
-  line-height: 1.4;
-  height: auto;
-}
-
-.xm-link-btn::after {
-  border: none;
-}
-
-.xm-link-danger {
-  color: var(--xm-danger);
-}
-
-.xm-link-warning {
-  color: var(--xm-warning);
 }
 
 /* 单元格行：图标 + 文字 + 右侧内容/箭头（uview Cell 风格，用于「我的」页等功能入口） */
@@ -320,11 +456,12 @@ page {
 .xm-cell-icon {
   width: 64rpx;
   height: 64rpx;
-  line-height: 64rpx;
-  text-align: center;
-  font-size: 34rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 18rpx;
-  background: var(--xm-bg-input);
+  color: var(--xm-brand);
+  background: var(--xm-brand-soft);
   flex-shrink: 0;
 }
 
@@ -337,11 +474,11 @@ page {
 
 .xm-cell-arrow {
   color: var(--xm-text-2);
-  font-size: 32rpx;
+  display: flex;
   flex-shrink: 0;
 }
 
-/* 底部弹层表单 */
+/* 底部弹层表单：遮罩淡入 + 面板上滑（transform/opacity 走 GPU） */
 .xm-mask {
   position: fixed;
   left: 0;
@@ -350,6 +487,7 @@ page {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 99;
+  animation: xm-fade-in 0.2s ease both;
 }
 
 .xm-popup {
@@ -363,6 +501,37 @@ page {
   z-index: 100;
   max-height: 80vh;
   overflow-y: auto;
+  box-sizing: border-box;
+  animation: xm-popup-up 0.25s ease-out both;
+}
+
+/* 叠在另一个弹层之上的弹层（如表单里再打开的选择器） */
+.xm-mask.is-top {
+  z-index: 101;
+}
+
+.xm-popup.is-top {
+  z-index: 102;
+}
+
+@keyframes xm-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes xm-popup-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: none;
+  }
 }
 
 .xm-popup-title {
@@ -404,7 +573,7 @@ page {
   flex-shrink: 0;
 }
 
-/* 首页宫格菜单：小屏 3 列，宽屏（平板/横屏）自动加列 */
+/* 首页宫格菜单：手机 3 列，随屏宽加列（平板竖屏 4 / 6 列，横屏与 PC 8 列） */
 .xm-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -421,10 +590,74 @@ page {
   .xm-grid {
     grid-template-columns: repeat(6, 1fr);
   }
+}
 
+@media (min-width: 1248px) {
+  .xm-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+/* ================= 多设备宽度适配 =================
+ * 尺寸：rpx 超过 414px 屏宽后由构建插件换成固定 px（src/utils/rpxCap.js），平板 / PC 上元素不会被放大；
+ * 布局按屏宽分三档（媒体查询一律用 px，与 rpx 换算无关）：
+ *   手机        <720px   单列、全宽（与原设计一致）
+ *   平板竖屏 / 折叠屏  ≥720px   列表两列；底部弹层居中限宽；表单 / 设置类页面居中限宽
+ *   平板横屏 / PC     ≥1248px  列表三列；内容区最宽 1200px 居中
+ * 限宽用左右 padding 实现而不是 max-width：页面背景仍铺满整屏（深色模式两侧不会露出浅色底）
+ */
+@media (min-width: 720px) {
   .xm-page {
-    max-width: 960px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* 表单 / 设置类页面（个人信息、修改密码、我的等）：内容区 672px 居中，行宽适合阅读和填写 */
+  .xm-page.xm-page-narrow {
+    padding-left: calc((100% - 672px) / 2);
+    padding-right: calc((100% - 672px) / 2);
+  }
+
+  /* 列表卡片两列；卡片高度各自由内容决定，顶部对齐 */
+  .xm-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 16px;
+  }
+
+  .xm-list > .xm-card {
+    margin-bottom: 0;
+  }
+
+  /* 底部弹层 / 选择器：居中限宽，不再横跨整块平板屏幕 */
+  .xm-popup {
+    left: 0;
+    right: 0;
+    max-width: 600px;
     margin: 0 auto;
+  }
+
+  /* 悬浮按钮对齐内容区右缘 */
+  .xm-fab {
+    right: 24px;
+    bottom: calc(32px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 1248px) {
+  .xm-page {
+    padding-left: calc((100% - 1200px) / 2);
+    padding-right: calc((100% - 1200px) / 2);
+  }
+
+  .xm-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .xm-fab {
+    right: calc((100vw - 1200px) / 2);
   }
 }
 
@@ -444,14 +677,16 @@ page {
   background: var(--xm-bg-hover);
 }
 
-.xm-grid-item-emoji {
-  display: inline-block;
+/* 图标底块：四色软底 + 同色图标轮换（图标经 xm-icon 继承 color） */
+.xm-grid-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 92rpx;
   height: 92rpx;
-  line-height: 92rpx;
-  font-size: 44rpx;
+  margin: 0 auto 12rpx;
   border-radius: 28rpx;
-  margin-bottom: 12rpx;
+  color: var(--xm-brand);
   background: var(--xm-bg-input);
 }
 
@@ -459,37 +694,24 @@ page {
   line-height: 1.3;
 }
 
-/* emoji chip 四色轮换：软底色与功能色一一对应 */
-.xm-grid-item:nth-child(4n + 1) .xm-grid-item-emoji {
+.xm-grid-item:nth-child(4n + 1) .xm-grid-item-icon {
+  color: var(--xm-brand);
   background: var(--xm-brand-soft);
 }
 
-.xm-grid-item:nth-child(4n + 2) .xm-grid-item-emoji {
+.xm-grid-item:nth-child(4n + 2) .xm-grid-item-icon {
+  color: var(--xm-success);
   background: var(--xm-success-soft);
 }
 
-.xm-grid-item:nth-child(4n + 3) .xm-grid-item-emoji {
+.xm-grid-item:nth-child(4n + 3) .xm-grid-item-icon {
+  color: var(--xm-warning);
   background: var(--xm-warning-soft);
 }
 
-.xm-grid-item:nth-child(4n + 4) .xm-grid-item-emoji {
+.xm-grid-item:nth-child(4n + 4) .xm-grid-item-icon {
+  color: var(--xm-info);
   background: var(--xm-info-soft);
-}
-
-/* 统计条 */
-.xm-bar-wrap {
-  background: var(--xm-bg-input);
-  border-radius: 999rpx;
-  height: 14rpx;
-  overflow: hidden;
-  flex: 1;
-  min-width: 0;
-}
-
-.xm-bar {
-  height: 100%;
-  border-radius: 999rpx;
-  background: var(--xm-brand-grad);
 }
 
 /* 骨架屏占位：浅灰底 + 微光扫过动画（配合首页 firstLoading 使用） */

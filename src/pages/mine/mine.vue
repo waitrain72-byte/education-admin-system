@@ -1,6 +1,6 @@
 <template>
   <view
-    class="xm-page"
+    class="xm-page xm-page-narrow"
     :class="themeClass"
     :style="themeStyle"
   >
@@ -31,30 +31,54 @@
         class="xm-cell"
         @click="go('/pages/person/person')"
       >
-        <text class="xm-cell-icon">🧑</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="user"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('menu.person') }}</text>
-        <text class="xm-cell-arrow">›</text>
+        <view class="xm-cell-arrow"
+          ><xm-icon
+            name="chevron-right"
+            :size="32"
+        /></view>
       </view>
       <view
         class="xm-cell"
         @click="go('/pages/password/password')"
       >
-        <text class="xm-cell-icon">🔑</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="key"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('menu.password') }}</text>
-        <text class="xm-cell-arrow">›</text>
+        <view class="xm-cell-arrow"
+          ><xm-icon
+            name="chevron-right"
+            :size="32"
+        /></view>
       </view>
       <view
         class="xm-cell"
         @click="go('/pages/message/message')"
       >
-        <text class="xm-cell-icon">🔔</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="bell"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('menu.message') }}</text>
         <view
           v-if="unreadCount"
           class="cell-badge"
           >{{ unreadCount > 99 ? '99+' : unreadCount }}</view
         >
-        <text class="xm-cell-arrow">›</text>
+        <view class="xm-cell-arrow"
+          ><xm-icon
+            name="chevron-right"
+            :size="32"
+        /></view>
       </view>
     </view>
 
@@ -62,7 +86,11 @@
     <view class="xm-card">
       <view class="xm-card-title">{{ $t('home.prefs') }}</view>
       <view class="xm-cell">
-        <text class="xm-cell-icon">🌐</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="globe"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('layout.lang.label') }}</text>
         <button
           class="xm-btn pref-btn"
@@ -72,19 +100,30 @@
         </button>
       </view>
       <view class="xm-cell">
-        <text class="xm-cell-icon">🎨</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="moon"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('layout.theme.switch') }}</text>
         <button
           class="xm-btn pref-btn"
           @click="cycleTheme"
         >
-          {{ themeMode === 'light' ? '☀' : themeMode === 'dark' ? '☾' : '◐' }}
+          <xm-icon
+            :name="themeModeIcon"
+            :size="32"
+          />
         </button>
       </view>
 
       <!-- 主题色：预设色板点选（小程序无原生取色器；Web 端选的任意颜色同样会同步显示） -->
       <view class="xm-cell color-cell">
-        <text class="xm-cell-icon">🖌</text>
+        <view class="xm-cell-icon"
+          ><xm-icon
+            name="droplet"
+            :size="36"
+        /></view>
         <text class="xm-cell-body xm-ellipsis">{{ $t('layout.themeColor.title') }}</text>
         <text
           v-if="isCustomOutsidePresets"
@@ -123,11 +162,14 @@ import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { ensureLoggedIn } from '@/utils/authGuard'
 import { useMessageStore } from '@/stores/message'
-import { clearCookie, get, resolveFileUrl } from '@/utils/request'
+import { clearCookie, resolveFileUrl, SILENT } from '@/utils/request'
+import { userApiOf } from '@/api'
 import { closeWs } from '@/utils/websocket'
 import { t } from '@/i18n'
+import { confirm } from '@/utils/confirm'
+import { enumLabel } from '@/utils/enums'
 import { isZhLocale, toggleLocale } from '@/composables/useLocale'
-import { cycleTheme, themeMode, themeClass } from '@/composables/useTheme'
+import { cycleTheme, themeModeIcon } from '@/composables/useTheme'
 import { PRESET_COLORS, themeColor, setThemeColor, resetThemeColorOnLogout } from '@/composables/useThemeColor'
 
 const userStore = useUserStore()
@@ -142,15 +184,8 @@ const avatarUrl = computed(() => resolveFileUrl(user.value.avatar))
 
 const avatarLetter = computed(() => (user.value.name || user.value.username || '?').slice(0, 1))
 
-/** 角色码转展示名（与登录页角色选项一致） */
-const roleLabel = computed(() => {
-  const map = {
-    ADMIN: t('login.roleAdmin'),
-    TEACHER: t('login.roleTeacher'),
-    STUDENT: t('login.roleStudent'),
-  }
-  return map[user.value.role] || user.value.role || ''
-})
+/** 角色码转展示名（统一枚举表，与登录页角色选项一致） */
+const roleLabel = computed(() => enumLabel('role', user.value.role))
 
 /** 当前颜色是 Web 端选的、不在预设色板里的任意颜色时，给出「自定义」提示（此时没有色块处于选中态） */
 const isCustomOutsidePresets = computed(
@@ -160,36 +195,30 @@ const isCustomOutsidePresets = computed(
 const go = (path) => uni.navigateTo({ url: path })
 
 /** 退出登录：清空用户态与验证码会话 Cookie，回到登录页 */
-const logout = () => {
-  uni.showModal({
-    title: t('layout.logout'),
-    content: t('layout.logoutConfirm'),
-    success: (res) => {
-      if (!res.confirm) return
-      closeWs()
-      userStore.clearUser()
-      clearCookie()
-      // 复位主题色：否则下一个在本机登录的账号会先看到上一个账号的配色
-      resetThemeColorOnLogout()
-      uni.reLaunch({ url: '/pages/login/login' })
-    },
-  })
+const logout = async () => {
+  if (!(await confirm(t('layout.logoutConfirm'), { title: t('layout.logout') }))) return
+  closeWs()
+  userStore.clearUser()
+  clearCookie()
+  // 复位主题色：否则下一个在本机登录的账号会先看到上一个账号的配色
+  resetThemeColorOnLogout()
+  uni.reLaunch({ url: '/pages/login/login' })
 }
 
 onShow(() => {
   if (!ensureLoggedIn()) return
   uni.setNavigationBarTitle({ title: t('menu.mine') })
   // 载入当前用户的推送消息历史（消息中心入口红点）
-  messageStore.loadForUser(userStore.user.id)
+  messageStore.loadForUser(userStore.accountKey)
 
   // 跨端资料同步：Web 端等其它入口修改资料（如头像）后，进入「我的」页时
   // 静默拉取一次最新用户信息，无需重新登录。
   // selectById 返回的 token 为空，回填本地 token，防止把登录态冲掉。
-  const urlByRole = { ADMIN: '/admin', TEACHER: '/teacher', STUDENT: '/student' }
-  const base = urlByRole[userStore.role]
-  if (base && userStore.user.id) {
+  const api = userApiOf(userStore.role)
+  if (api && userStore.user.id) {
     // 静默同步最新资料（其他终端改过头像等）：失败不打扰用户，保留本地缓存
-    get(`${base}/selectById/${userStore.user.id}`, undefined, { loading: false })
+    api
+      .selectById(userStore.user.id, SILENT)
       .then((profile) => {
         if (profile) userStore.patchUser({ ...profile, token: userStore.token })
       })

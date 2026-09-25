@@ -26,10 +26,17 @@
       "path": "pages/choice/choice",
       "style": { "navigationBarTitleText": "我的选课", "enablePullDownRefresh": true }
     },
-    { "path": "pages/curriculum/curriculum", "style": { "navigationBarTitleText": "我的课表" } },
+    {
+      "path": "pages/curriculum/curriculum",
+      "style": { "navigationBarTitleText": "我的课表", "enablePullDownRefresh": true }
+    },
     {
       "path": "pages/score/score",
       "style": { "navigationBarTitleText": "我的成绩", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/warning/warning",
+      "style": { "navigationBarTitleText": "学业预警", "enablePullDownRefresh": true }
     },
     {
       "path": "pages/comment/comment",
@@ -87,10 +94,10 @@
     }
   },
   "tabBar": {
-    "color": "#8a90a0",
-    "selectedColor": "#5b6cff",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "white",
+    "color": "@tabColor",
+    "selectedColor": "@tabSelectedColor",
+    "backgroundColor": "@tabBgColor",
+    "borderStyle": "@tabBorderStyle",
     "list": [
       {
         "pagePath": "pages/home/home",
@@ -107,11 +114,11 @@
     ]
   },
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "@navTextStyle",
     "navigationBarTitleText": "教务管理系统",
-    "navigationBarBackgroundColor": "#4f6cff",
-    "backgroundColor": "#f4f6fb",
-    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "@navBgColor",
+    "backgroundColor": "@bgColor",
+    "backgroundTextStyle": "@bgTextStyle",
     "enablePullDownRefresh": false
   }
 }

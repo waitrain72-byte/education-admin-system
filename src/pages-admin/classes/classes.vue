@@ -6,77 +6,87 @@
   >
     <!-- 搜索区 -->
     <xm-search-card
-      v-model="name"
+      v-model="query.name"
       :placeholder="$t('pages.classes.searchPlaceholder')"
       @search="search"
-      @reset="onReset"
+      @reset="resetQuery"
     />
 
     <!-- 操作区 -->
     <xm-action-bar
       :manage-mode="manageMode"
+      :total="total"
+      :selected-count="selectedIds.length"
       @add="onAdd"
       @toggle-manage="toggleManage"
       @del-batch="delBatch"
     />
 
     <!-- 列表 -->
-    <view
+    <xm-empty
       v-if="!list.length && !loading"
-      class="xm-empty"
-      >{{ $t('common.empty') }}</view
-    >
+      :action-text="$t('common.reload')"
+      @action="search"
+    />
 
-    <view
-      v-for="item in list"
-      :key="item.id"
-      class="xm-card"
-    >
-      <view class="xm-between">
-        <view class="xm-row">
-          <!-- 批量管理模式下显示勾选框 -->
-          <checkbox
-            v-if="manageMode"
-            :checked="selectedIds.includes(item.id)"
-            style="transform: scale(0.8)"
-            @click.stop="toggleSelect(item.id)"
-          />
-          <view
-            class="xm-value"
-            style="font-weight: bold"
-            >{{ item.name }}</view
-          >
+    <!-- 列表：手机单列，平板 ≥720px 两列、≥1248px 三列（theme.scss .xm-list） -->
+    <view class="xm-list">
+      <view
+        v-for="item in list"
+        :key="item.id"
+        class="xm-card"
+      >
+        <view class="xm-between">
+          <view class="xm-row xm-card-head">
+            <!-- 批量管理模式下显示勾选框 -->
+            <checkbox
+              v-if="manageMode"
+              :checked="selectedIds.includes(item.id)"
+              style="transform: scale(0.8)"
+              @click.stop="toggleSelect(item.id)"
+            />
+            <text class="xm-card-name xm-ellipsis">{{ item.name }}</text>
+          </view>
+          <text class="xm-card-no">#{{ item._index }}</text>
         </view>
-        <view class="xm-label">{{ $t('pages.classes.id') }}: {{ item._index }}</view>
-      </view>
-      <view
-        class="xm-label"
-        style="margin-top: 8rpx"
-        >{{ $t('pages.classes.content') }}: {{ item.content }}</view
-      >
-      <view
-        class="xm-row"
-        style="margin-top: 8rpx"
-      >
-        <view class="xm-label">{{ $t('pages.classes.speciality') }}: {{ item.specialityName }}</view>
-        <view class="xm-label">{{ $t('pages.classes.teacher') }}: {{ item.teacherName }}</view>
-      </view>
-      <view
-        class="xm-actions"
-        v-if="!manageMode"
-      >
-        <button
-          class="xm-btn xm-btn-plain"
-          @click="onEdit(item)"
+        <view class="xm-meta">
+          <view class="xm-meta-item">
+            <xm-icon
+              name="book"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.specialityName || '-' }}</text>
+          </view>
+          <view class="xm-meta-item">
+            <xm-icon
+              name="briefcase"
+              :size="28"
+            />
+            <text class="xm-meta-text">{{ item.teacherName || '-' }}</text>
+          </view>
+        </view>
+        <view
+          v-if="item.content"
+          class="xm-card-desc xm-clamp-2"
+          >{{ item.content }}</view
         >
-          {{ $t('common.edit') }}
-        </button>
-        <button
-          class="xm-btn xm-btn-danger"
-          @click="del(item.id)"
+        <view
+          class="xm-actions"
+          v-if="!manageMode"
         >
-          {{ $t('common.delete') }}
-        </button>
+          <button
+            class="xm-btn xm-btn-plain"
+            @click="onEdit(item)"
+          >
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            class="xm-btn xm-btn-danger"
+            @click="del(item.id)"
+          >
+            {{ $t('common.delete') }}
+          </button>
+        </view>
       </view>
     </view>
 
@@ -91,7 +101,7 @@
     <xm-form-popup
       :visible="formVisible"
       :saving="saving"
-      :title="(form.id ? $t('common.edit') : $t('common.add')) + ' - ' + $t('pages.classes.dialogTitle')"
+      :title="$t(form.id ? 'common.editTitle' : 'common.addTitle', { name: $t('pages.classes.entity') })"
       @close="closeForm"
       @save="save"
     >
@@ -113,25 +123,23 @@
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.classes.speciality') }}</view>
-        <picker
-          :range="specialityLabels"
-          :value="specialityIndex"
-          @change="onSpecialityChange"
-        >
-          <view class="xm-input">{{
-            specialityName(form.specialityId) || $t('pages.classes.specialityPlaceholder')
-          }}</view>
-        </picker>
+        <xm-picker
+          v-model="form.specialityId"
+          :options="specialityData"
+          label-key="name"
+          value-key="id"
+          :placeholder="$t('pages.classes.specialityPlaceholder')"
+        />
       </view>
       <view class="xm-form-item">
         <view class="xm-form-label">{{ $t('pages.classes.teacher') }}</view>
-        <picker
-          :range="teacherLabels"
-          :value="teacherIndex"
-          @change="onTeacherChange"
-        >
-          <view class="xm-input">{{ teacherName(form.teacherId) || $t('pages.classes.teacherPlaceholder') }}</view>
-        </picker>
+        <xm-picker
+          v-model="form.teacherId"
+          :options="teacherData"
+          label-key="name"
+          value-key="id"
+          :placeholder="$t('pages.classes.teacherPlaceholder')"
+        />
       </view>
     </xm-form-popup>
 
@@ -140,119 +148,61 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { onShow, onReachBottom } from '@dcloudio/uni-app'
-import { useUserStore } from '@/stores/user'
-import { ensureLoggedIn } from '@/utils/authGuard'
-import { useCrud } from '@/composables/useCrud'
-import { useManage } from '@/composables/useManage'
-import { get } from '@/utils/request'
+import { ref } from 'vue'
+import { useListPage } from '@/composables/useListPage'
+import { classesApi, specialityApi, teacherApi } from '@/api'
+import { orNull } from '@/utils/request'
 import { t } from '@/i18n'
 
-const userStore = useUserStore()
-const name = ref('')
+// 上级专业 / 班主任下拉（接口与 Web 端一致），打开表单时加载
 const specialityData = ref([])
 const teacherData = ref([])
 
+// 仅管理员可见（与 Web 端路由 meta.roles 一致）
 const {
   list,
   loading,
-  saving,
   finished,
+  total,
   form,
   formVisible,
+  saving,
   selectedIds,
-  load,
+  query,
+  manageMode,
   loadNext,
   search,
+  resetQuery,
+  toggleManage,
+  toggleSelect,
   handleAdd,
   handleEdit,
   closeForm,
   save,
   del,
   delBatch,
-} = useCrud({
-  url: '/classes',
-  getParams: () => ({ name: name.value }),
-  validate: (f) => {
-    if (!f.name) return t('pages.classes.ruleNameRequired')
-    return ''
-  },
+} = useListPage({
+  api: classesApi,
+  title: 'menu.classes',
+  roles: ['ADMIN'],
+  query: { name: '' },
+  validate: (f) => (f.name ? '' : t('pages.classes.ruleNameRequired')),
 })
 
-const { manageMode, toggleManage, toggleSelect } = useManage(selectedIds)
-
-// 级联下拉：上级专业/教师列表（接口与 Web 端一致），表单打开时加载
-const loadSpeciality = async () => {
-  try {
-    specialityData.value = (await get('/speciality/selectAll')) || []
-  } catch {
-    // 请求层已统一提示
-  }
-}
-
-const loadTeacher = async () => {
-  try {
-    teacherData.value = (await get('/teacher/selectAll')) || []
-  } catch {
-    // 请求层已统一提示
-  }
-}
-
-const specialityLabels = computed(() => specialityData.value.map((item) => item.name))
-const specialityIndex = computed(() => {
-  const idx = specialityData.value.findIndex((item) => item.id === form.value.specialityId)
-  return idx >= 0 ? idx : 0
-})
-const specialityName = (id) => {
-  const item = specialityData.value.find((s) => s.id === id)
-  return item ? item.name : ''
-}
-const onSpecialityChange = (e) => {
-  const item = specialityData.value[Number(e.detail.value)]
-  if (item) form.value.specialityId = item.id
-}
-
-const teacherLabels = computed(() => teacherData.value.map((item) => item.name))
-const teacherIndex = computed(() => {
-  const idx = teacherData.value.findIndex((item) => item.id === form.value.teacherId)
-  return idx >= 0 ? idx : 0
-})
-const teacherName = (id) => {
-  const item = teacherData.value.find((tc) => tc.id === id)
-  return item ? item.name : ''
-}
-const onTeacherChange = (e) => {
-  const item = teacherData.value[Number(e.detail.value)]
-  if (item) form.value.teacherId = item.id
+const loadSelects = async () => {
+  ;[specialityData.value, teacherData.value] = await Promise.all([
+    orNull(specialityApi.selectAll()).then((rows) => rows || []),
+    orNull(teacherApi.selectAll()).then((rows) => rows || []),
+  ])
 }
 
 const onAdd = () => {
-  loadSpeciality()
-  loadTeacher()
-  handleAdd({})
+  loadSelects()
+  handleAdd()
 }
+
 const onEdit = (row) => {
-  loadSpeciality()
-  loadTeacher()
+  loadSelects()
   handleEdit(row)
 }
-const onReset = () => {
-  name.value = ''
-  search()
-}
-
-// 页面入口：仅管理员可见（与 Web 端路由 meta.roles 一致）
-onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.classes') })
-  if (!ensureLoggedIn()) return
-  if (!['ADMIN'].includes(userStore.role)) {
-    uni.showToast({ title: t('errors.403'), icon: 'none' })
-    setTimeout(() => uni.navigateBack(), 800)
-    return
-  }
-  load(true)
-})
-
-onReachBottom(() => loadNext())
 </script>
