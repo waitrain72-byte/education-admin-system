@@ -1,6 +1,6 @@
 # 数据库 ER 图
 
-> 数据库：`xm_educational_manager`（MySQL 5.7，共 21 张表）
+> 数据库：`xm_educational_manager`（MySQL 5.7，共 21 张表；表结构以种子 `sql/xm_educational_manager-full.sql` 为准）
 > 说明：系统采用**逻辑外键**设计（不建物理外键约束，由应用层保证一致性，便于批量导入与维护），下图为逻辑关系。
 > 图表使用 Mermaid 渲染，可在 GitHub 直接查看，也可粘贴到 [mermaid.live](https://mermaid.live) 导出 PNG/SVG 插入论文。
 
@@ -33,14 +33,14 @@ erDiagram
         varchar password "密码(BCrypt)"
         varchar name "姓名"
         varchar avatar "头像"
-        varchar role "角色"
+        varchar role "角色(对应SYS_ROLE.code)"
         int college_id FK "学院"
         int speciality_id FK "专业"
         int class_id FK "班级"
-        int score "已获学分"
-        varchar theme "主题偏好"
-        varchar locale "语言偏好"
-        varchar theme_color "自定义主题色"
+        int score "已获学分(及格课程累加)"
+        varchar theme "主题偏好(light/dark/system)"
+        varchar locale "语言偏好(zh-CN/en-US)"
+        varchar theme_color "自定义主题色(空串=默认色)"
     }
     TEACHER {
         int id PK "主键"
@@ -48,13 +48,13 @@ erDiagram
         varchar password "密码(BCrypt)"
         varchar name "姓名"
         varchar avatar "头像"
-        varchar role "角色"
+        varchar role "角色(对应SYS_ROLE.code)"
         varchar phone "电话"
         varchar email "邮箱"
         varchar title "职称"
-        varchar theme "主题偏好"
-        varchar locale "语言偏好"
-        varchar theme_color "自定义主题色"
+        varchar theme "主题偏好(light/dark/system)"
+        varchar locale "语言偏好(zh-CN/en-US)"
+        varchar theme_color "自定义主题色(空串=默认色)"
     }
     ADMIN {
         int id PK "主键"
@@ -62,12 +62,12 @@ erDiagram
         varchar password "密码(BCrypt)"
         varchar name "姓名"
         varchar avatar "头像"
-        varchar role "角色"
+        varchar role "角色(对应SYS_ROLE.code)"
         varchar phone "电话"
         varchar email "邮箱"
-        varchar theme "主题偏好"
-        varchar locale "语言偏好"
-        varchar theme_color "自定义主题色"
+        varchar theme "主题偏好(light/dark/system)"
+        varchar locale "语言偏好(zh-CN/en-US)"
+        varchar theme_color "自定义主题色(空串=默认色)"
     }
     COURSE {
         int id PK "主键"
@@ -75,11 +75,11 @@ erDiagram
         varchar type "课程类型(必修/选修)"
         int teacher_id FK "授课教师"
         int score "课程学分"
-        int num "上课人数"
+        int num "人数上限(选课满员校验)"
         varchar room "上课教室(对应ROOMPLAN.code)"
-        varchar week "周几"
-        varchar segment "第几大节"
-        varchar status "上课状态"
+        varchar week "星期(星期一~星期日)"
+        varchar segment "大节(第一~第五大节，含时段)"
+        varchar status "上课状态(未开课/已开课/已结课)"
     }
     CHOICE {
         int id PK "主键"
@@ -94,7 +94,7 @@ erDiagram
         int teacher_id FK "教师"
         double ordinary_score "平时分"
         double exam_score "考试分"
-        double score "总成绩"
+        double score "总成绩(平时×0.3+考试×0.7)"
     }
     ATTENDANCE {
         int id PK "主键"
@@ -102,7 +102,7 @@ erDiagram
         int teacher_id FK "教师"
         int course_id FK "课程"
         varchar time "上课时间"
-        varchar status "考勤状态(中文)"
+        varchar status "考勤状态(正常/迟到/早退/缺勤)"
     }
     HOMEWORK {
         int id PK "主键"
@@ -120,7 +120,7 @@ erDiagram
         text content "请假说明"
         varchar time "请假时间"
         int day "请假天数"
-        varchar status "审核状态(中文)"
+        varchar status "审核状态(待审核/审核通过/审核不通过)"
         varchar descr "审核说明"
     }
     COMMENT {
@@ -135,21 +135,22 @@ erDiagram
         int id PK "主键"
         varchar title "标题"
         varchar content "内容"
-        varchar time "创建时间"
-        varchar user "创建人"
+        varchar time "发布日期(新增时生成)"
+        varchar user "发布人账号名(弱关联ADMIN)"
     }
     EXAMPLAN {
         int id PK "主键"
         varchar name "标题"
         varchar content "内容"
-        varchar time "发布时间"
+        varchar time "发布时间(新增时生成，不可改)"
+        varchar exam_time "考试时间(yyyy-MM-dd HH:mm，倒计时依据)"
     }
     ROOMPLAN {
         int id PK "主键"
-        varchar code "教室编号(101-501或场馆名)"
+        varchar code UK "教室编号(唯一，排课按编号匹配)"
         varchar name "教室名称"
         varchar type "类型(授课教室/运动场馆/固定占用)"
-        varchar status "教室状态"
+        varchar status "教室状态(空闲/占用)"
         int num "容纳人数"
         varchar content "使用说明"
     }
@@ -176,6 +177,7 @@ erDiagram
     STUDENT ||--o{ APPLY : "提交请假"
     TEACHER ||--o{ COMMENT : "被评教(按姓名)"
     STUDENT ||--o{ COMMENT : "发起评教(按姓名)"
+    ADMIN ||--o{ NOTICE : "发布(按账号名)"
     ROOMPLAN ||--o{ COURSE : "排课占用(编号+星期+大节)"
 ```
 
@@ -240,12 +242,18 @@ erDiagram
    查询性能靠二级索引兜底（见下方「索引设计」，建表语句在种子文件中）。
 4. **三账号表结构相近但分表存储**：`admin` / `teacher` / `student` 字段高度相似，分表是因为三角色的
    业务字段差异（学生有班级归属与学分，教师有职称）与数据隔离需求（各角色独立管理页）。
-5. **独立实体**：`notice`（教务通知）、`examplan`（考试安排）、`admin`（管理员）
-   无外键关联，为全员公告/独立账号类数据；通知发布时通过 WebSocket 全员广播。
-6. **教室按「编号 + 时段」逻辑占用**：`course.room` 存教室编号（对应 `roomplan.code`）。
-   `roomplan.type = 固定占用`（办公/器材等约 200 间）不参与排课；课程保存时校验同一
+5. **公告类实体与弱关联**：`examplan`（考试安排）无外键关联，有两个时间字段——`time` 为发布时间
+   （新增时由后端生成、不可修改），`exam_time` 为考试时间（`yyyy-MM-dd HH:mm`，Web 与小程序据此显示考试倒计时，
+   升级前录入的旧数据可为空）；`notice`（教务通知）的 `user` 存发布人**账号名**（默认只有管理员有 `notice:manage` 权限），
+   与 `admin` 表按账号名弱关联，通知发布时通过 WebSocket 全员广播。
+6. **教室按「编号 + 时段」逻辑占用**：`course.room` 存教室编号（对应 `roomplan.code`，唯一）。
+   `roomplan.type = 固定占用`（办公室、器材存放等）不参与排课；课程保存时校验同一
    「教室 + 星期 + 大节」不重叠（错误码 5010），状态为「已结课」的课程自动释放教室；
    排课表单只列该时段空闲教室，留空时系统按容量就近自动分配（体育课优先运动场馆）。
+7. **计算型数据不落表**：学业预警（按成绩与考勤多指标加权实时算出风险指数）、课程推荐（基于选课矩阵的协同过滤）、
+   我的课表（由选课 + 课程拼装，`Curriculum` 只是传输对象）都不单独建表；首页统计与数据大屏同样按需聚合。
+8. **表结构演进**：新增列同时写进种子 SQL（新库）和后端启动迁移 `SchemaMigration`（查 `information_schema`，
+   旧库缺列才执行 `ALTER`，幂等），已在用的数据库不必重新导入；目前由它补齐的列是 `examplan.exam_time`。
 
 ## 四、索引设计
 
@@ -263,7 +271,7 @@ erDiagram
 | `course` | `idx_room_week_segment` | 联合 | 教室占用校验与智能排课分配 |
 | `roomplan` | `uk_room_code` | UNIQUE | 教室编号唯一 |
 | `sys_login_log` / `sys_oper_log` | `idx_create_time` / `idx_username` | 单列 | 日志分页查询与按时间定期清理 |
-| `sys_permission` / `sys_role` / `sys_role_permission` | `uk_permission_code` / `uk_role_code` / `uk_role_permission` / `idx_rp_permission` | UNIQUE + 单列 | 权限码与角色码唯一；角色-权限关联查询 |
+| `sys_permission` / `sys_role` / `sys_role_permission` | `uk_permission_code` / `idx_permission_module` / `uk_role_code` / `uk_role_permission` / `idx_rp_permission` | UNIQUE + 单列 | 权限码与角色码唯一；权限设置页按模块分组列出权限点；角色-权限关联查询 |
 
 ### 设计说明
 

@@ -34,7 +34,7 @@
 
 - **Web 前端**：Vue 3 + Vite 5 + TypeScript + Element Plus + Pinia + Vue Router + Vue I18n + ECharts + Axios + Vitest + ESLint/Prettier
 - **后端**：Java 8 + Spring Boot 2.7.18 + MyBatis + PageHelper + MySQL + JWT + Knife4j + EasyExcel + Spring AOP + Hutool + Easy Captcha + JUnit 5/Mockito
-- **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图 + WebSocket 实时通知
+- **小程序端**：uni-app（Vue 3）+ Pinia + 自研轻量 i18n + 纯 CSS 统计图 + WebSocket 实时通知 + Vitest（渐进式 TypeScript）
 - **部署**：Docker / docker-compose + nginx
 
 ## 功能总览
@@ -57,16 +57,17 @@
 | 数据隔离                  | 教师只看自己任课课程的成绩/考勤/作业/评教，学生只看自己的数据，管理员看全部                                                                                                                                                                   |
 | 中英文国际化              | vue-i18n 全页面覆盖；语言/主题偏好存数据库，一次设置多端同步                                                                                                                                                                                  |
 | 深浅色主题                | light / dark / 跟随系统三档，CSS 变量体系 + Element Plus 暗色联动 + ECharts 重绘                                                                                                                                                              |
-| 自定义主题色（按账号）    | 顶栏取色面板：8 个预设 + 任意取色 + 恢复默认；按 Element Plus 同款算法派生完整色阶（深色模式自动提亮基色并反向派生），颜色存账号表 `theme_color`，换终端登录自动跟随。**Web 端功能，小程序端暂未支持**                                        |
+| 自定义主题色（按账号）    | 顶栏取色面板：8 个预设 + 任意取色 + 恢复默认；按 Element Plus 同款算法派生完整色阶（深色模式自动提亮基色并反向派生），颜色存账号表 `theme_color`，换终端登录自动跟随；小程序在「我的」页提供同一套 8 个预设色板（没有原生取色器），与 Web 端双向同步                                        |
 | 数据大屏                  | `/dashboard` 全屏页：指标卡 + 成绩分布/考勤占比/学院人数/选课热度/职称结构/登录趋势六图                                                                                                                                                       |
 | 智能算法                  | 课程推荐：基于物品的协同过滤（选课矩阵 + 余弦相似度），冷启动自动降级热门推荐；学业预警：不及格占比/平均分差距/异常考勤率加权合成风险指数，三级预警并经 WebSocket 实时推送提醒                                                                |
 | WebSocket 实时通知        | 请假审核、成绩发布、作业批改实时推送学生；提交通知教师；发通知全员广播，断线自动重连                                                                                                                                                          |
+| 考试倒计时（两端）        | 考试安排新增「考试时间」（与发布时间分开，精确到分钟）；列表与首页显示「今天 / 明天 / 还有 N 天 / 已结束」标签（3 天内红、一周内橙），首页按离开考远近排序，页面开着跨过零点自动更新；老库由后端启动时自动补列 |
 | Excel 导入导出            | 学生批量导入（EasyExcel 校验、跳过重复）/ 导出，成绩导出                                                                                                                                                                                      |
 | 防重复提交与 XSS          | `@NoRepeatSubmit` 关键写接口 2 秒防重；Jackson 反序列化中和脚本标签                                                                                                                                                                           |
 | 文件上传安全              | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls                                                                                                                                        |
 | 通用 CRUD 框架            | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，18 个管理页样板代码收敛；批量删除收敛为单条 IN 语句（Service 层拦截空集合）                                                                                |
 | 性能优化                  | 请求级用户缓存（单个写请求原先要查 3~4 遍同一行账号，收敛为 1 次）；成绩分段/考勤占比统计下推数据库 `GROUP BY`；学业预警按角色过滤下推 SQL；数据大屏 30s、课程推荐 60s 进程内缓存；Element Plus 按需引入（JS 深导入 + CSS 按需，首屏样式 355→216 KB） |
-| 单元测试与规范            | 前端 Vitest 27 个用例（Pinia store / useCrud / 主题色派生）；后端 JUnit 5 + Mockito 47 个用例（学业预警评分模型、协同过滤推荐、选课时间冲突与满员边界、成绩学分记账）；ESLint + Prettier                                                       |
+| 单元测试与规范            | 前端 Vitest 42 个用例（Pinia store / useCrud / 主题色派生 / 考试倒计时 / 通用 CRUD 组件）；后端 JUnit 5 + Mockito 57 个用例（学业预警评分模型、协同过滤推荐、选课时间冲突与满员边界、成绩学分记账、考试时间校验与启动补列）；ESLint + Prettier                                                       |
 | Docker 化部署             | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`）                                                                                                                                                                      |
 
 **内置账号**（初始密码均为 `123456`，数据库存 BCrypt 哈希，登录后可修改）：
@@ -102,7 +103,7 @@
 - **权限隔离口径**：教师/学生按身份看数据（教师看自己任课课程，学生看自己），管理员看全部。
 - **数据大屏**：汇总账号表（学生/教师数）、`choice`（选课人次）、`score`（成绩分布）、`attendance`（考勤占比）等。
 - **请假申请**：学生提交、管理员审核（结果实时推送），独立于课程链。
-- **通知 / 考试安排 / 教室安排**：全员公告性数据，出现在首页与数据大屏。
+- **通知 / 考试安排 / 教室安排**：全员公告性数据，出现在首页与数据大屏。考试安排有两个时间：发布时间 `time`（新增时后端生成，不可改）与考试时间 `exam_time`（`yyyy-MM-dd HH:mm`），两端据后者显示考试倒计时。
 
 ## 项目结构
 
@@ -244,6 +245,7 @@ mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.s
 - 第一条：创建数据库（`-p123456` 换成你自己的 root 密码）；
 - 第二条：导入全量种子（表结构 + 演示数据 + RBAC 授权一次到位），没有任何输出就是成功；
 - 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`。
+- **已经在用的旧库不用重新导入**：新版本新增的列（目前是考试安排的 `exam_time`）由后端启动时自动补齐（`common/config/SchemaMigration`，已有该列时什么也不做）；数据库账号没有 ALTER 权限时，启动日志会打印要手动执行的 SQL：`ALTER TABLE examplan ADD COLUMN exam_time varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '考试时间（yyyy-MM-dd HH:mm）' AFTER time;`
 
 #### 3. 启动后端
 
@@ -272,7 +274,7 @@ npm run dev
 
 #### 5. 改代码怎么看效果
 
-前端改 `.vue`/`.ts` 文件保存后浏览器自动热更新；后端改 Java 文件需重启 `mvn spring-boot:run`。改完前端执行 `npm run lint`（格式检查）和 `npm run test`（16 个单元测试）保持代码规范。
+前端改 `.vue`/`.ts` 文件保存后浏览器自动热更新；后端改 Java 文件需重启 `mvn spring-boot:run`。改完前端执行 `npm run lint`（格式检查）和 `npm run test`（42 个单元测试）保持代码规范。
 
 ### Web 端打包发布
 
@@ -284,7 +286,7 @@ java -jar target/springboot-0.0.1-SNAPSHOT.jar
 
 ## 部署说明 · App 端（微信小程序）
 
-小程序与 Web 端功能对齐（23 个页面、三角色、中英文、深浅色主题与偏好同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端，并支持 WebSocket 实时通知（成绩发布/作业批改/请假审核/教务通知推送 + 「首页」未读角标）与跨端资料同步（头像等修改后进入相关页面自动拉取，无需重新登录）。交互按移动端习惯适配：底部 TabBar（首页 / 我的）、卡片列表 + 底部弹层表单、触底加载、请假状态筛选、退出登录；管理页面放在分包里按需加载。
+小程序与 Web 端功能对齐（25 个页面：主包 19 个 + 管理分包 6 个；三角色、中英文、深浅色主题与自定义主题色，偏好按账号两端同步），基于 uni-app（Vue 3）连接同一 Spring Boot 后端，并支持 WebSocket 实时通知（成绩发布 / 作业批改 / 请假审核 / 教务通知 / 学业预警提醒，「首页」未读角标 + 消息中心可回看）与跨端资料同步（头像等修改后进入相关页面自动拉取，无需重新登录）。移动端另有增强：首页今日课程、课表周视图（断网也能看上次同步的课表）、学生成绩汇总（平均学分绩点）、考试倒计时、新版本提示与右上角转发。交互按移动端习惯适配：底部 TabBar（首页 / 我的）、卡片列表 + 底部弹层表单、触底加载、请假状态筛选、退出登录；管理页面放在分包里按需加载。完整功能与目录见小程序仓库（`mobile` 分支）的 README。
 
 ### 第 1 步：准备两样东西
 
@@ -305,7 +307,7 @@ npm install
 | 文件                  | 改什么                                                                                                                                                                |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/manifest.json`   | 找到 `"mp-weixin"` 里的 `"appid"`，把值换成你自己的 AppID                                                                                                             |
-| `src/utils/config.js` | 第 4 行 `baseUrl`：**开发者工具模拟器**用 `http://localhost:9091`；**真机预览**用电脑局域网 IP（命令行执行 `ipconfig`，找"IPv4 地址"，如 `http://192.168.1.10:9091`） |
+| `.env.development` / `.env.production` | `VITE_API_BASE_URL`（开发 / 生产构建各读一个）：**开发者工具模拟器**用 `http://localhost:9091`；**真机预览**用电脑局域网 IP（命令行执行 `ipconfig`，找"IPv4 地址"，如 `http://192.168.1.10:9091`）；改完要**重启** `npm run dev:mp-weixin`（env 只在启动时读取） |
 
 ### 第 4 步：构建并导入开发者工具
 
@@ -323,7 +325,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 1. 工具栏点**"预览"**按钮，生成二维码，用手机微信扫码；
 2. 手机和电脑必须连**同一个 Wi-Fi**；
-3. `baseUrl` 必须是电脑的局域网 IP（不是 localhost）；
+3. `VITE_API_BASE_URL` 必须是电脑的局域网 IP（不是 localhost）；电脑 IP 被路由器重新分配后要同步改 env 文件并重启编译；
 4. Windows 防火墙放行 9091 端口（管理员 PowerShell 执行）：
    ```powershell
    New-NetFirewallRule -DisplayName 'edu-manager-9091' -Direction Inbound -Protocol TCP -LocalPort 9091 -Action Allow
@@ -336,7 +338,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 ### 发布上线（仅演示可跳过）
 
-正式发布要求：① 一个**已备案的 HTTPS 域名**部署后端（localhost/局域网 IP 不行）；② 公众平台"开发管理 → 服务器域名"把域名填入 request / uploadFile 合法域名；③ 开发者工具点"上传"→ 公众平台提交审核 → 审核通过后发布。
+正式发布要求：① 一个**已备案的 HTTPS 域名**部署后端（localhost/局域网 IP 不行）；② 公众平台"开发管理 → 服务器域名"登记该域名：request / uploadFile / downloadFile 合法域名填 `https://` 地址，socket 合法域名填 `wss://` 地址（实时通知走 WebSocket，作业附件查看走下载）；③ 把 `.env.production` 的 `VITE_API_BASE_URL` 改成该域名，用 `RELEASE=1 npm run build:mp-weixin` 构建（PowerShell 写作 `$env:RELEASE=1; npm run build:mp-weixin`），地址仍不是 HTTPS、是局域网 / 本机地址或带端口时直接构建失败；④ 开发者工具点"上传"→ 公众平台提交审核 → 审核通过后发布。
 
 ## 配置速查
 
@@ -346,7 +348,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 | 数据库连接    | 同上（`ip` / `spring.datasource.*`）                                                                               | `localhost:3306/xm_educational_manager`，`root/123456` |
 | JWT 密钥/过期 | 同上 `jwt.*`（支持环境变量 `JWT_SECRET`）                                                                          | 内置默认值 / `2` 小时                                  |
 | CORS 白名单   | 同上 `app.cors.allowed-origins`（环境变量 `CORS_ALLOWED_ORIGINS`）                                                 | `http://localhost:8080,http://localhost:5173`          |
-| 文件访问前缀  | 同上 `files.url-prefix`                                                                                            | `/api/files/`                                          |
+| 文件访问前缀  | 同上，可加 `files.url-prefix` 覆盖（未配置时用代码默认值）                                                                                            | `/api/files/`                                          |
 | 前端接口地址  | `vue/.env.development`（开发）/ `.env.production`（生产 `/api`）                                                   | 见文件                                                 |
 | 前端开发端口  | `vue/vite.config.ts`                                                                                               | `8080`                                                 |
 | 上传文件目录  | 后端启动目录 `user.dir` 下的 `files/`（MD5 去重；演示头像随仓库 `files/` 目录分发，Docker 部署以绑定挂载方式提供） | —                                                      |
@@ -360,6 +362,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 - [ ] 修改默认管理员密码
 - [ ] 保持 SQL 注入防御约定：Mapper 一律 `#{}` 预编译（禁用 `${}`）、不开 `allowMultiQueries`、枚举入参白名单校验
 - [ ] 高并发场景：调整 `spring.datasource.hikari.maximum-pool-size`，多实例部署需引入 Redis 外置 Session/验证码（登录失败计数、防重复提交、大屏与推荐缓存目前都是进程内实现，仅适用单实例）
+
 ## 数据库索引设计
 
 种子已为数据隔离与高频查询建好索引（导入即生效，无需额外操作）：
@@ -373,6 +376,10 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 | `admin` / `teacher` / `student` | `username` **UNIQUE** | 登录查询；同时从数据库层堵住「先查后插」的账号重复竞态 |
 | `course` | `(room, week, segment)` | 教室占用校验与智能排课 |
 | `sys_login_log` / `sys_oper_log` | `create_time` / `username` | 日志分页与按时间清理 |
+| `roomplan` | `code` **UNIQUE** | 教室编号唯一，排课按编号精确匹配 |
+| `sys_permission` / `sys_role` / `sys_role_permission` | `code` UNIQUE、`module` / `code` UNIQUE / `(role_id, permission_id)` UNIQUE、`permission_id` | 权限码与角色码唯一；权限设置页按模块分组列出；角色-权限关联查询 |
+
+索引名与设计取舍见 [docs/数据库ER图.md](docs/数据库ER图.md) 的「索引设计」。
 
 **实测执行计划**（`EXPLAIN`，演示数据量下）：
 
@@ -396,7 +403,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 依次检查：后端是否启动（开 `http://localhost:9091/` 看有没有 JSON）；`vue/.env.development` 的 `VITE_BASE_URL`；浏览器 F12 控制台是否报跨域（跨域 = 前端没跑在 8080，见问题 5）。
 
 **3. 后端启动失败，提示数据库连接失败**
-MySQL 没启动、库没建、备份没导入、账号密码不对——按手动部署第 2 步重来一遍。日志页/主题语言接口报错同理（缺表缺字段就重新导入全量备份）。
+MySQL 没启动、库没建、备份没导入、账号密码不对——按手动部署第 2 步重来一遍。日志页/主题语言接口报错同理（缺表缺字段就重新导入全量备份）；考试安排缺 `exam_time` 列不用重导，后端启动时会自动补（见手动部署第 2 步）。
 
 **4. 忘记密码**
 BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码"为 `123456`，登录后立即修改。管理员自己忘了密码只能直接改数据库。
@@ -414,23 +421,24 @@ BCrypt 无法反推原密码。用管理员账号在用户管理页"重置密码
 多试几次；或使用镜像加速（把克隆地址中的 `github.com` 换成 `gitclone.com/github.com` 等加速前缀）；网络允许时配代理最快。
 
 **9. 小程序验证码不显示 / 真机连不上后端**
-按 App 端部署"第 5 步真机预览"的 6 条逐项检查（baseUrl、同一 Wi-Fi、防火墙、不校验合法域名、代理设置）。
+按 App 端部署"第 5 步真机预览"的清单逐项检查（`VITE_API_BASE_URL`、同一 Wi-Fi、防火墙、不校验合法域名、代理设置）；小程序 `src/utils/config.ts` 头部也有同样的排错清单。电脑的局域网 IP 变了的话，改两个 env 文件后重启 `npm run dev:mp-weixin`。
 
 ## 维护约定（两端必读）
 
-1. **用户偏好多端同步**：主题（`theme`：light/dark/system）与语言（`locale`：zh-CN/en-US）存账号表，两端登录自动拉取、修改后防抖推送。自定义主题色（`theme_color`：`#RRGGBB`，空串=用内置默认色）走同一套机制，但**目前只有 Web 端实现**；小程序端若要跟进，照 `useThemeColor.ts` 的模式接 `/themeColor` 接口即可。
+1. **用户偏好多端同步**：主题（`theme`：light/dark/system）与语言（`locale`：zh-CN/en-US）存账号表，两端登录自动拉取、修改后防抖推送。自定义主题色（`theme_color`：`#RRGGBB`，空串=用内置默认色）走同一套机制，**两端都已实现**：Web 端可任意取色，小程序只提供 8 个预设色板（没有原生取色器），同一账号两端互通；预设色板两端各有一份（Web `vue/src/composables/useThemeColor.ts`、小程序 `src/utils/themeColor.js` 的 `PRESET_COLORS`），修改时两边同步。
 2. **语言包词条键两端一致**：Web（vue-i18n）与小程序（自研 i18n）使用相同键名，改文案两端同步。
 3. **数据库枚举值为中文**：考勤状态、请假状态、课程性质等按中文入库，后端统计按中文分组——界面只翻译展示文案，不要改入库枚举值。
 4. **接口约定**：统一返回 `{ code, msg, data }`；token 放自定义请求头 `token`；错误码见 `ResultCodeEnum`，前端按码本地化、未知码回退后端消息。
 5. **日志约定**：操作日志由 AOP 自动记录非 GET 请求（新接口无需埋点）；登录日志由 `LoginProtectService` 记录。
 6. **典型模块阅读路径**：`vue/src/views/manager/College.vue` → `controller/CollegeController.java` → `service/CollegeService.java` → `mapper/CollegeMapper.java` → `resources/mapper/CollegeMapper.xml` → `entity/College.java`。
+7. **给已有表加列**：同时改 `sql/xm_educational_manager-full.sql`（新库）、`SchemaMigration.run()` 里加一行 `addColumnIfMissing`（老库启动时自动补，幂等）、实体与 Mapper XML、`docs/数据库ER图.md`；日期时间字段两端统一存 `yyyy-MM-dd HH:mm` 字符串，前端手动解析（iOS / Safari 不认空格分隔的日期串）。
 
 ## 可个性化调整
 
 | 想改什么    | 位置                                                                                                                          |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 系统名称    | Web：`vue/src/locales/zh-CN.ts` 的 `layout.title`；小程序：`BISHE-mobile/src/locales/zh-CN.js` 同名键（中英两个语言包都要改） |
-| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——登录后点顶栏的彩色圆点即可换，按账号保存；要调预设色板改 `vue/src/composables/useThemeColor.ts` 的 `PRESET_COLORS` |
+| 系统名称    | Web：`vue/src/locales/zh-CN.ts` / `en-US.ts` 的 `layout.title`（顶栏）、`login.systemName`（登录 / 注册页）、`pages.dashboard.title`（数据大屏），浏览器标签页标题在 `vue/index.html`；小程序：`BISHE-mobile/src/locales/zh-CN.js` / `en-US.js` 的 `login.systemName`（登录页）与 `layout.title`（转发标题），以及 `src/manifest.json` 的 `name`（微信里显示的小程序名称以公众平台登记的为准） |
+| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——Web 端登录后点顶栏的彩色圆点、小程序在「我的」页即可换，按账号保存、两端同步；要调预设色板改 `vue/src/composables/useThemeColor.ts` 与 `BISHE-mobile/src/utils/themeColor.js` 的 `PRESET_COLORS` |
 | 页面切换动画 | `vue/src/assets/css/manager.css` 的 `.route-fade-*`（离场 0.06s + 进场 0.16s）；想完全关掉就把两条 `transition` 改成 `none`  |
 | 大屏样式    | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放）                                                                           |
 | 演示数据    | `sql/` 下备份脚本可按需修改                                                                                                   |
