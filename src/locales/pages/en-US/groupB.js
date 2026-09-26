@@ -33,9 +33,19 @@ export default {
       title: 'Title',
       content: 'Content',
       time: 'Created At',
-      timePlaceholder: 'Select date',
       ruleTitleRequired: 'Please enter the title',
       ruleContentRequired: 'Please enter the content',
+      // Exam time and countdown (same keys as Web)
+      examTime: 'Exam Time',
+      ruleExamTimeRequired: 'Please select the exam time',
+      countdownToday: 'Today',
+      countdownTomorrow: 'Tomorrow',
+      countdownDays: 'In {n} days',
+      countdownEnded: 'Ended',
+      // Mini program form: date + start time pickers; legacy rows may have no exam time
+      examDatePlaceholder: 'Exam date',
+      examClockPlaceholder: 'Start time',
+      examTimeUnset: 'Exam time not set',
     },
 
     roomplan: {

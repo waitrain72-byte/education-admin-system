@@ -34,9 +34,19 @@ export default {
       title: '标题',
       content: '内容',
       time: '创建时间',
-      timePlaceholder: '请选择日期',
       ruleTitleRequired: '请输入标题',
       ruleContentRequired: '请输入内容',
+      // 考试时间与倒计时（与 Web 端同键）
+      examTime: '考试时间',
+      ruleExamTimeRequired: '请选择考试时间',
+      countdownToday: '今天',
+      countdownTomorrow: '明天',
+      countdownDays: '还有 {n} 天',
+      countdownEnded: '已结束',
+      // 小程序表单由「日期 + 开考时间」两个选择器组成；历史数据可能没有考试时间
+      examDatePlaceholder: '考试日期',
+      examClockPlaceholder: '开考时间',
+      examTimeUnset: '未设置考试时间',
     },
 
     roomplan: {

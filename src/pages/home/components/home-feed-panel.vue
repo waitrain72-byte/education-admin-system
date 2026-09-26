@@ -49,16 +49,25 @@
         v-if="!examplans.length"
         icon="clipboard"
       />
+      <!-- 即将开考的排最前（由近到远），已结束的其次；显示考试时间与倒计时，历史数据没有考试时间时显示发布时间 -->
       <view
         v-for="item in examplanList"
         :key="item.id"
         class="notice-item"
       >
-        <view class="xm-value">{{ item.name }}</view>
+        <view class="xm-between">
+          <view class="xm-value xm-ellipsis exam-name">{{ item.name }}</view>
+          <text
+            v-if="item.countdown"
+            class="xm-tag exam-countdown"
+            :class="item.countdown.cls"
+            >{{ item.countdown.text }}</text
+          >
+        </view>
         <view
           class="xm-label"
-          v-if="item.time"
-          >{{ item.time }}</view
+          v-if="item.examTime || item.time"
+          >{{ item.examTime || item.time }}</view
         >
       </view>
       <view
@@ -73,6 +82,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { sortByExamTime, countdownTag } from '@/utils/examCountdown'
 
 /** 首页「动态」标签页：课程推荐 + 教务通知 + 考试安排 */
 const props = defineProps({
@@ -85,7 +95,13 @@ const props = defineProps({
 // 首页仅展示最新 3 条，完整列表在对应页面分页浏览
 const HOME_LIST_LIMIT = 3
 const noticeList = computed(() => props.notices.slice(0, HOME_LIST_LIMIT))
-const examplanList = computed(() => props.examplans.slice(0, HOME_LIST_LIMIT))
+// 考试安排按离开考的远近排序后取前几条，并算好倒计时（首页每次显示都会重新拉数据，基准时间随之更新）
+const examplanList = computed(() => {
+  const now = new Date()
+  return sortByExamTime(props.examplans, now)
+    .slice(0, HOME_LIST_LIMIT)
+    .map((row) => ({ ...row, countdown: countdownTag(row.examTime, now) }))
+})
 
 const go = (path) => uni.navigateTo({ url: path })
 </script>
@@ -98,6 +114,17 @@ const go = (path) => uni.navigateTo({ url: path })
 
 .notice-item:last-child {
   border-bottom: none;
+}
+
+/* 考试名过长时省略，右侧倒计时标签不被挤压 */
+.exam-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.exam-countdown {
+  flex-shrink: 0;
+  margin-left: 12rpx;
 }
 
 /* 推荐理由：品牌色弱化小字 */
