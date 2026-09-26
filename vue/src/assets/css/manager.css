@@ -351,64 +351,6 @@ html.dark .theme-switch {
     transform: translateY(-6px);
 }
 
-
-/* 澶氭爣绛鹃〉锛氬祵鍦ㄥご閮ㄥ唴銆侀潰鍖呭睉鍙充晶锛涙案杩滃崟琛屾í鍚戞粴鍔?*/
-.manager-tabs {
-    display: flex;
-    flex-wrap: nowrap;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    min-width: 0;
-    margin-bottom: 14px;
-    padding: 6px 2px;
-    white-space: nowrap;
-    scrollbar-width: thin;
-}
-
-.manager-tab {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    font-size: 13px;
-    border-radius: 14px;
-    background-color: var(--xm-bg-hover);
-    color: var(--xm-text-regular);
-    cursor: pointer;
-    white-space: nowrap;
-    user-select: none;
-    transition: all 0.2s ease;
-}
-
-.manager-tab:hover {
-    background-color: var(--xm-bg-input-hover);
-    color: var(--xm-brand);
-}
-
-.manager-tab.active {
-    background-color: var(--xm-brand);
-    color: #ffffff;
-    font-weight: 600;
-}
-
-.manager-tab .tab-close {
-    font-size: 13px;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
-}
-
-.manager-tab .tab-close:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.manager-tab.active .tab-close:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-}
-
 /* ===== 路由切换过渡动画（manager-main-right 内容区） ===== */
 /* mode="out-in" 下旧页必须完全退场新页才进场，总耗时 = 离场 + 进场。
    离场做得极短（几乎无感），把时间预算留给进场，避免点击菜单后出现"半秒没反应"的空窗。 */
@@ -498,20 +440,15 @@ html.dark .theme-switch {
         background: rgba(0, 0, 0, 0.35);
     }
 
-    /* 中等宽度：头部中间区允许收缩，多标签可横向滚动 */
+    /* 中等宽度：头部中间区允许收缩 */
     .manager-header-center {
         min-width: 0;
         overflow: hidden;
     }
-
-    .manager-tabs {
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
 }
 
 @media (max-width: 768px) {
-    /* 手机：隐藏面包屑与多标签（信息密度过高），只保留 logo + 关键操作 */
+    /* 手机：隐藏面包屑（信息密度过高），只保留 logo + 关键操作；多标签栏保留（自带左右滚动箭头） */
     .manager-header-center {
         display: none;
     }
@@ -530,10 +467,6 @@ html.dark .theme-switch {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    .manager-tabs {
-        display: none;
     }
 
     /* 头像旁的用户名隐藏，只留头像 */
