@@ -486,7 +486,8 @@ html.dark .theme-switch {
         transform: translateX(0);
     }
 
-    .sidebar-mask {
+    /* 遮罩只在抽屉展开时显示；无条件显示会在抽屉收起时一直盖住内容区、拦截所有点击 */
+    .sidebar-open .sidebar-mask {
         display: block;
         position: fixed;
         top: 60px;
@@ -515,6 +516,22 @@ html.dark .theme-switch {
         display: none;
     }
 
+    /* 标题保持单行：头部左侧原本固定 200px，窄屏被挤压后会把标题折成三行、撑出 60px 头部；
+       中间区已隐藏，左侧改为占满剩余宽度，实在放不下时省略 */
+    .manager-header-left {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+    .manager-header-left .title {
+        min-width: 0;
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .manager-tabs {
         display: none;
     }
@@ -528,9 +545,17 @@ html.dark .theme-switch {
         padding: 10px;
     }
 
-    /* 弹窗在小屏接近全宽（max-width 约束优先于内联 width，无需改各页面） */
+    /* 弹窗在小屏接近全宽：各页面的 width="40%" 会写成内联的 --el-dialog-width，
+       只设 max-width 撑不大它，这里用 !important 覆盖该变量（无需改各页面） */
     .el-dialog {
-        max-width: 92%;
+        --el-dialog-width: 92% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* 手机竖屏：头部右侧工具区约 240px，完整标题放不下，只留 logo（导航走汉堡菜单） */
+    .manager-header-left .title {
+        display: none;
     }
 }
 
