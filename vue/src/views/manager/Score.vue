@@ -73,7 +73,15 @@ const { user } = useUser()
 const courseId = ref('')
 const studentId = ref(null)
 
-const { options: courseData, load: loadCourse } = useOptions('/course/selectAll', { params: () => ({ teacherId: user.value.id }) })
+// 课程下拉按角色取数（与小程序一致）：教师取本人任教的课程，管理员取全部课程；
+// 学生取本人已选的课程——课程接口对学生不做过滤，改查选课记录（后端只返回当前学生的），再映射成课程选项
+const isStudent = user.value.role === 'STUDENT'
+const { options: courseRows, load: loadCourse } = useOptions(isStudent ? '/choice/selectAll' : '/course/selectAll', {
+  params: () => (user.value.role === 'TEACHER' ? { teacherId: user.value.id } : {}),
+})
+const courseData = computed(() =>
+  isStudent ? courseRows.value.map((row: any) => ({ id: row.courseId, name: row.name })) : courseRows.value,
+)
 const { options: studentData, load: loadStudent } = useOptions('/choice/selectAll')
 const { download: downloadExport } = useDownload('/score/export')
 

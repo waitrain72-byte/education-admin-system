@@ -169,13 +169,13 @@ const reset = () => {
 
 onMounted(() => {
   load(1)
-  // 教师身份下 loadCourseByTeacher 与 loadCourseSearch 请求的是同一份数据，只取一次
+  // 新增 / 编辑只对教师开放：表单的课程下拉取本人任教的课程，搜索栏复用同一份，只取一次；
+  // 其他角色没有表单，只加载搜索栏的课程（不能拿管理员 / 学生的 id 当教师 id 去查）
   if (user.value.role === 'TEACHER') {
     loadCourseByTeacher().then(() => {
       courseSearchData.value = courseData.value
     })
   } else {
-    loadCourseByTeacher()
     loadCourseSearch()
   }
 })

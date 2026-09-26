@@ -205,7 +205,8 @@ const reset = () => {
 
 onMounted(() => {
     load(1)
-    loadCourse()
+    // 课程下拉只用于学生提交作业（取本人已选课程），其他角色不加载
+    if (user.value.role === 'STUDENT') loadCourse()
 })
 </script>
 
