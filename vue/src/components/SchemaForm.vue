@@ -38,6 +38,17 @@
             :value="item[field.optionValue || 'id']"
         />
       </el-select>
+      <!-- 日期时间：选到分钟，值为 YYYY-MM-DD HH:mm 字符串 -->
+      <el-date-picker
+          v-else-if="field.type === 'datetime'"
+          v-model="model[field.prop]"
+          type="datetime"
+          format="YYYY-MM-DD HH:mm"
+          value-format="YYYY-MM-DD HH:mm"
+          :placeholder="field.placeholder"
+          :clearable="field.clearable !== false"
+          style="width: 100%"
+      />
       <!-- 自定义渲染：页面通过具名插槽提供整段表单项 -->
       <slot v-else-if="field.type === 'slot'" :name="field.prop" :model="model" :field="field" />
     </el-form-item>
@@ -51,7 +62,8 @@ import type { FormInstance } from 'element-plus'
 export interface SchemaField {
     prop: string
     label: string
-    type?: 'input' | 'textarea' | 'select' | 'slot'
+    /** datetime：日期时间选择器，值为 YYYY-MM-DD HH:mm 字符串（与后端、小程序一致） */
+    type?: 'input' | 'textarea' | 'select' | 'slot' | 'datetime'
     placeholder?: string
     rows?: number
     options?: any[]

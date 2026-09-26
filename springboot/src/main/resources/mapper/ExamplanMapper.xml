@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.ExamplanMapper">
 
     <sql id="Base_Column_List">
-        id,name,content,time
+        id,name,content,time,exam_time
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Examplan">
@@ -17,6 +17,7 @@
             <if test="name != null"> and name like concat('%', #{name}, '%')</if>
             <if test="content != null"> and content= #{content}</if>
             <if test="time != null"> and time= #{time}</if>
+            <if test="examTime != null"> and exam_time= #{examTime}</if>
         </where>
         order by id desc
     </select>
@@ -46,12 +47,14 @@
                 <if test="name != null">name,</if>
                 <if test="content != null">content,</if>
                 <if test="time != null">time,</if>
+                <if test="examTime != null">exam_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
                 <if test="name != null">#{name},</if>
                 <if test="content != null">#{content},</if>
                 <if test="time != null">#{time},</if>
+                <if test="examTime != null">#{examTime},</if>
         </trim>
     </insert>
 
@@ -66,6 +69,9 @@
             </if>
             <if test="time != null">
                 time = #{time},
+            </if>
+            <if test="examTime != null">
+                exam_time = #{examTime},
             </if>
         </set>
         where id = #{id} 

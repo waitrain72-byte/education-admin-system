@@ -28,11 +28,13 @@
           <span>{{ $t('home.examplan') }}</span>
           <router-link class="card-more" to="/examplan">{{ $t('home.viewAll') }} ›</router-link>
         </div>
-        <el-timeline v-if="examplans.length" reverse>
-          <el-timeline-item v-for="item in examplans.slice(0, 5)" :key="item.id" :timestamp="item.time">
+        <!-- 即将开考的排在最前（由近到远），已结束的其次；时间轴显示考试时间，历史数据没有时显示发布时间 -->
+        <el-timeline v-if="examplans.length">
+          <el-timeline-item v-for="item in homeExams" :key="item.id" :timestamp="item.examTime || item.time">
             <el-popover placement="right" width="200" trigger="hover" :content="item.content">
               <template #reference><span class="tl-item">{{ item.name }}</span></template>
             </el-popover>
+            <ExamCountdownTag :exam-time="item.examTime" />
           </el-timeline-item>
         </el-timeline>
         <el-empty v-else :image-size="60" :description="$t('common.empty')" />
@@ -78,6 +80,9 @@ import request from '@/utils/request'
 import { useUser } from '@/components/useUser.ts'
 import { useTheme } from '@/composables/useTheme'
 import { t } from '@/i18n'
+import ExamCountdownTag from '@/components/ExamCountdownTag.vue'
+import { sortByExamTime } from '@/utils/examCountdown'
+import { useNow } from '@/composables/useNow'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -96,6 +101,9 @@ echarts.use([
 const { user } = useUser()
 const notices = ref<any[]>([])
 const examplans = ref<any[]>([])
+// 首页考试安排：按离考试的远近排序后取前 5 条（当前时间每分钟刷新，跨过零点后排序随之更新）
+const now = useNow()
+const homeExams = computed(() => sortByExamTime(examplans.value, now.value).slice(0, 5))
 const pieLoading = ref(false)
 const lineLoading = ref(false)
 const pieEmpty = ref(false)

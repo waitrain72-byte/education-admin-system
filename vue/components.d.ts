@@ -46,6 +46,7 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es/components/tooltip/index')['ElTooltip']
     ElTree: typeof import('element-plus/es/components/tree/index')['ElTree']
     ElUpload: typeof import('element-plus/es/components/upload/index')['ElUpload']
+    ExamCountdownTag: typeof import('./src/components/ExamCountdownTag.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SchemaForm: typeof import('./src/components/SchemaForm.vue')['default']

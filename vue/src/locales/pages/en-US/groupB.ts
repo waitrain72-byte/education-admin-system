@@ -38,6 +38,13 @@ export default {
             time: 'Created At',
             ruleTitleRequired: 'Please enter the title',
             ruleContentRequired: 'Please enter the content',
+            examTime: 'Exam Time',
+            examTimePlaceholder: 'Select the exam time',
+            ruleExamTimeRequired: 'Please select the exam time',
+            countdownToday: 'Today',
+            countdownTomorrow: 'Tomorrow',
+            countdownDays: 'In {n} days',
+            countdownEnded: 'Ended',
         },
 
         roomplan: {

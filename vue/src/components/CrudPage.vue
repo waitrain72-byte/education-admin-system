@@ -49,6 +49,10 @@
         @selection-change="handleSelectionChange"
         @page-change="load"
     >
+      <!-- 自定义列：页面提供与列 prop 同名的插槽（如 #examTime="{ row }"）时原样转给表格 -->
+      <template v-for="name in columnSlots" :key="name" #[name]="scope">
+        <slot :name="name" v-bind="scope" />
+      </template>
       <template #actions="scope">
         <slot name="actions" :row="scope.row" :edit="handleEdit" :remove="del">
           <el-button link type="primary" size="small" @click="handleEdit(scope.row)">{{ $t('common.edit') }}</el-button>
@@ -69,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref, onMounted } from 'vue'
+import { reactive, computed, ref, onMounted, useSlots } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { FormRules } from 'element-plus'
 import { useUser } from '@/components/useUser.ts'
@@ -128,6 +132,15 @@ const props = withDefaults(defineProps<{
 defineOptions({ name: 'CrudPage' })
 
 const { hasRole } = useUser()
+
+// 与表格列同名的页面插槽：转发给 CrudTable 自定义该列的渲染（toolbar / actions 另有用途，不参与）
+const slots = useSlots()
+const RESERVED_SLOTS = ['toolbar', 'actions']
+const columnSlots = computed(() =>
+    props.columns
+        .map((col) => col.prop)
+        .filter((prop): prop is string => !!prop && !!slots[prop] && !RESERVED_SLOTS.includes(prop)),
+)
 const canManage = computed(() => props.manageRoles.length === 0 || hasRole(...props.manageRoles))
 
 const searchForm = reactive<Record<string, any>>({})

@@ -165,9 +165,10 @@ CREATE TABLE `examplan` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标题',
   `content` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '内容',
   `time` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '发布时间',
+  `exam_time` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '考试时间（yyyy-MM-dd HH:mm）',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='考试安排表';
-INSERT INTO `examplan` (`id`,`name`,`content`,`time`) VALUES (2,'2024期末考试时间安排','今天要考数学！','2024-11-29 18:18:57'),(3,'2026年秋季期中考试安排','期中考试将于第9周举行，具体科目安排见教务通知。','2026-08-26 10:00:00'),(4,'全国计算机等级考试提醒','9月全国计算机等级考试准考证开始打印，请按时领取。','2026-08-28 09:00:00');
+INSERT INTO `examplan` (`id`,`name`,`content`,`time`,`exam_time`) VALUES (2,'2024期末考试时间安排','今天要考数学！','2024-11-29 18:18:57','2024-11-29 19:00'),(3,'2026年秋季期中考试安排','期中考试将于第9周举行，具体科目安排见教务通知。','2026-08-26 10:00:00','2026-11-02 09:00'),(4,'全国计算机等级考试提醒','9月全国计算机等级考试准考证开始打印，请按时领取。','2026-08-28 09:00:00','2026-09-26 08:30');
 -- examplan: 3 rows
 -- >>> end-of-statement <<<
 

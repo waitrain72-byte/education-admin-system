@@ -39,6 +39,13 @@ export default {
             time: '创建时间',
             ruleTitleRequired: '请输入标题',
             ruleContentRequired: '请输入内容',
+            examTime: '考试时间',
+            examTimePlaceholder: '请选择考试时间',
+            ruleExamTimeRequired: '请选择考试时间',
+            countdownToday: '今天',
+            countdownTomorrow: '明天',
+            countdownDays: '还有 {n} 天',
+            countdownEnded: '已结束',
         },
 
         roomplan: {

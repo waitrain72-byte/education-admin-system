@@ -19,6 +19,8 @@ public class Examplan implements Serializable {
     private String name;
     /** 内容 */
     private String content;
-    /** 时间 */
+    /** 发布时间（新增时由后端生成） */
     private String time;
+    /** 考试时间（yyyy-MM-dd HH:mm），前端据此显示考试倒计时；历史数据可能为空 */
+    private String examTime;
 }
