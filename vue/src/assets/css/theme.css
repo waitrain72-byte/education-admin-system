@@ -1,7 +1,13 @@
 /* ============================================================
    主题变量体系：所有自定义颜色统一收敛为 CSS 自定义属性，
-   浅色定义在 :root，深色定义在 html.dark（与 Element Plus 暗色
+   浅色定义在 html:root，深色定义在 html.dark:root（与 Element Plus 暗色
    方案同一开关，由 useColorMode 在 <html> 上维护 dark 类）。
+
+   选择器比 Element Plus 自带的高一级，不依赖样式加载顺序：组件样式按需
+   注入（vite.config.ts），每个组件都会带上 theme-chalk/base.css 的
+   :root { --el-color-primary: #409eff; ... }，且总是晚于本文件加载，
+   同级的 :root 会被它覆盖，按钮、菜单、分页就退回默认蓝。
+   深色块再高一级，保证深色模式下压过浅色块与 Element Plus 的 html.dark。
    ============================================================ */
 
 body {
@@ -9,7 +15,7 @@ body {
         'Microsoft YaHei', sans-serif;
 }
 
-:root {
+html:root {
     /* 页面与卡片背景 */
     --xm-bg-page: #f6f7fb;
     --xm-bg-card: #ffffff;
@@ -50,7 +56,7 @@ body {
     --el-border-radius-small: 6px;
 }
 
-html.dark {
+html.dark:root {
     --xm-bg-page: #0b0f1a;
     --xm-bg-card: #111827;
     --xm-bg-hover: #1f2937;

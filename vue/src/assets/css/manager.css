@@ -77,8 +77,10 @@
     color: var(--xm-text-secondary);
 }
 
+/* 宽度随内容（语言、主题色、深浅色、头像四项），不能写死：
+   原先固定 240px 装不下这四项，用户名被挤成一字一行 */
 .manager-header-right {
-    width: 240px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -212,6 +214,14 @@ html.dark .theme-switch {
     border-radius: 50%;
     margin-right: 5px;
     object-fit: cover;
+}
+
+/* 用户名单行显示，过长时省略 */
+.manager-header-right .avatar > div {
+    max-width: 8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .manager-main {
