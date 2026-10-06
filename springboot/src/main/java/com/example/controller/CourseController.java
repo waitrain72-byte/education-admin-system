@@ -5,11 +5,14 @@ import com.example.common.annotation.RequirePermission;
 import com.example.entity.Account;
 import com.example.entity.Course;
 import com.example.service.CourseService;
+import com.example.service.CourseSpaceService;
 import com.example.service.CrudService;
 import com.example.service.RecommendService;
 import com.example.service.RoomplanService;
+import com.example.service.WorkbenchService;
 import com.example.utils.TokenUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,9 +36,27 @@ public class CourseController extends CrudController<Course> {
     @Resource
     private RoomplanService roomplanService;
 
+    @Resource
+    private WorkbenchService workbenchService;
+
+    @Resource
+    private CourseSpaceService courseSpaceService;
+
     @Override
     protected CrudService<Course> getService() {
         return courseService;
+    }
+
+    /** 「课程」页卡片：学生 = 已选、教师 = 所授、管理员 = 全部 */
+    @GetMapping("/mine")
+    public Result mine() {
+        return Result.success(workbenchService.myCourses());
+    }
+
+    /** 课程空间概览：课程信息、任课教师、选课人数、当前登录人与这门课的关系 */
+    @GetMapping("/{id}/overview")
+    public Result overview(@PathVariable Integer id) {
+        return Result.success(courseSpaceService.overview(id));
     }
 
     /**

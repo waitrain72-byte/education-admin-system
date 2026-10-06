@@ -1,504 +1,59 @@
-.manager-container {
-    background-color: var(--xm-bg-page);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+/* ============================================================
+   过渡期的旧页面样式（搜索栏 / 操作栏 / 表格三段式）。
+   只作用于 .legacy-page 容器内：新界面的页面不受影响；
+   旧页面全部迁移到新界面后，这个文件随之删除。
+   ============================================================ */
 
-.manager-header {
-    display: flex;
-    align-items: center;
-    background-color: var(--xm-header-bg);
-    border-bottom: 1px solid var(--xm-header-border);
-    height: 60px;
-    flex-shrink: 0;
-}
-
-.manager-header-left {
-    width: 200px;
-    height: 60px;
-    padding-left: 10px;
-    display: flex;
-    align-items: center;
-}
-
-.manager-header-left img {
-    width: 35px;
-    height: 35px;
-}
-
-.manager-header-left .title {
-    flex: 1;
-    margin-left: 5px;
-    font-size: 20px;
-    font-weight: bold;
-    color: var(--xm-header-text);
-}
-
-/* 英文标题较长：缩小字号、收紧行高，保证三行以内不超出 60px 头部 */
-.manager-header-left .title.title-en {
-    font-size: 14px;
-    line-height: 1.25;
-    overflow: hidden;
-}
-
-.manager-header-center {
-    flex: 1;
-    width: 0;
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 16px;
-    min-width: 0;
-    overflow: hidden;
-}
-
-/* 面包屑配色：跟随头部文字色，当前页加粗 */
-.manager-header-center .el-breadcrumb {
-    flex-shrink: 0;
-}
-
-.manager-header-center .el-breadcrumb .el-breadcrumb__inner {
-    color: var(--xm-text-secondary);
-    font-weight: normal;
-}
-
-.manager-header-center .el-breadcrumb .el-breadcrumb__inner a:hover,
-.manager-header-center .el-breadcrumb .el-breadcrumb__inner:hover {
-    color: var(--xm-brand);
-}
-
-.manager-header-center .el-breadcrumb .el-breadcrumb__item:last-child .el-breadcrumb__inner {
-    color: var(--xm-header-text);
-    font-weight: bold;
-}
-
-.manager-header-center .el-breadcrumb .el-breadcrumb__separator {
-    color: var(--xm-text-secondary);
-}
-
-/* 宽度随内容（语言、主题色、深浅色、头像四项），不能写死：
-   原先固定 240px 装不下这四项，用户名被挤成一字一行 */
-.manager-header-right {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 20px;
-}
-
-/* 主题切换开关（浅色/深色） */
-.theme-switch {
-    margin-right: 14px;
-    /* 跟随主题色，不写死品牌色，否则用户换了主题色这个开关会落单 */
-    --el-switch-on-color: var(--xm-brand-strong);
-    --el-switch-off-color: #d1d5db;
-}
-
-html.dark .theme-switch {
-    --el-switch-off-color: #374151;
-}
-
-/* 主题色入口：一个显示当前颜色的小圆点 */
-.color-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 14px;
-    padding: 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.25s ease;
-}
-
-.color-trigger:hover {
-    background-color: var(--xm-bg-hover);
-}
-
-.color-dot {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 2px solid var(--xm-bg-card);
-    box-shadow: 0 0 0 1px var(--xm-border);
-}
-
-/* 主题色下拉面板 */
-.color-panel {
-    width: 208px;
-    padding: 12px;
-}
-
-.color-panel__title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--xm-text-primary);
-    margin-bottom: 10px;
-}
-
-.color-panel__swatches {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.color-swatch {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 6px;
-    border: 2px solid transparent;
-    box-shadow: 0 0 0 1px var(--xm-border);
-    cursor: pointer;
-    padding: 0;
-    transition:
-        transform 0.15s ease,
-        border-color 0.15s ease;
-}
-
-.color-swatch:hover {
-    transform: scale(1.08);
-}
-
-.color-swatch.is-active {
-    border-color: var(--xm-text-primary);
-}
-
-/* 「默认」色块：用内置品牌色的渐变表示，与自定义色区分开 */
-.color-swatch[data-default='true'] {
-    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
-}
-
-.color-panel__custom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 12px;
-    font-size: 13px;
-    color: var(--xm-text-regular);
-}
-
-.color-panel__reset {
-    width: 100%;
-    margin-top: 10px;
-}
-
-/* 语言切换入口（中/EN） */
-.lang-trigger {
-    margin-right: 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--xm-header-text);
-    background: transparent;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: background-color 0.25s ease;
-}
-
-.lang-trigger:hover {
-    background-color: var(--xm-bg-hover);
-}
-
-.manager-header-right .avatar {
-    display: flex;
-    align-items: center;
-    color: var(--xm-header-text);
-    cursor: default;
-}
-
-.manager-header-right .avatar img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 5px;
-    object-fit: cover;
-}
-
-/* 用户名单行显示，过长时省略 */
-.manager-header-right .avatar > div {
-    max-width: 8em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.manager-main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-
-.manager-main-left {
-    width: 200px;
-    height: calc(100vh - 60px);
-    background-color: var(--xm-sidebar-bg, var(--xm-bg-card));
-    overflow-y: auto;
-    flex-shrink: 0;
-    padding: 8px 6px;
-    box-sizing: border-box;
-}
-
-/* 菜单项胶囊选中态（soybean 风格） */
-.manager-main-left .el-menu {
-    border-right: none;
-    background: transparent;
-}
-
-.manager-main-left .el-menu-item,
-.manager-main-left .el-sub-menu__title {
-    height: 44px;
-    line-height: 44px;
-    margin: 4px 0;
-    border-radius: 8px;
-}
-
-.manager-main-left .el-menu-item.is-active {
-    background-color: var(--el-color-primary-light-9);
-    color: var(--el-color-primary);
-    font-weight: 600;
-}
-
-.manager-main-left::-webkit-scrollbar,
-.manager-main-right::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.manager-main-left::-webkit-scrollbar-thumb,
-.manager-main-right::-webkit-scrollbar-thumb {
-    background: var(--xm-scrollbar-thumb);
-    border-radius: 4px;
-}
-
-.manager-main-left::-webkit-scrollbar-track,
-.manager-main-right::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.manager-main-right {
-    flex: 1;
-    width: 0;
-    padding: 16px;
-    overflow-y: auto;
-    background-color: var(--xm-bg-page);
-}
-
-.manager-main-right .search,
-.manager-main-right .operation,
-.manager-main-right .table {
+.legacy-page .search,
+.legacy-page .operation,
+.legacy-page .table {
     background: var(--xm-bg-card);
     border: 1px solid var(--xm-border);
     border-radius: 12px;
-    box-shadow: var(--xm-shadow-card);
     overflow: hidden;
 }
 
-.manager-main-right .search {
+.legacy-page .search {
     padding: 14px 16px;
     margin-bottom: 12px;
 }
 
-.manager-main-right .operation {
+.legacy-page .operation {
     padding: 12px 16px;
     margin-bottom: 12px;
 }
 
-.manager-main-right .table {
+.legacy-page .table {
     padding: 16px 16px 6px;
-    box-shadow: var(--xm-shadow-card-lg);
+    /* 教务后台的内容区比旧布局窄，列多的表格要能横向滚动，不能把「操作」列裁掉 */
+    overflow-x: auto;
 }
 
 /* 相邻卡片视觉合并为一张：搜索 + 操作 + 表格 */
-.manager-main-right .search:has(+ .operation),
-.manager-main-right .search:has(+ .table),
-.manager-main-right .operation:has(+ .table) {
+.legacy-page .search:has(+ .operation),
+.legacy-page .search:has(+ .table),
+.legacy-page .operation:has(+ .table) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     border-bottom: none;
     margin-bottom: 0;
 }
 
-.manager-main-right .search + .operation,
-.manager-main-right .search + .table,
-.manager-main-right .operation + .table {
+.legacy-page .search + .operation,
+.legacy-page .search + .table,
+.legacy-page .operation + .table {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     margin-top: 0;
 }
 
-.manager-main-right .table .pagination {
+.legacy-page .table .pagination {
     margin-top: 10px;
 }
 
-.card {
+.legacy-page .card {
     padding: 20px;
     background: var(--xm-bg-card);
     border: 1px solid var(--xm-border);
     border-radius: 12px;
-    box-shadow: var(--xm-shadow-card);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
-
-.card:hover {
-    box-shadow: var(--xm-shadow-card-lg);
-}
-
-/* 页面切换过渡（配合 Manager.vue 中 router-view 的 transition） */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-    transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.fade-slide-enter-from {
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-.fade-slide-leave-to {
-    opacity: 0;
-    transform: translateY(-6px);
-}
-
-/* ===== 路由切换过渡动画（manager-main-right 内容区） ===== */
-/* mode="out-in" 下旧页必须完全退场新页才进场，总耗时 = 离场 + 进场。
-   离场做得极短（几乎无感），把时间预算留给进场，避免点击菜单后出现"半秒没反应"的空窗。 */
-.route-fade-leave-active {
-    transition: opacity 0.06s linear;
-}
-
-.route-fade-enter-active {
-    transition: opacity 0.16s ease-out, transform 0.16s ease-out;
-}
-
-.route-fade-enter-from {
-    opacity: 0;
-    transform: translateY(6px);
-}
-
-.route-fade-leave-to {
-    opacity: 0;
-}
-
-/* 跟随系统"减少动态效果"偏好：直接关掉路由过渡 */
-@media (prefers-reduced-motion: reduce) {
-    .route-fade-enter-active,
-    .route-fade-leave-active {
-        transition: none;
-    }
-}
-
-/* ===== 响应式适配（平板 / 手机浏览器） ===== */
-/* 汉堡按钮与遮罩：桌面端不渲染效果 */
-.sidebar-toggle {
-    display: none;
-}
-
-.sidebar-mask {
-    display: none;
-}
-
-@media (max-width: 1024px) {
-    /* 侧边栏变为抽屉：默认收起，点击汉堡按钮展开 */
-    .sidebar-toggle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        margin: 0 6px 0 10px;
-        padding: 0;
-        border: none;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--xm-header-text, #fff);
-        font-size: 20px;
-        cursor: pointer;
-        flex-shrink: 0;
-    }
-
-    .sidebar-toggle:hover {
-        background: rgba(255, 255, 255, 0.15);
-    }
-
-    .manager-main-left {
-        position: fixed;
-        top: 60px;
-        bottom: 0;
-        left: 0;
-        z-index: 100;
-        width: 220px;
-        transform: translateX(-100%);
-        transition: transform 0.25s ease;
-        box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
-    }
-
-    .sidebar-open .manager-main-left {
-        transform: translateX(0);
-    }
-
-    /* 遮罩只在抽屉展开时显示；无条件显示会在抽屉收起时一直盖住内容区、拦截所有点击 */
-    .sidebar-open .sidebar-mask {
-        display: block;
-        position: fixed;
-        top: 60px;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 99;
-        background: rgba(0, 0, 0, 0.35);
-    }
-
-    /* 中等宽度：头部中间区允许收缩 */
-    .manager-header-center {
-        min-width: 0;
-        overflow: hidden;
-    }
-}
-
-@media (max-width: 768px) {
-    /* 手机：隐藏面包屑（信息密度过高），只保留 logo + 关键操作；多标签栏保留（自带左右滚动箭头） */
-    .manager-header-center {
-        display: none;
-    }
-
-    /* 标题保持单行：头部左侧原本固定 200px，窄屏被挤压后会把标题折成三行、撑出 60px 头部；
-       中间区已隐藏，左侧改为占满剩余宽度，实在放不下时省略 */
-    .manager-header-left {
-        flex: 1;
-        width: auto;
-        min-width: 0;
-    }
-
-    .manager-header-left .title {
-        min-width: 0;
-        font-size: 16px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* 头像旁的用户名隐藏，只留头像 */
-    .manager-header-right .avatar > div {
-        display: none;
-    }
-
-    .manager-main-right {
-        padding: 10px;
-    }
-
-    /* 弹窗在小屏接近全宽：各页面的 width="40%" 会写成内联的 --el-dialog-width，
-       只设 max-width 撑不大它，这里用 !important 覆盖该变量（无需改各页面） */
-    .el-dialog {
-        --el-dialog-width: 92% !important;
-    }
-}
-
-@media (max-width: 480px) {
-    /* 手机竖屏：头部右侧工具区约 240px，完整标题放不下，只留 logo（导航走汉堡菜单） */
-    .manager-header-left .title {
-        display: none;
-    }
-}
-

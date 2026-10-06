@@ -2,8 +2,8 @@ package com.example.controller;
 
 import com.example.common.Result;
 import com.example.common.annotation.RequirePermission;
+import com.example.service.MessageService;
 import com.example.service.WarningService;
-import com.example.websocket.NoticeWebSocketServer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +25,8 @@ public class WarningController {
 
     @Resource
     private WarningService warningService;
+    @Resource
+    private MessageService messageService;
 
     /**
      * 学业预警列表：管理员看全部、教师看本人任课学生、学生仅看本人
@@ -44,8 +46,9 @@ public class WarningController {
         if (target == null) {
             return Result.error("400", "该学生当前无预警数据");
         }
-        NoticeWebSocketServer.sendToUser(studentId, "STUDENT", "学业预警提醒",
-                "你的学业风险指数 " + target.get("riskIndex") + "（" + target.get("level") + "）：" + target.get("suggestion"));
+        messageService.push(studentId, "STUDENT", "warning", "学业预警提醒",
+                "你的学业风险指数 " + target.get("riskIndex") + "（" + target.get("level") + "）：" + target.get("suggestion"),
+                "/home");
         return Result.success();
     }
 }

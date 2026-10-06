@@ -152,7 +152,9 @@ export default defineConfig({
         port: 8080,
         proxy: {
             '/api': {
-                target: 'http://localhost:9091',
+                // 用 127.0.0.1 而不是 localhost：Node 17+ 解析 localhost 时优先 IPv6（::1），
+                // 后端只监听 IPv4 的环境里代理会 ECONNREFUSED；需要指向别的后端时设环境变量 VITE_PROXY_TARGET
+                target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:9091',
                 changeOrigin: true,
                 // WebSocket 也要经此转发，否则 /api/ws/notice/{token} 无法连接（实时通知失效）
                 ws: true,

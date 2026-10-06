@@ -1,7 +1,7 @@
 package com.example.service;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
+import com.example.common.AppTime;
 import com.example.common.enums.ResultCodeEnum;
 import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
@@ -37,7 +37,7 @@ public class CommentService extends CrudService<Comment> {
         if (ObjectUtil.isNotEmpty(dbComment)) {
             throw new CustomException(ResultCodeEnum.COMMENT_ALREADY_ERROR);
         }
-        comment.setTime(DateUtil.now());
+        comment.setTime(AppTime.now());
         commentMapper.insert(comment);
     }
 

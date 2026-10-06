@@ -6,7 +6,7 @@ import com.example.common.annotation.RequirePermission;
 import com.example.entity.Apply;
 import com.example.service.ApplyService;
 import com.example.service.CrudService;
-import com.example.websocket.NoticeWebSocketServer;
+import com.example.service.MessageService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +25,8 @@ public class ApplyController extends CrudController<Apply> {
 
     @Resource
     private ApplyService applyService;
+    @Resource
+    private MessageService messageService;
 
     @Override
     protected CrudService<Apply> getService() {
@@ -50,9 +52,9 @@ public class ApplyController extends CrudController<Apply> {
     public Result updateById(@RequestBody Apply apply) {
         applyService.updateById(apply);
         if ("审核通过".equals(apply.getStatus()) || "审核不通过".equals(apply.getStatus())) {
-            NoticeWebSocketServer.sendToUser(apply.getStudentId(), "STUDENT",
+            messageService.push(apply.getStudentId(), "STUDENT", "apply",
                     "请假审核结果", "你的请假申请" + apply.getStatus()
-                            + (apply.getDescr() == null ? "" : "：" + apply.getDescr()));
+                            + (apply.getDescr() == null ? "" : "：" + apply.getDescr()), null);
         }
         return Result.success();
     }

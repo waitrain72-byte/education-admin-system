@@ -7,6 +7,8 @@ import groupBZh from '@/locales/pages/zh-CN/groupB'
 import groupBEn from '@/locales/pages/en-US/groupB'
 import groupCZh from '@/locales/pages/zh-CN/groupC'
 import groupCEn from '@/locales/pages/en-US/groupC'
+import shellZh from '@/locales/pages/zh-CN/shell'
+import shellEn from '@/locales/pages/en-US/shell'
 
 /**
  * 深合并语言包：各页面分组模块都向 pages 命名空间贡献键，
@@ -31,9 +33,12 @@ export type AppLocale = (typeof SUPPORTED_LOCALES)[number]
 
 // 消息结构标注为宽类型，避免 vue-i18n 对深层嵌套消息的递归类型展开（TS2589）
 const messages = {
-    'zh-CN': deepMerge(zhCN, deepMerge(groupAZh, deepMerge(groupBZh, groupCZh))),
-    'en-US': deepMerge(enUS, deepMerge(groupAEn, deepMerge(groupBEn, groupCEn))),
+    'zh-CN': [groupAZh, groupBZh, groupCZh, shellZh].reduce(deepMerge, zhCN),
+    'en-US': [groupAEn, groupBEn, groupCEn, shellEn].reduce(deepMerge, enUS),
 }
+
+/** 两种语言的完整消息树（导出给单测做键一致性检查） */
+export const localeMessages = messages
 
 // 放宽 vue-i18n 的消息 Schema 为索引签名（官方推荐做法），避免深层嵌套消息的递归类型展开
 declare module 'vue-i18n' {

@@ -1,173 +1,122 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw, type RouteRecordSingleView } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+
+/**
+ * 路由表：meta.name 是页面名称的 i18n 键（导航、命令面板、后台侧栏都从这里取，单一数据源）；
+ * meta.roles 限定可访问的角色（子路由继承父路由的限制）；meta.permission 是需要的权限码。
+ *
+ * meta.legacy 标记「还没迁到新界面的旧页面」：学生、教师在顶栏「全部功能」里进入，
+ * 管理员的旧页面都挂在教务后台侧栏下（meta.section 决定侧栏分组）。
+ */
+const Course = () => import('@/views/manager/Course.vue')
+const Choice = () => import('@/views/manager/Choice.vue')
+const Score = () => import('@/views/manager/Score.vue')
+const Attendance = () => import('@/views/manager/Attendance.vue')
+const Homework = () => import('@/views/manager/Homework.vue')
+const Comment = () => import('@/views/manager/Comment.vue')
+const Apply = () => import('@/views/manager/Apply.vue')
+const Warning = () => import('@/views/manager/Warning.vue')
+const Examplan = () => import('@/views/manager/Examplan.vue')
+const Roomplan = () => import('@/views/manager/Roomplan.vue')
+
+/** 学生、教师过渡期的旧页面 */
+const legacy = (path: string, name: string, component: RouteRecordSingleView['component'], roles: string[]): RouteRecordSingleView => ({
+    path: `legacy/${path}`,
+    name: `Legacy${name}`,
+    meta: { name: `menu.${path}`, roles, legacy: true },
+    component,
+})
+
+const BOTH = ['TEACHER', 'STUDENT']
 
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
-        component: () => import('@/views/Manager.vue'),
+        component: () => import('@/layout/AppLayout.vue'),
         redirect: '/home',
         children: [
-            // meta.name 存放 i18n 键（menu.*），菜单与面包屑渲染时经 $t 翻译，保持单一数据源
+            { path: 'home', name: 'Home', meta: { name: 'nav.home' }, component: () => import('@/views/home/HomePage.vue') },
             {
-                path: 'home',
-                name: 'Home',
-                meta: { name: 'menu.home' },
-                component: () => import('@/views/manager/Home.vue'),
+                path: 'courses',
+                name: 'Courses',
+                meta: { name: 'nav.courses' },
+                component: () => import('@/views/courses/CoursesPage.vue'),
             },
             {
-                path: 'notice',
-                name: 'Notice',
-                meta: { name: 'menu.notice', group: 'info' },
-                component: () => import('@/views/manager/Notice.vue'),
+                path: 'course/:id(\\d+)',
+                component: () => import('@/views/course/CourseSpaceLayout.vue'),
+                meta: { name: 'nav.courses', hidden: true },
+                redirect: (to) => `/course/${to.params.id}/overview`,
+                children: [
+                    {
+                        path: 'overview',
+                        name: 'CourseOverview',
+                        meta: { name: 'space.tabs.overview' },
+                        component: () => import('@/views/course/CourseOverview.vue'),
+                    },
+                ],
             },
             {
-                path: 'examplan',
-                name: 'Examplan',
-                meta: { name: 'menu.examplan', group: 'info' },
-                component: () => import('@/views/manager/Examplan.vue'),
+                path: 'messages',
+                name: 'Messages',
+                meta: { name: 'nav.messages' },
+                component: () => import('@/views/messages/MessagesPage.vue'),
             },
             {
-                path: 'roomplan',
-                name: 'Roomplan',
-                meta: { name: 'menu.roomplan', group: 'info' },
-                component: () => import('@/views/manager/Roomplan.vue'),
+                path: 'profile',
+                name: 'Profile',
+                meta: { name: 'shell.profile', hidden: true },
+                component: () => import('@/views/profile/ProfilePage.vue'),
             },
-            {
-                path: 'college',
-                name: 'College',
-                meta: { name: 'menu.college', group: 'admin', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/College.vue'),
-            },
-            {
-                path: 'speciality',
-                name: 'Speciality',
-                meta: { name: 'menu.speciality', group: 'admin', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Speciality.vue'),
-            },
-            {
-                path: 'classes',
-                name: 'Classes',
-                meta: { name: 'menu.classes', group: 'admin', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Classes.vue'),
-            },
-            {
-                path: 'course',
-                name: 'Course',
-                meta: { name: 'menu.course', group: 'teach' },
-                component: () => import('@/views/manager/Course.vue'),
-            },
-            {
-                path: 'choice',
-                name: 'Choice',
-                meta: { name: 'menu.choice', group: 'teach' },
-                component: () => import('@/views/manager/Choice.vue'),
-            },
-            {
-                path: 'curriculum',
-                name: 'Curriculum',
-                meta: { name: 'menu.curriculum', group: 'teach', roles: ['STUDENT'] },
-                component: () => import('@/views/manager/Curriculum.vue'),
-            },
-            {
-                path: 'score',
-                name: 'Score',
-                meta: { name: 'menu.score', group: 'teach' },
-                component: () => import('@/views/manager/Score.vue'),
-            },
-            {
-                path: 'warning',
-                name: 'Warning',
-                meta: { name: 'menu.warning', group: 'teach' },
-                component: () => import('@/views/manager/Warning.vue'),
-            },
-            {
-                path: 'comment',
-                name: 'Comment',
-                meta: { name: 'menu.comment', group: 'teach' },
-                component: () => import('@/views/manager/Comment.vue'),
-            },
-            {
-                path: 'apply',
-                name: 'Apply',
-                meta: { name: 'menu.apply', group: 'edu' },
-                component: () => import('@/views/manager/Apply.vue'),
-            },
-            {
-                path: 'homework',
-                name: 'Homework',
-                meta: { name: 'menu.homework', group: 'edu' },
-                component: () => import('@/views/manager/Homework.vue'),
-            },
-            {
-                path: 'attendance',
-                name: 'Attendance',
-                meta: { name: 'menu.attendance', group: 'edu' },
-                component: () => import('@/views/manager/Attendance.vue'),
-            },
+
+            legacy('course', 'Course', Course, BOTH),
+            legacy('choice', 'Choice', Choice, BOTH),
+            legacy('curriculum', 'Curriculum', () => import('@/views/manager/Curriculum.vue'), ['STUDENT']),
+            legacy('score', 'Score', Score, BOTH),
+            legacy('attendance', 'Attendance', Attendance, BOTH),
+            legacy('homework', 'Homework', Homework, BOTH),
+            legacy('comment', 'Comment', Comment, BOTH),
+            legacy('apply', 'Apply', Apply, BOTH),
+            legacy('warning', 'Warning', Warning, BOTH),
+            legacy('examplan', 'Examplan', Examplan, BOTH),
+            legacy('roomplan', 'Roomplan', Roomplan, BOTH),
+
             {
                 path: 'admin',
-                name: 'Admin',
-                meta: { name: 'menu.admin', group: 'user', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Admin.vue'),
-            },
-            {
-                path: 'teacher',
-                name: 'Teacher',
-                meta: { name: 'menu.teacher', group: 'user', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Teacher.vue'),
-            },
-            {
-                path: 'student',
-                name: 'Student',
-                meta: { name: 'menu.student', group: 'user', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Student.vue'),
-            },
-            {
-                path: 'operlog',
-                name: 'OperLog',
-                meta: { name: 'menu.operlog', group: 'system', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/OperLog.vue'),
-            },
-            {
-                path: 'loginlog',
-                name: 'LoginLog',
-                meta: { name: 'menu.loginlog', group: 'system', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/LoginLog.vue'),
-            },
-            {
-                path: 'permission',
-                name: 'Permission',
-                meta: { name: 'menu.permission', group: 'system', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/Permission.vue'),
-            },
-            {
-                path: 'adminPerson',
-                name: 'AdminPerson',
-                meta: { name: 'menu.person', roles: ['ADMIN'] },
-                component: () => import('@/views/manager/AdminPerson.vue'),
-            },
-            {
-                path: 'teacherPerson',
-                name: 'TeacherPerson',
-                meta: { name: 'menu.person', roles: ['TEACHER'] },
-                component: () => import('@/views/manager/TeacherPerson.vue'),
-            },
-            {
-                path: 'studentPerson',
-                name: 'StudentPerson',
-                meta: { name: 'menu.person', roles: ['STUDENT'] },
-                component: () => import('@/views/manager/StudentPerson.vue'),
-            },
-            {
-                path: 'password',
-                name: 'Password',
-                meta: { name: 'menu.password' },
-                component: () => import('@/views/manager/Password.vue'),
+                component: () => import('@/layout/AdminLayout.vue'),
+                meta: { name: 'nav.admin', roles: ['ADMIN'], hidden: true },
+                redirect: '/admin/courses',
+                children: [
+                    // 教学
+                    { path: 'courses', name: 'AdminCourses', meta: { name: 'menu.course', section: 'teaching', legacy: true }, component: Course },
+                    { path: 'exams', name: 'AdminExams', meta: { name: 'menu.examplan', section: 'teaching', legacy: true }, component: Examplan },
+                    { path: 'rooms', name: 'AdminRooms', meta: { name: 'menu.roomplan', section: 'teaching', legacy: true }, component: Roomplan },
+                    { path: 'leaves', name: 'AdminLeaves', meta: { name: 'admin.menu.leaves', section: 'teaching', legacy: true }, component: Apply },
+                    { path: 'warnings', name: 'AdminWarnings', meta: { name: 'menu.warning', section: 'teaching', legacy: true }, component: Warning },
+                    // 教学记录
+                    { path: 'choices', name: 'AdminChoices', meta: { name: 'admin.menu.choices', section: 'records', legacy: true }, component: Choice },
+                    { path: 'scores', name: 'AdminScores', meta: { name: 'admin.menu.scores', section: 'records', legacy: true }, component: Score },
+                    { path: 'attendance', name: 'AdminAttendance', meta: { name: 'menu.attendance', section: 'records', legacy: true }, component: Attendance },
+                    { path: 'homework', name: 'AdminHomework', meta: { name: 'admin.menu.homework', section: 'records', legacy: true }, component: Homework },
+                    { path: 'comments', name: 'AdminComments', meta: { name: 'menu.comment', section: 'records', legacy: true }, component: Comment },
+                    // 档案
+                    { path: 'colleges', name: 'AdminColleges', meta: { name: 'menu.college', section: 'archives', legacy: true }, component: () => import('@/views/manager/College.vue') },
+                    { path: 'specialities', name: 'AdminSpecialities', meta: { name: 'menu.speciality', section: 'archives', legacy: true }, component: () => import('@/views/manager/Speciality.vue') },
+                    { path: 'classes', name: 'AdminClasses', meta: { name: 'menu.classes', section: 'archives', legacy: true }, component: () => import('@/views/manager/Classes.vue') },
+                    { path: 'students', name: 'AdminStudents', meta: { name: 'menu.student', section: 'archives', legacy: true }, component: () => import('@/views/manager/Student.vue') },
+                    { path: 'teachers', name: 'AdminTeachers', meta: { name: 'menu.teacher', section: 'archives', legacy: true }, component: () => import('@/views/manager/Teacher.vue') },
+                    { path: 'admins', name: 'AdminAdmins', meta: { name: 'menu.admin', section: 'archives', legacy: true }, component: () => import('@/views/manager/Admin.vue') },
+                    // 系统
+                    { path: 'semester', name: 'AdminSemester', meta: { name: 'admin.menu.semester', section: 'system' }, component: () => import('@/views/admin/SemesterSettings.vue') },
+                    { path: 'permission', name: 'AdminPermission', meta: { name: 'menu.permission', section: 'system', legacy: true }, component: () => import('@/views/manager/Permission.vue') },
+                    { path: 'operlog', name: 'AdminOperLog', meta: { name: 'menu.operlog', section: 'system', legacy: true }, component: () => import('@/views/manager/OperLog.vue') },
+                    { path: 'loginlog', name: 'AdminLoginLog', meta: { name: 'menu.loginlog', section: 'system', legacy: true }, component: () => import('@/views/manager/LoginLog.vue') },
+                ],
             },
         ],
     },
-    { path: '/login', name: 'Login', component: () => import('@/views/Login.vue') },
-    { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
+    { path: '/login', name: 'Login', component: () => import('@/views/auth/LoginPage.vue') },
+    { path: '/register', name: 'Register', component: () => import('@/views/auth/RegisterPage.vue') },
     {
         path: '/dashboard',
         name: 'Dashboard',
@@ -181,6 +130,10 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes,
+    // 切页回到顶部；浏览器前进后退保留原来的滚动位置
+    scrollBehavior(_to, _from, savedPosition) {
+        return savedPosition || { top: 0 }
+    },
 })
 
 // ========== 路由守卫 ==========
@@ -189,9 +142,8 @@ router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
     const isLoggedIn = userStore.isLoggedIn
 
-    // 如果访问的是登录页或注册页
+    // 登录页、注册页：已登录直接回首页
     if (to.path === '/login' || to.path === '/register') {
-        // 如果已登录，跳转到首页
         if (isLoggedIn) {
             next('/home')
             return
@@ -200,13 +152,12 @@ router.beforeEach((to, _from, next) => {
         return
     }
 
-    // 如果访问的是需要登录的页面
     if (!isLoggedIn) {
         next('/login')
         return
     }
 
-    // 路由级权限校验：meta.roles 存在时，当前角色必须在允许列表内
+    // 路由级权限：meta.roles 存在时，当前角色必须在允许列表内（子路由的 meta 已合并父路由）
     const roles = to.meta?.roles as string[] | undefined
     if (roles && roles.length && !roles.includes(userStore.role)) {
         next('/403')
@@ -220,7 +171,6 @@ router.beforeEach((to, _from, next) => {
         return
     }
 
-    // 已登录且有权限，正常访问
     next()
 })
 

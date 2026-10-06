@@ -1,7 +1,7 @@
 package com.example.service;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import com.example.common.AppTime;
 import com.example.common.enums.ResultCodeEnum;
 import com.example.entity.Examplan;
 import com.example.exception.CustomException;
@@ -39,7 +39,7 @@ public class ExamplanService extends CrudService<Examplan> {
     @Override
     public void add(Examplan examplan) {
         checkExamTime(examplan.getExamTime());
-        examplan.setTime(DateUtil.now());
+        examplan.setTime(AppTime.now());
         examplanMapper.insert(examplan);
     }
 

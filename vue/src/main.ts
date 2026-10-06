@@ -9,10 +9,11 @@ import {
 // 故此处不再全量 import element-plus/dist/index.css（355 KB）。
 // 下面这份暗色变量是纯 CSS 变量定义、不含组件样式，必须保留，否则深色主题失效。
 import 'element-plus/theme-chalk/dark/css-vars.css'
-// 全局样式：基础 reset + 主题变量 + 后台布局样式（manager.css 曾放在 Manager.vue 的
-// style @import 中，Vite 热更新场景下会偶发丢失导致布局错乱，现统一在入口引入）
+// 全局样式：基础 reset + 主题变量 + 新界面公共样式 + 过渡期旧页面样式（统一在入口引入，
+// 写在组件 style @import 里时 Vite 热更新会偶发丢失）
 import '@/assets/css/global.css'
 import '@/assets/css/theme.css'
+import '@/assets/css/layout.css'
 import '@/assets/css/manager.css'
 
 import App from './App.vue'

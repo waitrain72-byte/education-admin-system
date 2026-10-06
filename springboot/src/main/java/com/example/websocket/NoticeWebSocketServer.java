@@ -100,9 +100,25 @@ public class NoticeWebSocketServer {
      * 推送给指定用户（studentId/teacherId/adminId + 角色）
      */
     public static void sendToUser(Integer userId, String role, String title, String content) {
+        Map<String, Object> message = new java.util.HashMap<>();
+        message.put("title", title);
+        message.put("content", content);
+        sendPayload(userId, role, message);
+    }
+
+    /**
+     * 推送任意字段给指定用户。
+     *
+     * <p>带 title 的消息两端都会弹通知 / 记角标；不带 title 的是「静默事件」（如课堂签到人数变化），
+     * 只给正在看对应页面的客户端刷新数据用——小程序与旧版 Web 收到没有 title 的消息会直接忽略。</p>
+     */
+    public static void sendPayload(Integer userId, String role, Map<String, Object> payload) {
+        if (userId == null || role == null) {
+            return;
+        }
         Session session = SESSIONS.get(userId + "-" + role);
         if (session != null && session.isOpen()) {
-            send(session, title, content);
+            send(session, payload);
         }
     }
 
@@ -110,18 +126,19 @@ public class NoticeWebSocketServer {
      * 全员广播
      */
     public static void sendToAll(String title, String content) {
+        Map<String, Object> message = new java.util.HashMap<>();
+        message.put("title", title);
+        message.put("content", content);
+        message.put("type", "notice");
         for (Session session : SESSIONS.values()) {
             if (session.isOpen()) {
-                send(session, title, content);
+                send(session, message);
             }
         }
     }
 
-    private static void send(Session session, String title, String content) {
+    private static void send(Session session, Map<String, Object> message) {
         try {
-            Map<String, String> message = new java.util.HashMap<>();
-            message.put("title", title);
-            message.put("content", content);
             // 必须用 getBasicRemote 同步发送：getAsyncRemote 在方法返回后才真正写出，
             // synchronized 保护不到实际写入，全员广播时会抛 IllegalStateException: TEXT_FULL_WRITING
             synchronized (session) {

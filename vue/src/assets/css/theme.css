@@ -8,85 +8,125 @@
    :root { --el-color-primary: #409eff; ... }，且总是晚于本文件加载，
    同级的 :root 会被它覆盖，按钮、菜单、分页就退回默认蓝。
    深色块再高一级，保证深色模式下压过浅色块与 Element Plus 的 html.dark。
+
+   配色：品牌色玉绿 #0f7b63，中性色带一点绿灰（不是纯灰），
+   课程封面色另有一套固定色板（utils/courseColor.ts，白字在上面对比度都 ≥ 4.5）。
    ============================================================ */
 
 body {
-    font-family: 'MiSans', 'HarmonyOS Sans SC', 'Inter', -apple-system, 'PingFang SC',
-        'Microsoft YaHei', sans-serif;
+    font-family: 'MiSans', 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei', -apple-system, 'Segoe UI',
+        sans-serif;
 }
 
 html:root {
-    /* 页面与卡片背景 */
-    --xm-bg-page: #f6f7fb;
-    --xm-bg-card: #ffffff;
-    --xm-bg-hover: #f3f4f6;
-    --xm-bg-input: #f9fafb;
-    --xm-bg-input-hover: #f3f4f6;
+    /* 字体：数字用 DIN 风格（Windows 自带 Bahnschrift），表格与指标里数字等宽对齐 */
+    --xm-font-num: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Segoe UI', sans-serif;
 
-    /* 布局区域 */
-    --xm-header-bg: #ffffff;
-    --xm-header-border: rgba(17, 24, 39, 0.08);
-    --xm-header-text: #1f2937;
+    /* 布局尺寸 */
+    --xm-nav-height: 60px;
+    --xm-content-width: 1280px;
+    --xm-radius-lg: 14px;
+    --xm-radius: 10px;
+    --xm-radius-sm: 6px;
+
+    /* 页面与卡片背景 */
+    --xm-bg-page: #f3f5f4;
+    --xm-bg-card: #ffffff;
+    --xm-bg-sunken: #eef2f0;
+    --xm-bg-hover: #eaf0ed;
+    --xm-bg-input: #f7f9f8;
+    --xm-bg-input-hover: #eef2f0;
+
+    /* 顶部导航 */
+    --xm-nav-bg: rgba(255, 255, 255, 0.86);
+    --xm-nav-border: rgba(16, 35, 28, 0.08);
 
     /* 文字 */
-    --xm-text-primary: #111827;
-    --xm-text-regular: #4b5563;
-    --xm-text-secondary: #6b7280;
+    --xm-text-primary: #17211d;
+    --xm-text-regular: #3f4b46;
+    --xm-text-secondary: #5f6b66;
 
-    /* 边框与阴影 */
-    --xm-border: #e5e7eb;
-    --xm-border-dashed: #d1d5db;
-    --xm-scrollbar-thumb: #d1d5db;
-    --xm-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-    --xm-shadow-card-lg: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 16px rgba(16, 24, 40, 0.06);
+    /* 边框与阴影：以描边分层为主，阴影只留给浮层与悬停 */
+    --xm-border: #e1e8e4;
+    --xm-border-dashed: #cbd5d0;
+    --xm-scrollbar-thumb: #cbd5d0;
+    --xm-shadow-card: 0 1px 2px rgba(16, 32, 26, 0.04);
+    --xm-shadow-card-lg: 0 12px 28px -16px rgba(16, 32, 26, 0.28);
+    --xm-shadow-pop: 0 18px 48px -12px rgba(16, 32, 26, 0.28);
 
-    /* 品牌色 */
-    --xm-brand: #6366f1;
-    --xm-brand-strong: #4f46e5;
+    /* 品牌色；--xm-on-brand 是压在品牌色 / 警示色实底上的文字色 */
+    --xm-brand: #0f7b63;
+    --xm-brand-strong: #0c624f;
+    --xm-brand-soft: #e7f2ef;
+    --xm-on-brand: #ffffff;
+
+    /* 状态色（考勤、作业、预警等的胶囊标签） */
+    --xm-ok: #1d8048;
+    --xm-ok-soft: #e1f3e8;
+    --xm-warn: #9a5c00;
+    --xm-warn-soft: #fbeed6;
+    --xm-bad: #c2372c;
+    --xm-bad-soft: #fbe3e0;
+    --xm-info: #2565a8;
+    --xm-info-soft: #e0ebf7;
 
     /* Element Plus 品牌色与圆角覆盖（按钮/链接/菜单/表格高亮自动跟随） */
-    --el-color-primary: #6366f1;
-    --el-color-primary-light-3: #878af4;
-    --el-color-primary-light-5: #b0b2f8;
-    --el-color-primary-light-7: #d8d9fb;
-    --el-color-primary-light-8: #e5e6fc;
-    --el-color-primary-light-9: #f2f2fe;
-    --el-color-primary-dark-2: #5153c9;
+    --el-color-primary: #0f7b63;
+    --el-color-primary-light-3: #57a392;
+    --el-color-primary-light-5: #87bdb1;
+    --el-color-primary-light-7: #b7d7d0;
+    --el-color-primary-light-8: #cfe5e0;
+    --el-color-primary-light-9: #e7f2ef;
+    --el-color-primary-dark-2: #0c624f;
     --el-border-radius-base: 8px;
     --el-border-radius-small: 6px;
 }
 
 html.dark:root {
-    --xm-bg-page: #0b0f1a;
-    --xm-bg-card: #111827;
-    --xm-bg-hover: #1f2937;
-    --xm-bg-input: #111827;
-    --xm-bg-input-hover: #1f2937;
+    --xm-bg-page: #0e1311;
+    --xm-bg-card: #151c19;
+    --xm-bg-sunken: #111714;
+    --xm-bg-hover: #1d2622;
+    --xm-bg-input: #111714;
+    --xm-bg-input-hover: #1d2622;
 
-    --xm-header-bg: #111827;
-    --xm-header-border: rgba(255, 255, 255, 0.08);
-    --xm-header-text: #e5e7eb;
+    --xm-nav-bg: rgba(21, 28, 25, 0.86);
+    --xm-nav-border: rgba(255, 255, 255, 0.07);
 
-    --xm-text-primary: #f3f4f6;
-    --xm-text-regular: #d1d5db;
-    --xm-text-secondary: #9ca3af;
+    --xm-text-primary: #e6ece9;
+    --xm-text-regular: #b4c0bb;
+    --xm-text-secondary: #8d9a94;
 
-    --xm-border: #374151;
-    --xm-border-dashed: #4b5563;
-    --xm-scrollbar-thumb: #374151;
-    --xm-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
-    --xm-shadow-card-lg: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --xm-border: #29332f;
+    --xm-border-dashed: #3a4641;
+    --xm-scrollbar-thumb: #3a4641;
+    --xm-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --xm-shadow-card-lg: 0 12px 28px -14px rgba(0, 0, 0, 0.6);
+    --xm-shadow-pop: 0 18px 48px -12px rgba(0, 0, 0, 0.7);
 
-    --xm-brand: #818cf8;
-    --xm-brand-strong: #a5b4fc;
+    --xm-brand: #3fb08f;
+    --xm-brand-strong: #65c0a5;
+    --xm-brand-soft: #182a24;
+    /* 深色下品牌色较亮，实底上用深色字（白字对比度只有 2.7） */
+    --xm-on-brand: #0c110f;
 
-    --el-color-primary: #818cf8;
-    --el-color-primary-light-3: #6d70d8;
-    --el-color-primary-light-5: #5558b2;
-    --el-color-primary-light-7: #3d3f8c;
-    --el-color-primary-light-8: #333576;
-    --el-color-primary-light-9: #292a5f;
-    --el-color-primary-dark-2: #9ba0f9;
+    --xm-ok: #55c787;
+    --xm-ok-soft: #14301f;
+    --xm-warn: #e4ad52;
+    --xm-warn-soft: #36290f;
+    --xm-bad: #f26b5f;
+    --xm-bad-soft: #3b1b18;
+    --xm-info: #76aef3;
+    --xm-info-soft: #16273a;
+
+    /* 深色下派生层级向深色表面（#141b18）混色而不是纯黑，否则 light-9 比卡片还黑，像个洞 */
+    --el-color-primary: #3fb08f;
+    --el-color-primary-light-3: #32836b;
+    --el-color-primary-light-5: #2a6654;
+    --el-color-primary-light-7: #21483c;
+    --el-color-primary-light-8: #1d3930;
+    --el-color-primary-light-9: #182a24;
+    --el-color-primary-dark-2: #65c0a5;
 }
 
 /* 告知浏览器表单/滚动条等原生控件跟随主题渲染 */
@@ -99,20 +139,29 @@ html.dark {
 
 /* 主题切换过渡动画：背景、文字、边框平滑渐变 */
 body,
-.manager-container,
-.manager-header,
-.manager-main-left,
-.manager-main-right,
-.manager-main-right .search,
-.manager-main-right .operation,
-.manager-main-right .table,
-.card,
+.app-shell,
+.top-nav,
+.panel,
 .el-table,
 .el-dialog,
+.el-drawer,
 .el-card {
     transition:
         background-color 0.3s ease,
         border-color 0.3s ease,
         color 0.3s ease,
         box-shadow 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body,
+    .app-shell,
+    .top-nav,
+    .panel,
+    .el-table,
+    .el-dialog,
+    .el-drawer,
+    .el-card {
+        transition: none;
+    }
 }

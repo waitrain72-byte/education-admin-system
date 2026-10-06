@@ -12,13 +12,14 @@
         select apply.*, student.name as studentName
         from apply
         left join student on apply.student_id = student.id
+        <!-- 过滤条件一律带表前缀：join 进来的 student 与 apply 都有 id 列，不带前缀按 id 查会报列名歧义 -->
         <where>
-            <if test="id != null"> and id= #{id}</if>
-            <if test="content != null"> and content like concat('%', #{content}, '%')</if>
-            <if test="status != null"> and status = #{status}</if>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="id != null"> and apply.id= #{id}</if>
+            <if test="content != null"> and apply.content like concat('%', #{content}, '%')</if>
+            <if test="status != null"> and apply.status = #{status}</if>
+            <if test="studentId != null"> and apply.student_id = #{studentId}</if>
         </where>
-        order by id desc
+        order by apply.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Apply">

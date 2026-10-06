@@ -92,10 +92,10 @@ export default {
             custom: 'Custom',
             reset: 'Reset to default',
             preset: {
-                default: 'Default (Indigo)',
+                default: 'Default (Jade)',
                 blue: 'Blue',
                 green: 'Green',
-                teal: 'Teal',
+                indigo: 'Indigo',
                 red: 'Rose',
                 orange: 'Orange',
                 purple: 'Purple',
@@ -129,6 +129,16 @@ export default {
         goRegister: 'Sign Up',
         captchaFailed: 'Failed to load CAPTCHA',
         loginFailed: 'Sign-in failed',
+        tagline: 'Courses, schedule and messages in one place',
+        heading: 'Sign in',
+        hint: 'Enter your account and password. We work out whether you are a student, teacher or admin.',
+        account: 'Account',
+        password: 'Password',
+        captcha: 'CAPTCHA',
+        captchaAlt: 'CAPTCHA image, click for a new one',
+        pickRole: 'Choose who you are signing in as',
+        pickRoleHint: 'This account belongs to more than one role. Choose one, then enter a new CAPTCHA.',
+        welcomeBack: 'Welcome back, {name}',
     },
 
     register: {
@@ -149,6 +159,9 @@ export default {
         rulePasswordLength: 'Password must be 6 to 20 characters',
         ruleConfirmRequired: 'Please confirm your password',
         ruleConfirmMismatch: 'Passwords do not match',
+        heading: 'Create a student account',
+        hint: 'Teacher and administrator accounts are created by the academic office',
+        confirm: 'Confirm password',
     },
 
     home: {
@@ -182,6 +195,7 @@ export default {
         '4001': 'Missing parameters',
         '5010': 'This room is already occupied for that time slot',
         '5011': 'This room code already exists',
+        '5012': 'This account belongs to more than one role. Please choose one.',
         '4008': 'Account locked, please try again later',
         '5001': 'Username already exists',
         '5002': 'Not signed in',

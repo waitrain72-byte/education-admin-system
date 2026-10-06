@@ -1,6 +1,6 @@
 package com.example.service;
 
-import cn.hutool.core.date.DateUtil;
+import com.example.common.AppTime;
 import com.example.entity.Account;
 import com.example.entity.Notice;
 import com.example.mapper.CrudMapper;
@@ -29,7 +29,7 @@ public class NoticeService extends CrudService<Notice> {
      */
     @Override
     public void add(Notice notice) {
-        notice.setTime(DateUtil.today());
+        notice.setTime(AppTime.today());
         Account currentUser = TokenUtils.getCurrentUser();
         notice.setUser(currentUser.getUsername());
         noticeMapper.insert(notice);

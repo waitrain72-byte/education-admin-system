@@ -7,8 +7,8 @@ import com.example.common.annotation.RequirePermission;
 import com.example.entity.Score;
 import com.example.entity.excel.ScoreExcel;
 import com.example.service.CrudService;
+import com.example.service.MessageService;
 import com.example.service.ScoreService;
-import com.example.websocket.NoticeWebSocketServer;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -30,6 +30,8 @@ public class ScoreController extends CrudController<Score> {
 
     @Resource
     private ScoreService scoreService;
+    @Resource
+    private MessageService messageService;
 
     @Override
     protected CrudService<Score> getService() {
@@ -44,8 +46,8 @@ public class ScoreController extends CrudController<Score> {
     @PostMapping("/add")
     public Result add(@RequestBody Score score) {
         scoreService.add(score);
-        NoticeWebSocketServer.sendToUser(score.getStudentId(), "STUDENT",
-                "成绩发布通知", "你有一门课程的成绩已发布，请到【我的成绩】查看");
+        messageService.push(score.getStudentId(), "STUDENT", "score",
+                "成绩发布通知", "你有一门课程的成绩已发布，请到【我的成绩】查看", null);
         return Result.success();
     }
 
@@ -57,8 +59,8 @@ public class ScoreController extends CrudController<Score> {
     @PutMapping("/update")
     public Result updateById(@RequestBody Score score) {
         scoreService.updateById(score);
-        NoticeWebSocketServer.sendToUser(score.getStudentId(), "STUDENT",
-                "成绩发布通知", "你有一门课程的成绩已更新，请到【我的成绩】查看");
+        messageService.push(score.getStudentId(), "STUDENT", "score",
+                "成绩发布通知", "你有一门课程的成绩已更新，请到【我的成绩】查看", null);
         return Result.success();
     }
 

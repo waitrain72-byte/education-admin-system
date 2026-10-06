@@ -6,7 +6,7 @@ import com.example.common.annotation.RequirePermission;
 import com.example.entity.Homework;
 import com.example.service.CrudService;
 import com.example.service.HomeworkService;
-import com.example.websocket.NoticeWebSocketServer;
+import com.example.service.MessageService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +25,8 @@ public class HomeworkController extends CrudController<Homework> {
 
     @Resource
     private HomeworkService homeworkService;
+    @Resource
+    private MessageService messageService;
 
     @Override
     protected CrudService<Homework> getService() {
@@ -40,8 +42,8 @@ public class HomeworkController extends CrudController<Homework> {
     public Result add(@RequestBody Homework homework) {
         homeworkService.add(homework);
         if (homework.getTeacherId() != null) {
-            NoticeWebSocketServer.sendToUser(homework.getTeacherId(), "TEACHER",
-                    "作业提交通知", "学生提交了新的作业，请到【作业提交】页面查看");
+            messageService.push(homework.getTeacherId(), "TEACHER", "homework",
+                    "作业提交通知", "学生提交了新的作业，请到课程的「作业」里查看", null);
         }
         return Result.success();
     }
@@ -55,8 +57,8 @@ public class HomeworkController extends CrudController<Homework> {
     public Result updateById(@RequestBody Homework homework) {
         homeworkService.updateById(homework);
         if (homework.getScore() != null && homework.getStudentId() != null) {
-            NoticeWebSocketServer.sendToUser(homework.getStudentId(), "STUDENT",
-                    "作业批改通知", "你提交的作业已批改，得分：" + homework.getScore());
+            messageService.push(homework.getStudentId(), "STUDENT", "homework",
+                    "作业批改通知", "你提交的作业已批改，得分：" + homework.getScore(), null);
         }
         return Result.success();
     }

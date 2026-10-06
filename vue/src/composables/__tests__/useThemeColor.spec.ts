@@ -30,8 +30,9 @@ describe('applyThemeColor', () => {
 
     // 基色按 20% 提亮，避免深色系自定义色在暗背景上看不见
     expect(cssVar('--el-color-primary')).toBe('#66b1ff')
-    // 深色模式向黑色渐变：层级越高越深
-    expect(cssVar('--el-color-primary-light-3')).toBe('#477cb3')
+    // 深色模式向深色卡片表面（#141b18）渐变：层级越高越接近背景，但不会比卡片更黑
+    expect(cssVar('--el-color-primary-light-3')).toBe('#4d84ba')
+    expect(cssVar('--el-color-primary-light-9')).toBe('#1c2a2f')
     // dark-2 反过来向白色渐变
     expect(cssVar('--el-color-primary-dark-2')).toBe('#85c1ff')
   })

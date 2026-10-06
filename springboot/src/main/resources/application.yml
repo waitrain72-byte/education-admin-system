@@ -49,5 +49,7 @@ jwt:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8080,http://localhost:5173}
+  # 业务时区：今日课程、教学周、签到截止都按它算（容器默认 UTC，不设会在零点到八点算错日期）
+  timezone: ${APP_TIMEZONE:Asia/Shanghai}
 
 ip: localhost

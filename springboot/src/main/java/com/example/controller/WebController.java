@@ -7,6 +7,7 @@ import com.example.common.enums.ResultCodeEnum;
 import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
 import com.example.exception.CustomException;
+import com.example.service.AccountLookupService;
 import com.example.service.AdminService;
 import com.example.service.LoginProtectService;
 import com.example.service.StudentService;
@@ -36,6 +37,8 @@ public class WebController {
     private StudentService studentService;
     @Resource
     private LoginProtectService loginProtectService;
+    @Resource
+    private AccountLookupService accountLookupService;
 
     @GetMapping("/")
     public Result hello() {
@@ -43,13 +46,18 @@ public class WebController {
     }
 
     /**
-     * 登录（带验证码校验、连续失败锁定与登录日志）
+     * 登录（带验证码校验、连续失败锁定与登录日志）。
+     *
+     * <p>身份 role 可以不传：Web 端登录页只填账号密码，由 {@link AccountLookupService#resolveRole} 按用户名判断身份；
+     * 同名账号密码也相同、实在分不出时返回 5012，前端再让用户选一次。小程序等老客户端照旧传 role。</p>
      */
     @PostMapping("/login")
     public Result login(@RequestBody Account account, HttpServletRequest request) {
-        if (ObjectUtil.isEmpty(account.getUsername()) || ObjectUtil.isEmpty(account.getPassword())
-                || ObjectUtil.isEmpty(account.getRole())) {
+        if (ObjectUtil.isEmpty(account.getUsername()) || ObjectUtil.isEmpty(account.getPassword())) {
             return Result.error(ResultCodeEnum.PARAM_LOST_ERROR);
+        }
+        if (ObjectUtil.isNotEmpty(account.getRole()) && !isKnownRole(account.getRole())) {
+            return Result.error(ResultCodeEnum.PARAM_ERROR);
         }
 
         String ip = request.getRemoteAddr();
@@ -67,22 +75,35 @@ public class WebController {
         }
 
         try {
+            if (ObjectUtil.isEmpty(account.getRole())) {
+                account.setRole(accountLookupService.resolveRole(account.getUsername(), account.getPassword()));
+            }
             if (RoleEnum.ADMIN.name().equals(account.getRole())) {
                 account = adminService.login(account);
-            }
-            if (RoleEnum.TEACHER.name().equals(account.getRole())) {
+            } else if (RoleEnum.TEACHER.name().equals(account.getRole())) {
                 account = teacherService.login(account);
-            }
-            if (RoleEnum.STUDENT.name().equals(account.getRole())) {
+            } else if (RoleEnum.STUDENT.name().equals(account.getRole())) {
                 account = studentService.login(account);
             }
             loginProtectService.recordSuccess(account.getUsername(), ip);
             return Result.success(account);
         } catch (CustomException e) {
-            // 账号或密码错误等业务异常：记录失败日志并向上抛出（全局异常处理器统一返回）
-            loginProtectService.recordFailure(account.getUsername(), ip, e.getMessage());
+            // 「需要选择身份」不是密码错误：账号密码都对，只是同名账号不止一个，不能计入失败次数
+            if (!ResultCodeEnum.ROLE_REQUIRED_ERROR.code.equals(e.getCode())) {
+                // 账号或密码错误等业务异常：记录失败日志并向上抛出（全局异常处理器统一返回）
+                loginProtectService.recordFailure(account.getUsername(), ip, e.getMsg());
+            }
             throw e;
         }
+    }
+
+    private static boolean isKnownRole(String role) {
+        for (RoleEnum value : RoleEnum.values()) {
+            if (value.name().equals(role)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

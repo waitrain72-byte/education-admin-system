@@ -94,10 +94,10 @@ export default {
             custom: '自定义',
             reset: '恢复默认',
             preset: {
-                default: '默认（靛蓝）',
+                default: '默认（玉绿）',
                 blue: '蓝色',
                 green: '绿色',
-                teal: '青色',
+                indigo: '靛蓝',
                 red: '玫红',
                 orange: '橙色',
                 purple: '紫色',
@@ -131,6 +131,16 @@ export default {
         goRegister: '注册',
         captchaFailed: '获取验证码失败',
         loginFailed: '登录失败',
+        tagline: '课程、日程、消息，一处办好',
+        heading: '登录',
+        hint: '输入账号和密码即可，系统会自动识别你是学生、教师还是管理员',
+        account: '账号',
+        password: '密码',
+        captcha: '验证码',
+        captchaAlt: '图形验证码，点击换一张',
+        pickRole: '请选择登录身份',
+        pickRoleHint: '这个账号对应多个身份，请选择本次登录的身份，再输入一次验证码。',
+        welcomeBack: '欢迎回来，{name}',
     },
 
     register: {
@@ -151,6 +161,9 @@ export default {
         rulePasswordLength: '密码长度在 6 到 20 个字符',
         ruleConfirmRequired: '请确认密码',
         ruleConfirmMismatch: '两次输入的密码不一致',
+        heading: '注册学生账号',
+        hint: '教师和管理员账号由教务后台统一创建',
+        confirm: '确认密码',
     },
 
     home: {
@@ -186,6 +199,7 @@ export default {
         '4008': '账号已锁定，请稍后再试',
         '5010': '该教室在此时间段已被其他课程占用',
         '5011': '教室编号已存在',
+        '5012': '这个账号对应多个身份，请选择登录身份',
         '5001': '用户名已存在',
         '5002': '用户未登录',
         '5003': '账号或密码错误',

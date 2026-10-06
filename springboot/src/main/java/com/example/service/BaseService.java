@@ -25,6 +25,10 @@ public abstract class BaseService<T extends Account> {
     @Resource
     protected FileService fileService;
 
+    /** 用户名在三张账号表之间全局唯一（登录页不再选身份，同名账号会让登录无法区分） */
+    @Resource
+    protected AccountLookupService accountLookupService;
+
     protected abstract BaseMapper<T> getMapper();
 
     protected abstract RoleEnum getRole();
@@ -59,11 +63,12 @@ public abstract class BaseService<T extends Account> {
     }
 
     /**
-     * 新增：校验用户名唯一、默认密码/姓名、按角色设置 role
+     * 新增：校验用户名唯一（三张账号表一起查）、默认密码/姓名、按角色设置 role
      */
     public void add(T entity) {
         T dbAccount = getMapper().selectByUsername(entity.getUsername());
-        if (ObjectUtil.isNotNull(dbAccount)) {
+        if (ObjectUtil.isNotNull(dbAccount)
+                || (accountLookupService != null && accountLookupService.isUsernameTaken(entity.getUsername(), null, null))) {
             throw new CustomException(ResultCodeEnum.USER_EXIST_ERROR);
         }
         if (ObjectUtil.isEmpty(entity.getPassword())) {
@@ -127,6 +132,11 @@ public abstract class BaseService<T extends Account> {
             }
             if (!isAdmin && isSelf) {
                 sanitizeSelfUpdate(entity);
+            }
+            // 管理员改账号名：新名字不能和任何其他账号（含另外两张表）重名
+            if (ObjectUtil.isNotEmpty(entity.getUsername()) && accountLookupService != null
+                    && accountLookupService.isUsernameTaken(entity.getUsername(), getRole(), entity.getId())) {
+                throw new CustomException(ResultCodeEnum.USER_EXIST_ERROR);
             }
         }
         T oldEntity = entity.getId() == null ? null : getMapper().selectById(entity.getId());

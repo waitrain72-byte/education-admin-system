@@ -20,6 +20,7 @@ public enum ResultCodeEnum {
     ATTENDANCE_ALREADY_ERROR("5009","该学生当天的考勤已经录入，请勿重复录入"),
     ROOM_OCCUPIED_ERROR("5010","该教室在此时间段已被其他课程占用"),
     ROOM_CODE_EXIST_ERROR("5011","教室编号已存在"),
+    ROLE_REQUIRED_ERROR("5012","该账号对应多个身份，请选择登录身份"),
     CAPTCHA_ERROR("402", "验证码错误"),
     PERMISSION_DENIED_ERROR("403", "无权限执行该操作"),
     ;

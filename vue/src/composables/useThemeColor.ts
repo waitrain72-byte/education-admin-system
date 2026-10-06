@@ -12,18 +12,21 @@ import { isDark } from '@/composables/useTheme'
  * 存储粒度是账号，所以 lisi 选了绿色，下次任何终端用 lisi 登录都是绿色。</p>
  *
  * <p>空串表示「使用系统内置默认色」——此时不写任何内联变量，
- * 完全回落到 assets/css/theme.css 里那套手工调过的靛蓝配色。</p>
+ * 完全回落到 assets/css/theme.css 里那套手工调过的玉绿配色。</p>
  */
 
 /** localStorage 键名：index.html 的防闪烁脚本会读取同一个键 */
 const STORAGE_KEY = 'xm-theme-color'
 
-/** 预设色板：兼顾浅色/深色两种模式下的对比度 */
+/**
+ * 预设色板：兼顾浅色/深色两种模式下的对比度。
+ * 默认色改为玉绿后，原来的青色与它太接近，换成靛蓝（即改版前的默认色，想要旧观感的可以选回去）。
+ */
 export const PRESET_COLORS: ReadonlyArray<{ value: string; label: string }> = [
     { value: '', label: 'layout.themeColor.preset.default' },
     { value: '#409eff', label: 'layout.themeColor.preset.blue' },
     { value: '#16a34a', label: 'layout.themeColor.preset.green' },
-    { value: '#0d9488', label: 'layout.themeColor.preset.teal' },
+    { value: '#6366f1', label: 'layout.themeColor.preset.indigo' },
     { value: '#e11d48', label: 'layout.themeColor.preset.red' },
     { value: '#ea580c', label: 'layout.themeColor.preset.orange' },
     { value: '#9333ea', label: 'layout.themeColor.preset.purple' },
@@ -60,6 +63,11 @@ function mix(base: [number, number, number], target: [number, number, number], w
 
 const WHITE: [number, number, number] = [255, 255, 255]
 const BLACK: [number, number, number] = [0, 0, 0]
+/**
+ * 深色模式下浅色层级的混色目标：深色卡片表面（theme.css 的 #141b18 附近）而不是纯黑。
+ * 向纯黑混出来的 light-9 比卡片底色还暗，用作按钮、标签底色时像在页面上挖了个洞。
+ */
+const DARK_SURFACE: [number, number, number] = [20, 27, 24]
 
 /** 需要派生的 Element Plus 浅色层级 */
 const LIGHT_LEVELS = [3, 5, 7, 8, 9]
@@ -92,10 +100,9 @@ export function applyThemeColor(hex: string, dark: boolean): void {
     }
 
     // 深色模式下把基色提亮 20%，否则深色系自定义色在暗背景上几乎看不见
-    // （内置配色 #6366f1 -> #818cf8 正是这个关系）
     const base = dark ? parseHex(mix(rgb, WHITE, 0.2))! : rgb
-    // 浅色模式向白色渐变、深色模式向黑色渐变，与 Element Plus 自身的明/暗主题一致
-    const lightTarget = dark ? BLACK : WHITE
+    // 浅色模式向白色渐变、深色模式向深色表面渐变，与 Element Plus 自身的明/暗主题一致
+    const lightTarget = dark ? DARK_SURFACE : WHITE
     const darkTarget = dark ? WHITE : BLACK
 
     root.style.setProperty('--el-color-primary', toHex(base))

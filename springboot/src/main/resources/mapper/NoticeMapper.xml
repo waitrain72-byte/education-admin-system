@@ -19,7 +19,8 @@
             <if test="time != null"> and time= #{time}</if>
             <if test="user != null"> and user= #{user}</if>
         </where>
-        order by id desc
+        <!-- 按发布时间倒序（time 是 yyyy-MM-dd 字符串，可直接比较）；同一天的按发布先后 -->
+        order by time desc, id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Notice">
