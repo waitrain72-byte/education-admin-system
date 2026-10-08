@@ -246,14 +246,15 @@ $env:JWT_SECRET="一串只有你知道的随机长字符串"; docker compose up 
 打开命令行，进入 MySQL 安装目录的 bin 文件夹（或已配置 PATH 则直接执行）：
 
 ```bash
-mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS xm_educational_manager DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -uroot -p123456 xm_educational_manager < sql/xm_educational_manager-full.sql
+mysql -uroot -p123456 -e "CREATE DATABASE IF NOT EXISTS xm_educational_manager_v2 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+mysql -uroot -p123456 xm_educational_manager_v2 < sql/xm_educational_manager-full.sql
 ```
 
 - 第一条：创建数据库（`-p123456` 换成你自己的 root 密码）；
 - 第二条：导入全量种子（表结构 + 演示数据 + RBAC 授权一次到位），没有任何输出就是成功；
+- 库名是 `xm_educational_manager_v2`，和改版前的版本（库名 `xm_educational_manager`）分开，两个版本可以装在同一个 MySQL 里互不影响；要换库名，就同时改上面两条命令和 `application.yml` 里的 `spring.datasource.url`。
 - 如果你的 MySQL 账号密码与后端默认（`root/123456@localhost:3306`）不同，改 `springboot/src/main/resources/application.yml`。
-- **已经在用的旧库不用重新导入**：新版本新增的表、列与权限点（课程空间的签到场次、作业任务、课程评价、课程资料、站内消息、学期参数，成绩册的权重与发布状态等）由后端启动时自动补齐（`common/config/SchemaMigration`，已有的什么也不做）；数据库账号没有建表 / ALTER 权限时，启动日志会打印要手动执行的 SQL。旧库补齐后没有本学期的演示课程，想看完整效果就用新种子建一个库。
+- **想把已经在用的旧库升级到新版本**：把 `application.yml` 里的库名改成旧库的名字即可，不用重新导入——新版本新增的表、列与权限点（课程空间的签到场次、作业任务、课程评价、课程资料、站内消息、学期参数，成绩册的权重与发布状态等）由后端启动时自动补齐（`common/config/SchemaMigration`，已有的什么也不做）；数据库账号没有建表 / ALTER 权限时，启动日志会打印要手动执行的 SQL。旧库补齐后没有本学期的演示课程，想看完整效果就用新种子建一个库。
 
 #### 3. 启动后端
 
@@ -355,7 +356,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 | 配置          | 文件                                                                                                               | 默认值                                                 |
 | ------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | 后端端口      | `springboot/src/main/resources/application.yml`                                                                    | `9091`                                                 |
-| 数据库连接    | 同上（`ip` / `spring.datasource.*`）                                                                               | `localhost:3306/xm_educational_manager`，`root/123456` |
+| 数据库连接    | 同上（`ip` / `spring.datasource.*`）                                                                               | `localhost:3306/xm_educational_manager_v2`，`root/123456` |
 | JWT 密钥/过期 | 同上 `jwt.*`（支持环境变量 `JWT_SECRET`）                                                                          | 内置默认值 / `2` 小时                                  |
 | CORS 白名单   | 同上 `app.cors.allowed-origins`（环境变量 `CORS_ALLOWED_ORIGINS`）                                                 | `http://localhost:8080,http://localhost:5173`          |
 | 文件访问前缀  | 同上，可加 `files.url-prefix` 覆盖（未配置时用代码默认值）                                                                                            | `/api/files/`                                          |

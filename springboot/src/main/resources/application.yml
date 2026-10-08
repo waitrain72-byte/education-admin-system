@@ -12,7 +12,8 @@ spring:
     username: root
     password: 123456
     # 不开启 allowMultiQueries：禁止一次请求执行多条 SQL，作为 SQL 注入的防御纵深
-    url: jdbc:mysql://${ip}:3306/xm_educational_manager?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # 库名 xm_educational_manager_v2：和改版前的版本（xm_educational_manager）分开，两个版本可以共用一个 MySQL 互不影响
+    url: jdbc:mysql://${ip}:3306/xm_educational_manager_v2?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
   servlet:
     multipart:
       # 上传大小限制（配合 FileController 扩展名白名单）：20MB 足够作业文档/图片
