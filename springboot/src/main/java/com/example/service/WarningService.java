@@ -74,6 +74,8 @@ public class WarningService {
         //    数据范围下推到 SQL：教师只取本人任课的成绩/考勤，学生只取本人的，
         //    不再「全表捞回来再在内存里逐条判断归属」。
         Score scoreProbe = new Score();
+        // 只算学生看得到的成绩：成绩册里的草稿还没定，不参与预警
+        scoreProbe.setStatus(GradeCalculator.PUBLISHED);
         Attendance attendanceProbe = new Attendance();
         if (RoleEnum.TEACHER.name().equals(role)) {
             scoreProbe.setTeacherId(selfId);
@@ -113,6 +115,7 @@ public class WarningService {
         }
         Score scoreProbe = new Score();
         scoreProbe.setStudentId(studentId);
+        scoreProbe.setStatus(GradeCalculator.PUBLISHED);
         Attendance attendanceProbe = new Attendance();
         attendanceProbe.setStudentId(studentId);
 

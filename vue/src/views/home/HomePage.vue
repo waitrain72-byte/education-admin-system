@@ -18,9 +18,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import request from '@/utils/request'
 import { syncServerClock } from '@/composables/useServerClock'
+import { onSocketMessage } from '@/composables/useNoticeSocket'
 import StudentHome from './StudentHome.vue'
 import TeacherHome from './TeacherHome.vue'
 import AdminHome from './AdminHome.vue'
@@ -47,6 +48,27 @@ const load = async () => {
 }
 
 onMounted(load)
+
+/** 静默刷新：签到开始 / 结束、布置作业时后端推事件，首页的「签到中」「待交作业」跟着变；失败时保留旧数据 */
+let refreshTimer: ReturnType<typeof setTimeout> | null = null
+const off = onSocketMessage((message) => {
+  if (message?.type !== 'course' || !['attendance', 'assignments'].includes(String(message.event))) return
+  if (refreshTimer) return
+  refreshTimer = setTimeout(async () => {
+    refreshTimer = null
+    try {
+      const summary = await request.get<Record<string, any>>('/workbench/summary')
+      syncServerClock(summary?.now)
+      data.value = summary
+    } catch {
+      // 保留旧数据
+    }
+  }, 600)
+})
+onBeforeUnmount(() => {
+  off()
+  if (refreshTimer) clearTimeout(refreshTimer)
+})
 </script>
 
 <style scoped>

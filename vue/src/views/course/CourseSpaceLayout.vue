@@ -35,12 +35,17 @@
             active-class="is-active"
           >
             {{ $t('space.tabs.' + tab.key) }}
+            <span
+              v-if="tab.key === 'attendance' && overview.signing"
+              class="space-tabs__live"
+              :title="$t('space.overview.signingTeacher')"
+            ></span>
           </router-link>
         </nav>
       </header>
 
-      <router-view v-slot="{ Component }">
-        <component :is="Component" :overview="overview" @refresh="load" />
+      <router-view v-if="relation !== 'visitor' || route.name === 'CourseOverview'" v-slot="{ Component }">
+        <component :is="Component" :overview="overview" @refresh="refresh" />
       </router-view>
     </template>
   </div>
@@ -52,6 +57,7 @@ import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { courseColor } from '@/utils/courseColor'
 import { segmentShortName } from '@/utils/schedule'
+import { useCourseEvents } from '@/composables/useCourseEvents'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,14 +70,11 @@ const course = computed(() => overview.value?.course || {})
 const color = computed(() => courseColor(course.value.name))
 const relation = computed<string>(() => overview.value?.relation || 'visitor')
 
-/**
- * 课程内的分页：访客（没选这门课的学生）只能看概览。
- * 后续阶段在这里追加签到、作业、成绩、评价、资料、成员。
- */
-const tabs = computed(() => {
-  const all = [{ key: 'overview', members: false }]
-  return all.filter((tab) => !tab.members || relation.value !== 'visitor')
-})
+/** 课程内的分页：访客（没选这门课的学生）只能看概览，其余页面只对课程成员开放 */
+const TABS = ['overview', 'attendance', 'assignments', 'grades', 'evaluation', 'resources', 'members']
+const tabs = computed(() =>
+  TABS.filter((key) => key === 'overview' || relation.value !== 'visitor').map((key) => ({ key })),
+)
 
 const load = async () => {
   if (!courseId.value) return
@@ -85,8 +88,27 @@ const load = async () => {
   }
 }
 
+/** 静默刷新（签到开始、布置作业、发公告时后端推事件）：失败时保留旧数据，不闪成「没有找到这门课」 */
+const refresh = async () => {
+  if (!courseId.value) return
+  try {
+    overview.value = await request.get<Record<string, any>>(`/course/${courseId.value}/overview`)
+  } catch {
+    // 保留旧数据
+  }
+}
+
 // 子页面通过 inject 拿到课程概览与刷新方法，不必各自再请求一遍
-provide('courseSpace', { overview, relation, reload: load })
+provide('courseSpace', { overview, relation, reload: refresh })
+
+useCourseEvents(() => courseId.value, ['attendance', 'assignments', 'posts'], refresh)
+
+// 没选这门课的人直接打开签到、作业等链接时，退回概览（这些页面的接口对访客一律 403）
+watch([relation, () => route.name], ([rel, name]) => {
+  if (overview.value && rel === 'visitor' && name !== 'CourseOverview') {
+    router.replace(`/course/${courseId.value}/overview`)
+  }
+})
 
 watch(courseId, load, { immediate: true })
 </script>
@@ -94,6 +116,8 @@ watch(courseId, load, { immediate: true })
 <style scoped>
 .space {
   display: grid;
+  /* 列宽可以缩到 0：里面的宽表格自己横向滚动，不把整页撑出屏幕 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
@@ -160,6 +184,12 @@ watch(courseId, load, { immediate: true })
   gap: 4px;
   padding: 0 16px;
   overflow-x: auto;
+  /* 窄屏放不下时横向滑动；滚动条不显示（导航条下面压一道粗滚动条很难看） */
+  scrollbar-width: none;
+}
+
+.space-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .space-tabs__item {
@@ -177,6 +207,29 @@ watch(courseId, load, { immediate: true })
 .space-tabs__item.is-active {
   color: var(--xm-text-primary);
   font-weight: 600;
+}
+
+.space-tabs__live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--xm-bad);
+  vertical-align: 2px;
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .space-tabs__live {
+    animation: none;
+  }
 }
 
 .space-tabs__item.is-active::after {
@@ -197,6 +250,21 @@ watch(courseId, load, { immediate: true })
 
   .space-head__name {
     font-size: 22px;
+  }
+
+  /* 手机上七个分页尽量一屏放下 */
+  .space-tabs {
+    gap: 2px;
+    padding: 0 6px;
+  }
+
+  .space-tabs__item {
+    padding: 12px 8px;
+  }
+
+  .space-tabs__item.is-active::after {
+    left: 8px;
+    right: 8px;
   }
 }
 </style>

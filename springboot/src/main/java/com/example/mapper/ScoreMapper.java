@@ -21,4 +21,13 @@ public interface ScoreMapper extends CrudMapper<Score> {
      * 过滤条件由实体承载（教师/学生的数据隔离范围）。
      */
     List<Map<String, Object>> selectScoreDistribution(Score score);
+
+    /** 成绩册：一门课全部学生的成绩行（含草稿） */
+    List<Score> selectByCourse(Integer courseId);
+
+    /** 成绩册新增一行（各项成绩可空），回填 id */
+    int insertGradebookRow(Score score);
+
+    /** 成绩册保存一行：空值照样写入（与 updateById 只改非空字段不同） */
+    int updateGradebookRow(Score score);
 }

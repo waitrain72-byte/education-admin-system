@@ -55,6 +55,17 @@ public class Notice implements Serializable {
         return user;
     }
 
+    /** 所属课程：空 = 全校通知，非空 = 课程公告 */
+    private Integer courseId;
+
+    public Integer getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Integer courseId) {
+        this.courseId = courseId;
+    }
+
     public void setUser(String user) {
         this.user = user;
     }

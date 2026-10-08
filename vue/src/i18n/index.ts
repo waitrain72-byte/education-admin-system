@@ -9,6 +9,8 @@ import groupCZh from '@/locales/pages/zh-CN/groupC'
 import groupCEn from '@/locales/pages/en-US/groupC'
 import shellZh from '@/locales/pages/zh-CN/shell'
 import shellEn from '@/locales/pages/en-US/shell'
+import spaceZh from '@/locales/pages/zh-CN/space'
+import spaceEn from '@/locales/pages/en-US/space'
 
 /**
  * 深合并语言包：各页面分组模块都向 pages 命名空间贡献键，
@@ -33,8 +35,8 @@ export type AppLocale = (typeof SUPPORTED_LOCALES)[number]
 
 // 消息结构标注为宽类型，避免 vue-i18n 对深层嵌套消息的递归类型展开（TS2589）
 const messages = {
-    'zh-CN': [groupAZh, groupBZh, groupCZh, shellZh].reduce(deepMerge, zhCN),
-    'en-US': [groupAEn, groupBEn, groupCEn, shellEn].reduce(deepMerge, enUS),
+    'zh-CN': [groupAZh, groupBZh, groupCZh, shellZh, spaceZh].reduce(deepMerge, zhCN),
+    'en-US': [groupAEn, groupBEn, groupCEn, shellEn, spaceEn].reduce(deepMerge, enUS),
 }
 
 /** 两种语言的完整消息树（导出给单测做键一致性检查） */

@@ -1,6 +1,6 @@
 /**
- * 新界面语言包：顶部导航、全局搜索、首页、课程、课程空间、消息中心、个人中心、教务后台。
- * 键命名空间：nav / shell / workbench / courses / space / messageCenter / profile / admin
+ * 新界面语言包：顶部导航、全局搜索、首页、课程、消息中心、个人中心、教务后台。
+ * 键命名空间：nav / shell / workbench / courses / messageCenter / profile / admin
  */
 export default {
     nav: {
@@ -105,6 +105,10 @@ export default {
         },
         handle: '去处理',
         noTodos: '暂时没有待办',
+        dueTitle: '待交作业',
+        noDue: '没有待交的作业',
+        dueAt: '截止 {time}',
+        signing: '签到中',
         admin: {
             pendingLeaves: '待审批的请假',
             goReview: '去审批',
@@ -163,36 +167,6 @@ export default {
         },
     },
 
-    space: {
-        notFound: '没有找到这门课',
-        backToCourses: '回到课程列表',
-        tabsLabel: '课程内导航',
-        tabs: {
-            overview: '概览',
-        },
-        overview: {
-            info: '课程信息',
-            time: '上课时间',
-            room: '上课地点',
-            type: '课程类型',
-            credit: '学分',
-            enrolled: '选课人数',
-            status: '课程状态',
-            teacher: '任课教师',
-        },
-        relation: {
-            admin: '管理员',
-            teacher: '任课教师',
-            student: '已选这门课',
-            visitor: '未选这门课',
-        },
-        relationHint: {
-            admin: '你可以查看这门课的全部内容。',
-            teacher: '这是你开的课。',
-            student: '你是这门课的学生。',
-            visitor: '选课之后可以看到这门课的作业、签到和成绩。',
-        },
-    },
 
     messageCenter: {
         title: '消息',

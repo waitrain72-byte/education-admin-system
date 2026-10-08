@@ -47,21 +47,29 @@ public class ScoreController extends CrudController<Score> {
     public Result add(@RequestBody Score score) {
         scoreService.add(score);
         messageService.push(score.getStudentId(), "STUDENT", "score",
-                "成绩发布通知", "你有一门课程的成绩已发布，请到【我的成绩】查看", null);
+                "成绩发布通知", "你有一门课程的成绩已发布，点击查看", gradesLink(score.getCourseId()));
         return Result.success();
     }
 
     /**
-     * 修改（修改成绩实时推送学生，防重复提交）
+     * 修改（成绩对学生可见时实时推送，防重复提交）
      */
     @Override
     @NoRepeatSubmit
     @PutMapping("/update")
     public Result updateById(@RequestBody Score score) {
         scoreService.updateById(score);
-        messageService.push(score.getStudentId(), "STUDENT", "score",
-                "成绩发布通知", "你有一门课程的成绩已更新，请到【我的成绩】查看", null);
+        // 草稿（成绩册里还没发布的）学生看不到，不发通知；只改了部分字段时学生、课程以库里为准
+        Score saved = scoreService.publishedRow(score.getId());
+        if (saved != null) {
+            messageService.push(saved.getStudentId(), "STUDENT", "score",
+                    "成绩更新通知", "你有一门课程的成绩已更新，点击查看", gradesLink(saved.getCourseId()));
+        }
         return Result.success();
+    }
+
+    private static String gradesLink(Integer courseId) {
+        return courseId == null ? null : "/course/" + courseId + "/grades";
     }
 
     /**

@@ -98,7 +98,7 @@ const ungradedTotal = computed(() =>
 )
 
 /** 批改作业的入口（课程空间的作业页上线前，先进旧的作业页） */
-const gradingLink = (_courseId: number) => '/legacy/homework'
+const gradingLink = (courseId: number) => `/course/${courseId}/assignments`
 </script>
 
 <style scoped>

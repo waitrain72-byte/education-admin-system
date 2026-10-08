@@ -1,6 +1,7 @@
 package com.example.mapper;
 
 import com.example.entity.Course;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -26,11 +27,20 @@ public interface WorkbenchMapper {
             + " where teacher_id = #{teacherId} and score is null group by course_id")
     List<Map<String, Object>> countUngradedByTeacher(Integer teacherId);
 
-    /** 学生已有总评的成绩，带课程学分（算绩点用） */
+    /** 学生已发布、有总评的成绩，带课程学分（算绩点用；成绩册里的草稿不算） */
     @Select("select s.course_id as courseId, s.score as score, c.score as credit"
             + " from score s join course c on s.course_id = c.id"
-            + " where s.student_id = #{studentId} and s.score is not null")
+            + " where s.student_id = #{studentId} and s.score is not null and s.status = '已发布'")
     List<Map<String, Object>> scoresWithCredit(Integer studentId);
+
+    /** 学生还没交、也没过截止时间的作业（首页待办），截止早的在前；now 为 yyyy-MM-dd HH:mm */
+    @Select("select a.id, a.course_id as courseId, c.name as courseName, a.title, a.deadline from assignment a"
+            + " join choice ch on ch.course_id = a.course_id and ch.student_id = #{studentId}"
+            + " join course c on c.id = a.course_id"
+            + " where a.deadline >= #{now}"
+            + " and not exists (select 1 from homework h where h.assignment_id = a.id and h.student_id = #{studentId})"
+            + " order by a.deadline, a.id limit 5")
+    List<Map<String, Object>> pendingAssignments(@Param("studentId") Integer studentId, @Param("now") String now);
 
     /** 学生所在专业要求修满的学分（未分配专业时为 null） */
     @Select("select sp.score from student st join speciality sp on st.speciality_id = sp.id where st.id = #{studentId}")

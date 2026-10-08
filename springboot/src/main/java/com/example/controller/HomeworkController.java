@@ -43,7 +43,8 @@ public class HomeworkController extends CrudController<Homework> {
         homeworkService.add(homework);
         if (homework.getTeacherId() != null) {
             messageService.push(homework.getTeacherId(), "TEACHER", "homework",
-                    "作业提交通知", "学生提交了新的作业，请到课程的「作业」里查看", null);
+                    "作业提交通知", "学生提交了新的作业，请到课程的「作业」里查看",
+                    "/course/" + homework.getCourseId() + "/assignments");
         }
         return Result.success();
     }
@@ -56,9 +57,13 @@ public class HomeworkController extends CrudController<Homework> {
     @PutMapping("/update")
     public Result updateById(@RequestBody Homework homework) {
         homeworkService.updateById(homework);
-        if (homework.getScore() != null && homework.getStudentId() != null) {
-            messageService.push(homework.getStudentId(), "STUDENT", "homework",
-                    "作业批改通知", "你提交的作业已批改，得分：" + homework.getScore(), null);
+        // 只有老师打了分才通知；学生、课程以库里为准（请求体可能只带了 id 和分数）
+        Homework saved = homework.getScore() == null ? null : homeworkService.selectById(homework.getId());
+        if (saved != null && saved.getScore() != null) {
+            String link = saved.getCourseId() == null ? null : "/course/" + saved.getCourseId() + "/assignments"
+                    + (saved.getAssignmentId() == null ? "" : "?open=" + saved.getAssignmentId());
+            messageService.push(saved.getStudentId(), "STUDENT", "homework",
+                    "作业批改通知", "你提交的作业已批改，得分：" + saved.getScore(), link);
         }
         return Result.success();
     }

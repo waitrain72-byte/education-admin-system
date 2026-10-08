@@ -52,6 +52,64 @@ public class SchemaMigration implements ApplicationRunner {
             + "KEY `idx_message_receiver` (`user_id`,`role`,`is_read`)"
             + ")" + TABLE_OPTIONS + " COMMENT='站内消息'";
 
+    static final String DDL_ASSIGNMENT = "CREATE TABLE `assignment` ("
+            + "`id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID',"
+            + "`course_id` int(11) NOT NULL COMMENT '课程ID',"
+            + "`teacher_id` int(11) DEFAULT NULL COMMENT '布置的教师',"
+            + "`title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '作业标题',"
+            + "`content` text COLLATE utf8mb4_unicode_ci COMMENT '作业要求',"
+            + "`attachment` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '附件地址',"
+            + "`attachment_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '附件原文件名',"
+            + "`deadline` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '截止时间（yyyy-MM-dd HH:mm）',"
+            + "`full_score` int(11) NOT NULL DEFAULT '100' COMMENT '满分',"
+            + "`create_time` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '布置时间（yyyy-MM-dd HH:mm）',"
+            + "PRIMARY KEY (`id`),"
+            + "KEY `idx_assignment_course` (`course_id`)"
+            + ")" + TABLE_OPTIONS + " COMMENT='作业任务（老师布置，学生按任务提交）'";
+
+    static final String DDL_ATTENDANCE_SESSION = "CREATE TABLE `attendance_session` ("
+            + "`id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID',"
+            + "`course_id` int(11) NOT NULL COMMENT '课程ID',"
+            + "`teacher_id` int(11) DEFAULT NULL COMMENT '发起的教师',"
+            + "`code` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '签到码',"
+            + "`date` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '上课日期（yyyy-MM-dd，写入考勤记录的时间）',"
+            + "`start_time` varchar(19) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '发起时间（yyyy-MM-dd HH:mm:ss）',"
+            + "`expire_time` varchar(19) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '截止时间（yyyy-MM-dd HH:mm:ss）',"
+            + "`status` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '进行中' COMMENT '进行中 / 已结束',"
+            + "PRIMARY KEY (`id`),"
+            + "KEY `idx_session_course` (`course_id`, `status`)"
+            + ")" + TABLE_OPTIONS + " COMMENT='课堂签到场次'";
+
+    static final String DDL_COURSE_EVAL = "CREATE TABLE `course_eval` ("
+            + "`id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID',"
+            + "`course_id` int(11) NOT NULL COMMENT '课程ID',"
+            + "`teacher_id` int(11) DEFAULT NULL COMMENT '任课教师',"
+            + "`student_id` int(11) NOT NULL COMMENT '评价的学生（对教师匿名展示）',"
+            + "`attitude` tinyint(4) NOT NULL COMMENT '教学态度 1-5',"
+            + "`content_score` tinyint(4) NOT NULL COMMENT '教学内容 1-5',"
+            + "`method` tinyint(4) NOT NULL COMMENT '教学方法 1-5',"
+            + "`effect` tinyint(4) NOT NULL COMMENT '教学效果 1-5',"
+            + "`support` tinyint(4) NOT NULL COMMENT '课后辅导 1-5',"
+            + "`comment` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文字评价',"
+            + "`create_time` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '评价时间（yyyy-MM-dd HH:mm）',"
+            + "PRIMARY KEY (`id`),"
+            + "UNIQUE KEY `uk_eval_course_student` (`course_id`, `student_id`),"
+            + "KEY `idx_eval_teacher` (`teacher_id`)"
+            + ")" + TABLE_OPTIONS + " COMMENT='课程评价（五个维度打分 + 文字）'";
+
+    static final String DDL_COURSE_RESOURCE = "CREATE TABLE `course_resource` ("
+            + "`id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'ID',"
+            + "`course_id` int(11) NOT NULL COMMENT '课程ID',"
+            + "`name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '资料名称（原文件名）',"
+            + "`file` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件地址',"
+            + "`size` bigint(20) DEFAULT NULL COMMENT '字节数',"
+            + "`uploader_id` int(11) DEFAULT NULL COMMENT '上传人ID',"
+            + "`uploader_role` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '上传人角色',"
+            + "`create_time` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '上传时间（yyyy-MM-dd HH:mm）',"
+            + "PRIMARY KEY (`id`),"
+            + "KEY `idx_resource_course` (`course_id`)"
+            + ")" + TABLE_OPTIONS + " COMMENT='课程资料'";
+
     private final JdbcTemplate jdbcTemplate;
     private final Clock clock;
 
@@ -84,6 +142,59 @@ public class SchemaMigration implements ApplicationRunner {
 
         // 权限点：学期设置（仅管理员）
         ensurePermission("config:manage", "学期设置", "menu", "config", 1, "ADMIN");
+
+        migrateCourseSpace();
+    }
+
+    /** 课程空间：作业任务、课堂签到、课程评价、课程资料、成绩册权重与发布、课程公告 */
+    private void migrateCourseSpace() {
+        createTableIfMissing("assignment", DDL_ASSIGNMENT);
+        createTableIfMissing("attendance_session", DDL_ATTENDANCE_SESSION);
+        createTableIfMissing("course_eval", DDL_COURSE_EVAL);
+        createTableIfMissing("course_resource", DDL_COURSE_RESOURCE);
+
+        // 作业提交挂到作业任务下；旧版「学生直接上传」的记录 assignment_id 为空，照常可查
+        addColumnIfMissing("homework", "assignment_id",
+                "int(11) DEFAULT NULL COMMENT '所属作业任务（旧版自由提交为空）' AFTER `id`");
+        addColumnIfMissing("homework", "submit_time",
+                "varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '提交时间（yyyy-MM-dd HH:mm）'");
+        addColumnIfMissing("homework", "status",
+                "varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '已提交 / 已批改'");
+        addColumnIfMissing("homework", "file_name",
+                "varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '附件原文件名'");
+        addIndexIfMissing("homework", "idx_homework_assignment", "`assignment_id`");
+
+        // 考勤记录关联签到场次（老师手工登记的为空）
+        addColumnIfMissing("attendance", "session_id",
+                "int(11) DEFAULT NULL COMMENT '签到场次（老师手工登记为空）'");
+
+        // 成绩册：考勤分、作业分两项成绩，以及草稿 / 已发布（老数据都算已发布）
+        addColumnIfMissing("score", "attendance_score",
+                "double(10,2) DEFAULT NULL COMMENT '考勤分' AFTER `teacher_id`");
+        addColumnIfMissing("score", "homework_score",
+                "double(10,2) DEFAULT NULL COMMENT '作业分' AFTER `attendance_score`");
+        addColumnIfMissing("score", "status",
+                "varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '已发布' COMMENT '草稿 / 已发布（学生只看得到已发布）'");
+
+        // 课程的总评权重（%）：默认 平时 30 + 期末 70，与改版前的计算方式一致；以及课程简介
+        addColumnIfMissing("course", "weight_attendance", "int(11) NOT NULL DEFAULT '0' COMMENT '总评权重：考勤（%）'");
+        addColumnIfMissing("course", "weight_homework", "int(11) NOT NULL DEFAULT '0' COMMENT '总评权重：作业（%）'");
+        addColumnIfMissing("course", "weight_ordinary", "int(11) NOT NULL DEFAULT '30' COMMENT '总评权重：平时（%）'");
+        addColumnIfMissing("course", "weight_exam", "int(11) NOT NULL DEFAULT '70' COMMENT '总评权重：期末（%）'");
+        addColumnIfMissing("course", "intro", "varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '课程简介'");
+
+        // 课程公告：与全校通知同表，course_id 非空即课程公告
+        addColumnIfMissing("notice", "course_id",
+                "int(11) DEFAULT NULL COMMENT '所属课程（空 = 全校通知，非空 = 课程公告）'");
+        addIndexIfMissing("notice", "idx_notice_course", "`course_id`");
+
+        ensurePermission("assignment:view", "作业任务-查看", "menu", "assignment", 1, "ADMIN", "TEACHER", "STUDENT");
+        ensurePermission("assignment:manage", "作业任务-布置/批改", "button", "assignment", 2, "ADMIN", "TEACHER");
+        ensurePermission("assignment:submit", "作业任务-提交作业", "button", "assignment", 3, "STUDENT");
+        ensurePermission("course:teach", "课程空间-发公告/改简介", "button", "course", 3, "ADMIN", "TEACHER");
+        ensurePermission("attendance:checkin", "考勤-课堂签到", "button", "attendance", 3, "STUDENT");
+        ensurePermission("resource:view", "课程资料-查看", "menu", "resource", 1, "ADMIN", "TEACHER", "STUDENT");
+        ensurePermission("resource:manage", "课程资料-上传/删除", "button", "resource", 2, "ADMIN", "TEACHER");
     }
 
     /**
@@ -106,6 +217,30 @@ public class SchemaMigration implements ApplicationRunner {
             return true;
         } catch (Exception e) {
             log.error("数据库升级失败：{} 表缺少列 {}，请手动执行：{};", table, column, ddl, e);
+            return false;
+        }
+    }
+
+    /**
+     * 索引不存在时补建。表名、索引名、列都是代码里的常量，不接受外部输入。
+     *
+     * @return 本次是否新建了索引
+     */
+    boolean addIndexIfMissing(String table, String index, String columns) {
+        String ddl = "ALTER TABLE `" + table + "` ADD INDEX `" + index + "` (" + columns + ")";
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.STATISTICS"
+                            + " WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?",
+                    Integer.class, table, index);
+            if (count != null && count > 0) {
+                return false;
+            }
+            jdbcTemplate.execute(ddl);
+            log.info("数据库升级：{} 表已新增索引 {}", table, index);
+            return true;
+        } catch (Exception e) {
+            log.error("数据库升级失败：{} 表缺少索引 {}，可手动执行：{};", table, index, ddl, e);
             return false;
         }
     }

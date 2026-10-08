@@ -29,6 +29,8 @@ public class NoticeService extends CrudService<Notice> {
      */
     @Override
     public void add(Notice notice) {
+        // 这里只发全校通知；课程公告走课程空间接口（要校验是不是这门课的老师）
+        notice.setCourseId(null);
         notice.setTime(AppTime.today());
         Account currentUser = TokenUtils.getCurrentUser();
         notice.setUser(currentUser.getUsername());

@@ -32,6 +32,14 @@ public class Course implements Serializable {
     /** 上课状态 */
     private String status;
 
+    /** 总评权重（%）：考勤、作业、平时、期末，四项合计 100；默认 0/0/30/70 与改版前的计算方式一致 */
+    private Integer weightAttendance;
+    private Integer weightHomework;
+    private Integer weightOrdinary;
+    private Integer weightExam;
+    /** 课程简介（课程空间概览、课程广场卡片展示） */
+    private String intro;
+
     private String teacherName;
 
 }

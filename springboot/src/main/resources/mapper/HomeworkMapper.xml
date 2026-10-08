@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.HomeworkMapper">
 
     <sql id="Base_Column_List">
-        id,student_id,content,course_id,teacher_id,file,score,descr
+        id,student_id,content,course_id,teacher_id,file,score,descr,assignment_id,submit_time,status,file_name
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Homework">
@@ -20,6 +20,8 @@
             <if test="content != null"> and homework.content like concat('%', #{content}, '%')</if>
             <if test="studentId != null"> and homework.student_id = #{studentId}</if>
             <if test="teacherId != null"> and homework.teacher_id = #{teacherId}</if>
+            <if test="courseId != null"> and homework.course_id = #{courseId}</if>
+            <if test="assignmentId != null"> and homework.assignment_id = #{assignmentId}</if>
         </where>
         order by homework.id desc
     </select>
@@ -42,7 +44,7 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
-    <insert id="insert" parameterType="com.example.entity.Homework" useGeneratedKeys="true">
+    <insert id="insert" parameterType="com.example.entity.Homework" useGeneratedKeys="true" keyProperty="id">
         insert into homework
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -53,6 +55,10 @@
             <if test="file != null">file,</if>
             <if test="score != null">score,</if>
             <if test="descr != null">descr,</if>
+            <if test="assignmentId != null">assignment_id,</if>
+            <if test="submitTime != null">submit_time,</if>
+            <if test="status != null">status,</if>
+            <if test="fileName != null">file_name,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -63,6 +69,10 @@
             <if test="file != null">#{file},</if>
             <if test="score != null">#{score},</if>
             <if test="descr != null">#{descr},</if>
+            <if test="assignmentId != null">#{assignmentId},</if>
+            <if test="submitTime != null">#{submitTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="fileName != null">#{fileName},</if>
         </trim>
     </insert>
 
@@ -89,6 +99,18 @@
             </if>
             <if test="descr != null">
                 descr = #{descr},
+            </if>
+            <if test="assignmentId != null">
+                assignment_id = #{assignmentId},
+            </if>
+            <if test="submitTime != null">
+                submit_time = #{submitTime},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="fileName != null">
+                file_name = #{fileName},
             </if>
         </set>
         where id = #{id}

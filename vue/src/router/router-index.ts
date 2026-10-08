@@ -46,13 +46,50 @@ const routes: RouteRecordRaw[] = [
                 path: 'course/:id(\\d+)',
                 component: () => import('@/views/course/CourseSpaceLayout.vue'),
                 meta: { name: 'nav.courses', hidden: true },
-                redirect: (to) => `/course/${to.params.id}/overview`,
+                // 消息里的链接会带查询参数（如 /course/8?post=3），跳到概览时要保留
+                redirect: (to) => ({ path: `/course/${to.params.id}/overview`, query: to.query }),
                 children: [
                     {
                         path: 'overview',
                         name: 'CourseOverview',
                         meta: { name: 'space.tabs.overview' },
                         component: () => import('@/views/course/CourseOverview.vue'),
+                    },
+                    {
+                        path: 'attendance',
+                        name: 'CourseAttendance',
+                        meta: { name: 'space.tabs.attendance' },
+                        component: () => import('@/views/course/CourseAttendance.vue'),
+                    },
+                    {
+                        path: 'assignments',
+                        name: 'CourseAssignments',
+                        meta: { name: 'space.tabs.assignments' },
+                        component: () => import('@/views/course/CourseAssignments.vue'),
+                    },
+                    {
+                        path: 'grades',
+                        name: 'CourseGrades',
+                        meta: { name: 'space.tabs.grades' },
+                        component: () => import('@/views/course/CourseGrades.vue'),
+                    },
+                    {
+                        path: 'evaluation',
+                        name: 'CourseEvaluation',
+                        meta: { name: 'space.tabs.evaluation' },
+                        component: () => import('@/views/course/CourseEvaluation.vue'),
+                    },
+                    {
+                        path: 'resources',
+                        name: 'CourseResources',
+                        meta: { name: 'space.tabs.resources' },
+                        component: () => import('@/views/course/CourseResources.vue'),
+                    },
+                    {
+                        path: 'members',
+                        name: 'CourseMembers',
+                        meta: { name: 'space.tabs.members' },
+                        component: () => import('@/views/course/CourseMembers.vue'),
                     },
                 ],
             },

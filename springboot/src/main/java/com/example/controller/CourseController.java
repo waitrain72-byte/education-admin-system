@@ -1,9 +1,11 @@
 package com.example.controller;
 
 import com.example.common.Result;
+import com.example.common.annotation.NoRepeatSubmit;
 import com.example.common.annotation.RequirePermission;
 import com.example.entity.Account;
 import com.example.entity.Course;
+import com.example.entity.Notice;
 import com.example.service.CourseService;
 import com.example.service.CourseSpaceService;
 import com.example.service.CrudService;
@@ -11,8 +13,12 @@ import com.example.service.RecommendService;
 import com.example.service.RoomplanService;
 import com.example.service.WorkbenchService;
 import com.example.utils.TokenUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,10 +59,50 @@ public class CourseController extends CrudController<Course> {
         return Result.success(workbenchService.myCourses());
     }
 
-    /** 课程空间概览：课程信息、任课教师、选课人数、当前登录人与这门课的关系 */
+    /** 课程空间概览：课程信息、任课教师、选课人数、当前登录人与这门课的关系、简介、权重与待办提醒 */
     @GetMapping("/{id}/overview")
     public Result overview(@PathVariable Integer id) {
         return Result.success(courseSpaceService.overview(id));
+    }
+
+    /** 课程成员（花名册） */
+    @GetMapping("/{id}/members")
+    public Result members(@PathVariable Integer id) {
+        return Result.success(courseSpaceService.members(id));
+    }
+
+    /** 课程公告 */
+    @GetMapping("/{id}/posts")
+    public Result posts(@PathVariable Integer id) {
+        return Result.success(courseSpaceService.posts(id));
+    }
+
+    /** 发布课程公告，并通知全体选课学生 */
+    @NoRepeatSubmit
+    @RequirePermission("course:teach")
+    @PostMapping("/{id}/posts")
+    public Result addPost(@PathVariable Integer id, @RequestBody Notice post) {
+        Notice saved = courseSpaceService.addPost(id, post);
+        Course course = courseSpaceService.requireCourse(id);
+        courseSpaceService.notifyStudents(id, "course", "《" + course.getName() + "》发布了新公告", saved.getTitle(),
+                "/course/" + id + "?post=" + saved.getId());
+        courseSpaceService.emit(id, "posts");
+        return Result.success(saved);
+    }
+
+    @RequirePermission("course:teach")
+    @DeleteMapping("/{id}/posts/{postId}")
+    public Result deletePost(@PathVariable Integer id, @PathVariable Integer postId) {
+        courseSpaceService.deletePost(id, postId);
+        courseSpaceService.emit(id, "posts");
+        return Result.success();
+    }
+
+    /** 修改课程简介 */
+    @RequirePermission("course:teach")
+    @PutMapping("/{id}/intro")
+    public Result updateIntro(@PathVariable Integer id, @RequestBody Course body) {
+        return Result.success(courseSpaceService.updateIntro(id, body == null ? null : body.getIntro()));
     }
 
     /**

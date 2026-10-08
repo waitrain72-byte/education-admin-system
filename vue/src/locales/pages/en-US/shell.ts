@@ -1,6 +1,6 @@
 /**
- * New-UI messages: top navigation, global search, home, courses, course space, messages, profile, admin console.
- * Namespaces: nav / shell / workbench / courses / space / messageCenter / profile / admin
+ * New-UI messages: top navigation, global search, home, courses, messages, profile, admin console.
+ * Namespaces: nav / shell / workbench / courses / messageCenter / profile / admin
  */
 export default {
     nav: {
@@ -105,6 +105,10 @@ export default {
         },
         handle: 'Open',
         noTodos: 'Nothing to do right now',
+        dueTitle: 'Due soon',
+        noDue: 'Nothing due',
+        dueAt: 'Due {time}',
+        signing: 'Check-in open',
         admin: {
             pendingLeaves: 'Leave requests to review',
             goReview: 'Review',
@@ -163,36 +167,6 @@ export default {
         },
     },
 
-    space: {
-        notFound: 'Course not found',
-        backToCourses: 'Back to courses',
-        tabsLabel: 'Course sections',
-        tabs: {
-            overview: 'Overview',
-        },
-        overview: {
-            info: 'About this course',
-            time: 'Time',
-            room: 'Room',
-            type: 'Type',
-            credit: 'Credits',
-            enrolled: 'Enrolled',
-            status: 'Status',
-            teacher: 'Teacher',
-        },
-        relation: {
-            admin: 'Administrator',
-            teacher: 'Teacher',
-            student: 'Enrolled',
-            visitor: 'Not enrolled',
-        },
-        relationHint: {
-            admin: 'You can see everything in this course.',
-            teacher: 'You teach this course.',
-            student: 'You are a student of this course.',
-            visitor: 'Enroll to see assignments, attendance and grades.',
-        },
-    },
 
     messageCenter: {
         title: 'Messages',

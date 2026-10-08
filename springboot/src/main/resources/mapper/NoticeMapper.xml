@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.NoticeMapper">
 
     <sql id="Base_Column_List">
-        id,title,content,time,user
+        id,title,content,time,user,course_id
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Notice">
@@ -18,6 +18,12 @@
             <if test="content != null"> and content= #{content}</if>
             <if test="time != null"> and time= #{time}</if>
             <if test="user != null"> and user= #{user}</if>
+            <!-- 课程公告与全校通知同表：不指定课程时只查全校通知（首页、消息中心、小程序都走这里），
+                 指定课程时只查这门课的公告 -->
+            <choose>
+                <when test="courseId != null"> and course_id = #{courseId}</when>
+                <otherwise> and course_id is null</otherwise>
+            </choose>
         </where>
         <!-- 按发布时间倒序（time 是 yyyy-MM-dd 字符串，可直接比较）；同一天的按发布先后 -->
         order by time desc, id desc
@@ -41,7 +47,7 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
-    <insert id="insert" parameterType="com.example.entity.Notice" useGeneratedKeys="true">
+    <insert id="insert" parameterType="com.example.entity.Notice" useGeneratedKeys="true" keyProperty="id">
         insert into notice
         <trim prefix="(" suffix=")" suffixOverrides=",">
                 <if test="id != null">id,</if>
@@ -49,6 +55,7 @@
                 <if test="content != null">content,</if>
                 <if test="time != null">time,</if>
                 <if test="user != null">user,</if>
+                <if test="courseId != null">course_id,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
@@ -56,9 +63,11 @@
                 <if test="content != null">#{content},</if>
                 <if test="time != null">#{time},</if>
                 <if test="user != null">#{user},</if>
+                <if test="courseId != null">#{courseId},</if>
         </trim>
     </insert>
 
+    <!-- 所属课程不允许通过修改改变：全校通知不会变成课程公告，反之亦然 -->
     <update id="updateById" parameterType="com.example.entity.Notice">
         update notice
         <set>
@@ -75,7 +84,7 @@
                 user = #{user},
             </if>
         </set>
-        where id = #{id} 
+        where id = #{id}
     </update>
 
 </mapper>

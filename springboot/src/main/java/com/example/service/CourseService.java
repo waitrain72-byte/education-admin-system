@@ -47,6 +47,7 @@ public class CourseService extends CrudService<Course> {
     @Override
     public void add(Course course) {
         requireAdmin();
+        stripWeights(course);
         checkRoomOccupied(course);
         super.add(course);
     }
@@ -99,8 +100,23 @@ public class CourseService extends CrudService<Course> {
             courseMapper.updateById(merged);
             return;
         }
+        stripWeights(course);
         checkRoomOccupied(course);
         super.updateById(course);
+    }
+
+    /**
+     * 总评权重只能在成绩册里改（{@link GradebookService#save}）：那里改权重会同时重算已录的总评、调整学分，
+     * 从课程表单改会让已发布的总评和权重对不上，所以这里一律忽略。新课程用表默认值（平时 30 + 期末 70）。
+     */
+    private static void stripWeights(Course course) {
+        if (course == null) {
+            return;
+        }
+        course.setWeightAttendance(null);
+        course.setWeightHomework(null);
+        course.setWeightOrdinary(null);
+        course.setWeightExam(null);
     }
 
     /**

@@ -5,7 +5,8 @@
 <mapper namespace="com.example.mapper.CourseMapper">
 
     <sql id="Base_Column_List">
-        id,name,type,teacher_id,score,num,room,week,segment,status
+        id,name,type,teacher_id,score,num,room,week,segment,status,
+        weight_attendance,weight_homework,weight_ordinary,weight_exam,intro
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Course">
@@ -39,7 +40,7 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
-    <insert id="insert" parameterType="com.example.entity.Course" useGeneratedKeys="true">
+    <insert id="insert" parameterType="com.example.entity.Course" useGeneratedKeys="true" keyProperty="id">
         insert into course
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -52,6 +53,11 @@
             <if test="week != null">week,</if>
             <if test="segment != null">segment,</if>
             <if test="status != null">status,</if>
+            <if test="weightAttendance != null">weight_attendance,</if>
+            <if test="weightHomework != null">weight_homework,</if>
+            <if test="weightOrdinary != null">weight_ordinary,</if>
+            <if test="weightExam != null">weight_exam,</if>
+            <if test="intro != null">intro,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
@@ -64,6 +70,11 @@
             <if test="week != null">#{week},</if>
             <if test="segment != null">#{segment},</if>
             <if test="status != null">#{status},</if>
+            <if test="weightAttendance != null">#{weightAttendance},</if>
+            <if test="weightHomework != null">#{weightHomework},</if>
+            <if test="weightOrdinary != null">#{weightOrdinary},</if>
+            <if test="weightExam != null">#{weightExam},</if>
+            <if test="intro != null">#{intro},</if>
         </trim>
     </insert>
 
@@ -96,6 +107,21 @@
             </if>
             <if test="status != null">
                 status = #{status},
+            </if>
+            <if test="weightAttendance != null">
+                weight_attendance = #{weightAttendance},
+            </if>
+            <if test="weightHomework != null">
+                weight_homework = #{weightHomework},
+            </if>
+            <if test="weightOrdinary != null">
+                weight_ordinary = #{weightOrdinary},
+            </if>
+            <if test="weightExam != null">
+                weight_exam = #{weightExam},
+            </if>
+            <if test="intro != null">
+                intro = #{intro},
             </if>
         </set>
         where id = #{id}

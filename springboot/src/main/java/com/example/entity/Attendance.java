@@ -19,6 +19,8 @@ public class Attendance implements Serializable {
     private Integer teacherId;
     private String time;
     private String status;
+    /** 签到场次（老师手工登记的为空） */
+    private Integer sessionId;
 
     private String studentName;
     private String courseName;

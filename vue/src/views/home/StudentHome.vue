@@ -85,6 +85,26 @@
           </div>
         </section>
 
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__title">{{ $t('workbench.dueTitle') }}</span>
+          </div>
+          <div class="panel__body">
+            <ul v-if="data.todos?.length" class="due">
+              <li v-for="todo in data.todos" :key="todo.id">
+                <router-link :to="`/course/${todo.courseId}/assignments?open=${todo.id}`" class="due__item">
+                  <span class="due__bar" :style="{ background: courseColor(todo.courseName) }"></span>
+                  <span class="due__text">
+                    <span class="due__title">{{ todo.title }}</span>
+                    <span class="due__meta">{{ todo.courseName }} · <span class="num">{{ $t('workbench.dueAt', { time: todo.deadline.slice(5) }) }}</span></span>
+                  </span>
+                </router-link>
+              </li>
+            </ul>
+            <div v-else class="empty-note">{{ $t('workbench.noDue') }}</div>
+          </div>
+        </section>
+
         <ExamsPanel :exams="data.exams" />
       </aside>
     </div>
@@ -101,6 +121,7 @@ import NextClassCard from './NextClassCard.vue'
 import TodayClasses from './TodayClasses.vue'
 import ExamsPanel from './ExamsPanel.vue'
 import { useHomeText } from './useHomeText'
+import { courseColor } from '@/utils/courseColor'
 
 const props = defineProps<{ data: Record<string, any> }>()
 
@@ -168,5 +189,49 @@ const activeCourses = computed(() => (props.data.courses || []).filter((c: any) 
 
 .warning-bar__text {
   min-width: 0;
+}
+
+.due {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.due__item {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 0 -10px;
+  border-radius: var(--xm-radius);
+}
+
+.due__item:hover {
+  background: var(--xm-bg-hover);
+}
+
+.due__bar {
+  width: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.due__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.due__title {
+  font-size: 14px;
+  color: var(--xm-text-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.due__meta {
+  font-size: 12px;
+  color: var(--xm-text-secondary);
 }
 </style>

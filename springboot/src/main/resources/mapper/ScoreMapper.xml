@@ -5,7 +5,7 @@
 <mapper namespace="com.example.mapper.ScoreMapper">
 
     <sql id="Base_Column_List">
-        id,student_id,course_id,teacher_id,ordinary_score,exam_score,score
+        id,student_id,course_id,teacher_id,attendance_score,homework_score,ordinary_score,exam_score,score,status
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Score">
@@ -21,6 +21,8 @@
             <if test="studentId != null"> and score.student_id= #{studentId}</if>
             <if test="courseId != null"> and score.course_id= #{courseId}</if>
             <if test="teacherId != null"> and score.teacher_id= #{teacherId}</if>
+            <!-- 学生只看得到已发布的成绩（ScoreService 的数据隔离会带上 status） -->
+            <if test="status != null"> and score.status = #{status}</if>
         </where>
         order by score.id desc
     </select>
@@ -43,6 +45,7 @@
             <if test="studentId != null"> and score.student_id = #{studentId}</if>
             <if test="courseId != null"> and score.course_id = #{courseId}</if>
             <if test="teacherId != null"> and score.teacher_id = #{teacherId}</if>
+            <if test="status != null"> and score.status = #{status}</if>
         </where>
         group by bucket
     </select>
@@ -72,18 +75,24 @@
             <if test="studentId != null">student_id,</if>
             <if test="courseId != null">course_id,</if>
             <if test="teacherId != null">teacher_id,</if>
+            <if test="attendanceScore != null">attendance_score,</if>
+            <if test="homeworkScore != null">homework_score,</if>
             <if test="ordinaryScore != null">ordinary_score,</if>
             <if test="examScore != null">exam_score,</if>
             <if test="score != null">score,</if>
+            <if test="status != null">status,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">#{id},</if>
             <if test="studentId != null">#{studentId},</if>
             <if test="courseId != null">#{courseId},</if>
             <if test="teacherId != null">#{teacherId},</if>
+            <if test="attendanceScore != null">#{attendanceScore},</if>
+            <if test="homeworkScore != null">#{homeworkScore},</if>
             <if test="ordinaryScore != null">#{ordinaryScore},</if>
             <if test="examScore != null">#{examScore},</if>
             <if test="score != null">#{score},</if>
+            <if test="status != null">#{status},</if>
         </trim>
     </insert>
     <!--student_id,course_id,teacher_id,ordinary_score,exam_score,score-->
@@ -108,7 +117,39 @@
             <if test="score != null">
                 score = #{score},
             </if>
+            <if test="attendanceScore != null">
+                attendance_score = #{attendanceScore},
+            </if>
+            <if test="homeworkScore != null">
+                homework_score = #{homeworkScore},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
         </set>
+        where id = #{id}
+    </update>
+
+    <!-- 成绩册：一门课全部学生的成绩行（含草稿） -->
+    <select id="selectByCourse" resultType="com.example.entity.Score">
+        select <include refid="Base_Column_List" /> from score where course_id = #{courseId}
+    </select>
+
+    <!-- 成绩册新增一行：各项成绩可以为空（还没录完），回填自增 id -->
+    <insert id="insertGradebookRow" parameterType="com.example.entity.Score" useGeneratedKeys="true" keyProperty="id">
+        insert into score (student_id, course_id, teacher_id, attendance_score, homework_score, ordinary_score, exam_score, score, status)
+        values (#{studentId}, #{courseId}, #{teacherId}, #{attendanceScore}, #{homeworkScore}, #{ordinaryScore}, #{examScore}, #{score}, #{status})
+    </insert>
+
+    <!-- 成绩册保存一行：与 updateById 不同，空值也要写进去（老师清空某项成绩、总评因此变回待录） -->
+    <update id="updateGradebookRow" parameterType="com.example.entity.Score">
+        update score set
+            attendance_score = #{attendanceScore},
+            homework_score = #{homeworkScore},
+            ordinary_score = #{ordinaryScore},
+            exam_score = #{examScore},
+            score = #{score},
+            status = #{status}
         where id = #{id}
     </update>
 

@@ -12,7 +12,10 @@
           {{ [c.room, showTeacher ? c.teacherName : null].filter(Boolean).join(' · ') || '—' }}
         </div>
       </div>
-      <span class="pill" :class="pillClass(c)">{{ stateLabel(c) }}</span>
+      <router-link v-if="c.signing" :to="`/course/${c.id}/attendance`" class="pill pill--bad today__signing">
+        {{ $t('workbench.signing') }} ›
+      </router-link>
+      <span v-else class="pill" :class="pillClass(c)">{{ stateLabel(c) }}</span>
       <slot name="action" :course="c" :state="stateOf(c)" />
     </li>
   </ol>
@@ -34,6 +37,8 @@ export interface TodayCourse {
   segment?: string
   start?: string
   end?: string
+  /** 正在签到（后端按进行中、没过截止的签到场次标记） */
+  signing?: boolean
 }
 
 const props = withDefaults(defineProps<{ courses: TodayCourse[]; showTeacher?: boolean }>(), { showTeacher: true })
@@ -105,6 +110,14 @@ const pillClass = (c: TodayCourse) => {
   align-self: stretch;
   width: 4px;
   border-radius: 2px;
+}
+
+.today__signing {
+  text-decoration: none;
+}
+
+.today__signing:hover {
+  filter: brightness(0.95);
 }
 
 .today__name {

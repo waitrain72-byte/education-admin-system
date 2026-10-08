@@ -14,6 +14,7 @@ import com.example.entity.Notice;
 import com.example.entity.Student;
 import com.example.exception.CustomException;
 import com.example.mapper.ApplyMapper;
+import com.example.mapper.AttendanceSessionMapper;
 import com.example.mapper.AttendanceMapper;
 import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
@@ -32,11 +33,14 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,6 +60,7 @@ public class WorkbenchService {
     private static final Logger log = LoggerFactory.getLogger(WorkbenchService.class);
 
     static final DateTimeFormatter MINUTE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter SECOND_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final Pattern SEGMENT_TIME = Pattern.compile("(\\d{1,2}:\\d{2})\\s*~\\s*(\\d{1,2}:\\d{2})");
     /** 及格线（与成绩模块一致） */
     static final double PASS_LINE = 60;
@@ -86,6 +91,8 @@ public class WorkbenchService {
     private DashboardService dashboardService;
     @Resource
     private WarningService warningService;
+    @Resource
+    private AttendanceSessionMapper attendanceSessionMapper;
 
     public Map<String, Object> summary() {
         Account current = TokenUtils.getCurrentUser();
@@ -149,6 +156,7 @@ public class WorkbenchService {
                 cards.add(card);
             }
         }
+        markSigning(cards, LocalDateTime.now(clock));
         cards.sort(Comparator.comparingInt(c -> STATUS_FINISHED.equals(c.get("status")) ? 1 : 0));
         return cards;
     }
@@ -162,10 +170,13 @@ public class WorkbenchService {
                     c.getRoom(), c.getWeek(), c.getSegment(), c.getStatus(), c.getNum()));
         }
 
+        markSigning(courses, now);
+
         Map<String, Object> part = new LinkedHashMap<>();
         part.put("courses", courses);
         part.put("todayCourses", todayCourses(courses, weekday));
         part.put("exams", upcomingExams(now, 3));
+        part.put("todos", pendingAssignments(studentId, now));
 
         Student student = studentMapper.selectById(studentId);
         Attendance attendanceProbe = new Attendance();
@@ -206,6 +217,8 @@ public class WorkbenchService {
                 todos.add(todo);
             }
         }
+
+        markSigning(courses, now);
 
         Map<String, Object> part = new LinkedHashMap<>();
         part.put("courses", courses);
@@ -354,6 +367,37 @@ public class WorkbenchService {
                 .sorted(Comparator.comparing(Examplan::getExamTime))
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    /** 给课程卡片标上「正在签到」（有进行中、没过截止时间的签到） */
+    private void markSigning(List<Map<String, Object>> cards, LocalDateTime now) {
+        List<Integer> ids = new ArrayList<>();
+        for (Map<String, Object> card : cards) {
+            if (card.get("id") instanceof Integer) {
+                ids.add((Integer) card.get("id"));
+            }
+        }
+        Set<Integer> signing = Collections.emptySet();
+        if (!ids.isEmpty()) {
+            try {
+                signing = new HashSet<>(attendanceSessionMapper.selectSigningCourseIds(ids, now.format(SECOND_FORMAT)));
+            } catch (Exception e) {
+                log.warn("首页签到状态查询失败：{}", e.getMessage());
+            }
+        }
+        for (Map<String, Object> card : cards) {
+            card.put("signing", signing.contains(card.get("id")));
+        }
+    }
+
+    /** 学生还没交、没过截止的作业（最多 5 条，截止早的在前） */
+    private List<Map<String, Object>> pendingAssignments(Integer studentId, LocalDateTime now) {
+        try {
+            return workbenchMapper.pendingAssignments(studentId, now.format(MINUTE_FORMAT));
+        } catch (Exception e) {
+            log.warn("首页待交作业查询失败：{}", e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /** 学生本人的学业预警；正常或没有数据时返回 null（首页不显示预警条） */
