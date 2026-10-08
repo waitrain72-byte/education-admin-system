@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -167,6 +168,24 @@ public class ApplyService extends CrudService<Apply> {
         int n = days == null ? 1 : days;
         requireRange(start, n);
         return scheduleService.classesBetween(current.getId(), start, start.plusDays(n - 1L));
+    }
+
+    /** 某条请假影响的课（审核看板用）：管理员看任意一条，学生只能看自己的 */
+    public List<Map<String, Object>> affected(Integer id) {
+        Apply db = id == null ? null : applyMapper.selectById(id);
+        if (db == null) {
+            throw new CustomException(ResultCodeEnum.PARAM_ERROR);
+        }
+        Account current = TokenUtils.getCurrentUser();
+        if (!isAdmin(current) && !(isStudent(current) && current.getId().equals(db.getStudentId()))) {
+            throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+        }
+        LocalDate start = parseDateOrNull(db.getTime());
+        if (start == null || db.getStudentId() == null) {
+            return Collections.emptyList();
+        }
+        int days = db.getDay() == null || db.getDay() < 1 ? 1 : Math.min(db.getDay(), MAX_DAYS);
+        return scheduleService.classesBetween(db.getStudentId(), start, start.plusDays(days - 1L));
     }
 
     /**

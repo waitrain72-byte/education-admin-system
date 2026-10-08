@@ -4,9 +4,11 @@ import cn.hutool.core.util.StrUtil;
 import com.example.common.enums.ResultCodeEnum;
 import com.example.entity.Roomplan;
 import com.example.exception.CustomException;
+import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
 import com.example.mapper.RoomplanMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -19,6 +21,8 @@ public class RoomplanService extends CrudService<Roomplan> {
 
     @Resource
     private RoomplanMapper roomplanMapper;
+    @Resource
+    private CourseMapper courseMapper;
 
     @Override
     protected CrudMapper<Roomplan> getMapper() {
@@ -35,15 +39,47 @@ public class RoomplanService extends CrudService<Roomplan> {
     }
 
     /**
-     * 修改教室前校验编号重复（排除自身）
+     * 修改教室前校验编号重复（排除自身）；改了编号的话，课程上记的编号一起改，免得课程挂在一个不存在的教室上
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateById(Roomplan roomplan) {
         if (roomplan == null || roomplan.getId() == null) {
             throw new CustomException(ResultCodeEnum.PARAM_LOST_ERROR);
         }
         checkCodeDuplicate(roomplan);
+        Roomplan before = roomplanMapper.selectById(roomplan.getId());
         super.updateById(roomplan);
+        if (before != null && StrUtil.isNotBlank(before.getCode()) && StrUtil.isNotBlank(roomplan.getCode())
+                && !before.getCode().equals(roomplan.getCode())) {
+            courseMapper.renameRoom(before.getCode(), roomplan.getCode());
+        }
+    }
+
+    /**
+     * 删除教室：还有没结课的课排在这里时不许删（先给那些课换教室）
+     */
+    @Override
+    public void deleteById(Integer id) {
+        Roomplan room = id == null ? null : roomplanMapper.selectById(id);
+        if (room != null && StrUtil.isNotBlank(room.getCode()) && courseMapper.countActiveByRoom(room.getCode()) > 0) {
+            throw new CustomException(ResultCodeEnum.ROOM_IN_USE_ERROR);
+        }
+        super.deleteById(id);
+    }
+
+    /**
+     * 批量删除：逐条检查
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBatch(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        for (Integer id : ids) {
+            deleteById(id);
+        }
     }
 
     /**

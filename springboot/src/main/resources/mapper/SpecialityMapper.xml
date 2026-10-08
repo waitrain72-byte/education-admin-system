@@ -13,10 +13,12 @@
         from speciality
         left join college on speciality.college_id = college.id             /*关联查询*/
         <where>
-            <if test="id != null"> and id= #{id}</if>
+            <!-- 带表前缀：join 进来的 college 也有 id 列 -->
+            <if test="id != null"> and speciality.id= #{id}</if>
             <if test="name != null"> and speciality.name like concat('%', #{name}, '%')</if>
+            <if test="collegeId != null"> and speciality.college_id = #{collegeId}</if>
         </where>
-        order by id desc
+        order by speciality.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Speciality">

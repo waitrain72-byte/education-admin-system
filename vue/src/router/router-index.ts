@@ -137,10 +137,10 @@ const routes: RouteRecordRaw[] = [
                 redirect: '/admin/courses',
                 children: [
                     // 教学
-                    { path: 'courses', name: 'AdminCourses', meta: { name: 'menu.course', section: 'teaching', legacy: true }, component: Course },
+                    { path: 'courses', name: 'AdminCourses', meta: { name: 'admin.menu.courses', section: 'teaching' }, component: () => import('@/views/admin/CourseAdmin.vue') },
+                    { path: 'rooms', name: 'AdminRooms', meta: { name: 'admin.menu.rooms', section: 'teaching' }, component: () => import('@/views/admin/RoomsAdmin.vue') },
+                    { path: 'leaves', name: 'AdminLeaves', meta: { name: 'admin.menu.leaves', section: 'teaching' }, component: () => import('@/views/admin/LeaveBoard.vue') },
                     { path: 'exams', name: 'AdminExams', meta: { name: 'menu.examplan', section: 'teaching', legacy: true }, component: Examplan },
-                    { path: 'rooms', name: 'AdminRooms', meta: { name: 'menu.roomplan', section: 'teaching', legacy: true }, component: Roomplan },
-                    { path: 'leaves', name: 'AdminLeaves', meta: { name: 'admin.menu.leaves', section: 'teaching', legacy: true }, component: Apply },
                     { path: 'warnings', name: 'AdminWarnings', meta: { name: 'menu.warning', section: 'teaching', legacy: true }, component: Warning },
                     // 教学记录
                     { path: 'choices', name: 'AdminChoices', meta: { name: 'admin.menu.choices', section: 'records', legacy: true }, component: Choice },
@@ -149,12 +149,15 @@ const routes: RouteRecordRaw[] = [
                     { path: 'homework', name: 'AdminHomework', meta: { name: 'admin.menu.homework', section: 'records', legacy: true }, component: Homework },
                     { path: 'comments', name: 'AdminComments', meta: { name: 'menu.comment', section: 'records', legacy: true }, component: Comment },
                     // 档案
-                    { path: 'colleges', name: 'AdminColleges', meta: { name: 'menu.college', section: 'archives', legacy: true }, component: () => import('@/views/manager/College.vue') },
-                    { path: 'specialities', name: 'AdminSpecialities', meta: { name: 'menu.speciality', section: 'archives', legacy: true }, component: () => import('@/views/manager/Speciality.vue') },
-                    { path: 'classes', name: 'AdminClasses', meta: { name: 'menu.classes', section: 'archives', legacy: true }, component: () => import('@/views/manager/Classes.vue') },
-                    { path: 'students', name: 'AdminStudents', meta: { name: 'menu.student', section: 'archives', legacy: true }, component: () => import('@/views/manager/Student.vue') },
-                    { path: 'teachers', name: 'AdminTeachers', meta: { name: 'menu.teacher', section: 'archives', legacy: true }, component: () => import('@/views/manager/Teacher.vue') },
-                    { path: 'admins', name: 'AdminAdmins', meta: { name: 'menu.admin', section: 'archives', legacy: true }, component: () => import('@/views/manager/Admin.vue') },
+                    { path: 'org', name: 'AdminOrg', meta: { name: 'admin.menu.org', section: 'archives' }, component: () => import('@/views/admin/OrgAdmin.vue') },
+                    { path: 'people', name: 'AdminPeople', meta: { name: 'admin.menu.people', section: 'archives' }, component: () => import('@/views/admin/PeopleAdmin.vue') },
+                    // 旧地址（书签、旧消息里的链接）转到合并后的新页面；带 redirect 的不进侧栏
+                    { path: 'colleges', redirect: '/admin/org' },
+                    { path: 'specialities', redirect: '/admin/org' },
+                    { path: 'classes', redirect: '/admin/org' },
+                    { path: 'students', redirect: (to) => ({ path: '/admin/people', query: { ...to.query, tab: 'students' } }) },
+                    { path: 'teachers', redirect: (to) => ({ path: '/admin/people', query: { ...to.query, tab: 'teachers' } }) },
+                    { path: 'admins', redirect: (to) => ({ path: '/admin/people', query: { ...to.query, tab: 'admins' } }) },
                     // 系统
                     { path: 'semester', name: 'AdminSemester', meta: { name: 'admin.menu.semester', section: 'system' }, component: () => import('@/views/admin/SemesterSettings.vue') },
                     { path: 'permission', name: 'AdminPermission', meta: { name: 'menu.permission', section: 'system', legacy: true }, component: () => import('@/views/manager/Permission.vue') },

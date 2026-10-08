@@ -9,6 +9,7 @@ import com.example.service.ApplyService;
 import com.example.service.CrudService;
 import com.example.service.MessageService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,6 +65,12 @@ public class ApplyController extends CrudController<Apply> {
                     "/schedule?view=month" + (month.isEmpty() ? "" : "&month=" + month));
         }
         return Result.success();
+    }
+
+    /** 某条请假影响的课（审核看板展开时看） */
+    @GetMapping("/{id}/affected")
+    public Result affected(@PathVariable Integer id) {
+        return Result.success(applyService.affected(id));
     }
 
     /** 请假预览：从 from 起连续 days 天里，当前学生要上的课 */

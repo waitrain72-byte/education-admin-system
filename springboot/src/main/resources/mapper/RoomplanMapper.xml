@@ -127,8 +127,9 @@
         <include refid="Base_Column_List" />
         from roomplan
         where code = #{code}
-        <if test="id != null">
-            and id != #{id}
+        <!-- 接口方法用 @Param 命名了参数，这里只能用 excludeId（写成 id 会抛「Parameter 'id' not found」，新增和修改教室全部失败） -->
+        <if test="excludeId != null">
+            and id != #{excludeId}
         </if>
         limit 1
     </select>

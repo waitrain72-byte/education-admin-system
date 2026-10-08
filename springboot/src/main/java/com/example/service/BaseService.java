@@ -11,6 +11,7 @@ import com.example.utils.PasswordUtils;
 import com.example.utils.TokenUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -101,17 +102,25 @@ public abstract class BaseService<T extends Account> {
      * 删除
      */
     public void deleteById(Integer id) {
+        beforeDelete(id);
         getMapper().deleteById(id);
     }
 
+    /** 删除前的检查（子类按需覆写：还有课的老师、还有选课的学生不能删等），不通过时抛业务异常 */
+    protected void beforeDelete(Integer id) {
+    }
+
     /**
-     * 批量删除：单条 IN 语句。空集合直接返回（否则 foreach 会生成非法的 IN ()）。
+     * 批量删除：逐条走 {@link #deleteById}，每一条都做删除前检查。
      */
+    @Transactional(rollbackFor = Exception.class)
     public void deleteBatch(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        getMapper().deleteBatchIds(ids);
+        for (Integer id : ids) {
+            deleteById(id);
+        }
     }
 
     /**

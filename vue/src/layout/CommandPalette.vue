@@ -150,7 +150,7 @@ const groups = computed(() => {
       id: 'student:' + s.id,
       title: s.name,
       sub: [s.username, s.className].filter(Boolean).join(' · '),
-      to: `/admin/students?keyword=${encodeURIComponent(s.username || '')}`,
+      to: `/admin/people?tab=students&keyword=${encodeURIComponent(s.username || '')}`,
     })),
   )
   push(
@@ -159,7 +159,7 @@ const groups = computed(() => {
       id: 'teacher:' + s.id,
       title: s.name,
       sub: [s.username, s.title].filter(Boolean).join(' · '),
-      to: `/admin/teachers?keyword=${encodeURIComponent(s.username || '')}`,
+      to: `/admin/people?tab=teachers&keyword=${encodeURIComponent(s.username || '')}`,
     })),
   )
   return result

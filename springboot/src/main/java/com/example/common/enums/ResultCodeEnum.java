@@ -37,6 +37,12 @@ public enum ResultCodeEnum {
     SCHEDULE_CONFLICT_ERROR("5026","和已选的课上课时间冲突"),
     LEAVE_LOCKED_ERROR("5027","请假申请已审核，不能再修改或撤回"),
     LEAVE_RANGE_ERROR("5028","请假日期不正确：最早可补请 7 天前的假，一次最多连续 30 天"),
+    ORG_NOT_EMPTY_ERROR("5029","下面还有专业、班级或学生，先调走再删除"),
+    COURSE_IN_USE_ERROR("5030","已经有学生选了这门课，不能删除；可以把课程状态改成已结课"),
+    TEACHER_IN_USE_ERROR("5031","这位老师还有课程或带着班级，先换人再删除"),
+    STUDENT_IN_USE_ERROR("5032","这名学生还有选课记录，不能删除"),
+    DELETE_SELF_ERROR("5033","不能删除当前登录的账号"),
+    ROOM_IN_USE_ERROR("5034","还有没结课的课排在这间教室，先给它们换教室再删除"),
     CAPTCHA_ERROR("402", "验证码错误"),
     PERMISSION_DENIED_ERROR("403", "无权限执行该操作"),
     ;

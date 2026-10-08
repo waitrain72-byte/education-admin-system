@@ -5,6 +5,7 @@ import com.example.entity.Course;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -33,6 +34,10 @@ public interface ChoiceMapper extends CrudMapper<Choice> {
     /** 该学生选了的全部课程 ID（课程广场标「已选」用） */
     @Select("select course_id from choice where student_id = #{studentId}")
     List<Integer> selectCourseIdsByStudentId(Integer studentId);
+
+    /** 课程换了任课教师：选课记录上冗余的教师一起改（旧版按 choice.teacher_id 筛「我的学生」） */
+    @Update("update choice set teacher_id = #{teacherId} where course_id = #{courseId}")
+    int updateTeacherOfCourse(@Param("courseId") Integer courseId, @Param("teacherId") Integer teacherId);
 
     /** 退选：同一学生同一门课的选课记录（历史数据里可能重复）一并删除 */
     @Delete("delete from choice where student_id = #{studentId} and course_id = #{courseId}")

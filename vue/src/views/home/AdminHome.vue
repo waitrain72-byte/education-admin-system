@@ -28,15 +28,17 @@
           </div>
           <div class="panel__body">
             <ul v-if="data.pendingApplies.length" class="rows">
-              <li v-for="a in data.pendingApplies" :key="a.id" class="rows__item">
-                <UserAvatar :name="a.studentName" :size="30" />
-                <div class="rows__main">
-                  <div class="rows__title">
-                    {{ a.studentName || '—' }}
-                    <span class="rows__meta num">{{ a.time }} · {{ $t('workbench.admin.days', { n: a.day }) }}</span>
+              <li v-for="a in data.pendingApplies" :key="a.id">
+                <router-link :to="`/admin/leaves?open=${a.id}`" class="rows__item rows__item--link">
+                  <UserAvatar :name="a.studentName" :size="30" />
+                  <div class="rows__main">
+                    <div class="rows__title">
+                      {{ a.studentName || '—' }}
+                      <span class="rows__meta num">{{ a.time }} · {{ $t('workbench.admin.days', { n: a.day }) }}</span>
+                    </div>
+                    <div class="rows__text">{{ a.content }}</div>
                   </div>
-                  <div class="rows__text">{{ a.content }}</div>
-                </div>
+                </router-link>
               </li>
             </ul>
             <div v-else class="empty-note">{{ $t('workbench.admin.noPendingLeaves') }}</div>
@@ -46,16 +48,19 @@
         <section class="panel">
           <div class="panel__head">
             <span class="panel__title">{{ $t('workbench.admin.unscheduled') }}</span>
-            <router-link to="/admin/courses" class="panel__more">{{ $t('workbench.admin.goSchedule') }} ›</router-link>
+            <router-link to="/admin/courses?filter=unscheduled" class="panel__more">{{ $t('workbench.admin.goSchedule') }} ›</router-link>
           </div>
           <div class="panel__body">
             <ul v-if="data.unscheduledCourses.length" class="rows">
-              <li v-for="c in data.unscheduledCourses" :key="c.id" class="rows__item">
-                <span class="rows__swatch" :style="{ background: courseColor(c.name) }"></span>
-                <div class="rows__main">
-                  <div class="rows__title">{{ c.name }}</div>
-                  <div class="rows__text">{{ c.teacherName || '—' }} · {{ c.status || '—' }}</div>
-                </div>
+              <li v-for="c in data.unscheduledCourses" :key="c.id">
+                <!-- 点一门课直接打开它的排课向导 -->
+                <router-link :to="`/admin/courses?filter=unscheduled&edit=${c.id}`" class="rows__item rows__item--link">
+                  <span class="rows__swatch" :style="{ background: courseColor(c.name) }"></span>
+                  <div class="rows__main">
+                    <div class="rows__title">{{ c.name }}</div>
+                    <div class="rows__text">{{ c.teacherName || '—' }} · {{ c.status || '—' }}</div>
+                  </div>
+                </router-link>
               </li>
             </ul>
             <div v-else class="empty-note">{{ $t('workbench.admin.allScheduled') }}</div>
@@ -103,7 +108,7 @@ const { user } = useUser()
 const { greeting, semesterLine } = useHomeText(() => props.data.semester)
 
 const actions = [
-  { to: '/admin/courses', label: 'workbench.admin.actions.openCourse', icon: Reading },
+  { to: '/admin/courses?create=1', label: 'workbench.admin.actions.openCourse', icon: Reading },
   { to: '/messages?tab=notices&compose=1', label: 'workbench.admin.actions.notice', icon: EditPen },
   { to: '/admin/semester', label: 'workbench.admin.actions.semester', icon: Calendar },
   { to: '/dashboard', label: 'workbench.admin.actions.screen', icon: DataBoard },
@@ -209,6 +214,16 @@ const kpis = computed(() => {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+}
+
+.rows__item--link {
+  margin: -6px -8px;
+  padding: 6px 8px;
+  border-radius: var(--xm-radius-sm);
+}
+
+.rows__item--link:hover {
+  background: var(--xm-bg-hover);
 }
 
 .rows__swatch {

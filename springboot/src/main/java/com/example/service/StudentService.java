@@ -1,9 +1,12 @@
 package com.example.service;
 
+import com.example.common.enums.ResultCodeEnum;
 import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
 import com.example.entity.Student;
+import com.example.exception.CustomException;
 import com.example.mapper.BaseMapper;
+import com.example.mapper.PeopleMapper;
 import com.example.mapper.StudentMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,8 @@ public class StudentService extends BaseService<Student> {
 
     @Resource
     private StudentMapper studentMapper;
+    @Resource
+    private PeopleMapper peopleMapper;
 
     @Override
     protected BaseMapper<Student> getMapper() {
@@ -50,5 +55,13 @@ public class StudentService extends BaseService<Student> {
         Student student = new Student();
         BeanUtils.copyProperties(account, student);
         add(student);
+    }
+
+    /** 还有选课记录的学生不能删（成绩、考勤、作业都挂在选课上） */
+    @Override
+    protected void beforeDelete(Integer id) {
+        if (id != null && peopleMapper.countChoicesOfStudent(id) > 0) {
+            throw new CustomException(ResultCodeEnum.STUDENT_IN_USE_ERROR);
+        }
     }
 }

@@ -10,7 +10,7 @@
           {{ $t('courses.goSelect') }}
         </el-button>
         <el-button v-else plain @click="router.push('/square')">{{ $t('nav.square') }}</el-button>
-        <el-button v-if="role === 'ADMIN'" type="primary" @click="router.push('/admin/courses')">
+        <el-button v-if="role === 'ADMIN'" type="primary" @click="router.push('/admin/courses?create=1')">
           {{ $t('courses.openCourse') }}
         </el-button>
       </div>

@@ -5,10 +5,12 @@ import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
 import com.example.entity.Course;
 import com.example.exception.CustomException;
+import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -22,8 +24,12 @@ import java.util.List;
 @Service
 public class CourseService extends CrudService<Course> {
 
+    private static final String STATUS_FINISHED = "已结课";
+
     @Resource
     private CourseMapper courseMapper;
+    @Resource
+    private ChoiceMapper choiceMapper;
 
     @Override
     protected CrudMapper<Course> getMapper() {
@@ -53,21 +59,31 @@ public class CourseService extends CrudService<Course> {
     }
 
     /**
-     * 删除课程：仅管理员
+     * 删除课程：仅管理员；已经有学生选的课不能删（作业、考勤、成绩都挂在课程上，删了会成孤儿数据），
+     * 不再开的课把状态改成「已结课」即可
      */
     @Override
     public void deleteById(Integer id) {
         requireAdmin();
+        if (id != null && choiceMapper.countByCourseId(id) > 0) {
+            throw new CustomException(ResultCodeEnum.COURSE_IN_USE_ERROR);
+        }
         super.deleteById(id);
     }
 
     /**
-     * 批量删除课程：仅管理员
+     * 批量删除课程：仅管理员，逐条检查
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteBatch(List<Integer> ids) {
         requireAdmin();
-        super.deleteBatch(ids);
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        for (Integer id : ids) {
+            deleteById(id);
+        }
     }
 
     /**
@@ -75,34 +91,45 @@ public class CourseService extends CrudService<Course> {
      * 教室/周几/大节/上课状态（其余字段强制保留原值），并重新校验教室占用。
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateById(Course course) {
         if (course == null || course.getId() == null) {
             // 无 id 的更新无法排除自身，会误报教室占用/更新 0 行，直接按参数缺失拦截
             throw new CustomException(ResultCodeEnum.PARAM_LOST_ERROR);
         }
+        Course existing = courseMapper.selectById(course.getId());
+        if (existing == null) {
+            throw new CustomException(ResultCodeEnum.PARAM_ERROR);
+        }
         Account currentUser = TokenUtils.getCurrentUser();
         if (RoleEnum.TEACHER.name().equals(currentUser.getRole())) {
-            Course existing = courseMapper.selectById(course.getId());
-            if (existing == null) {
-                throw new CustomException(ResultCodeEnum.PARAM_ERROR);
-            }
             if (!currentUser.getId().equals(existing.getTeacherId())) {
                 throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
             }
             // 字段白名单：教师仅可调整排课四项，其余强制保留原值
-            Course merged = new Course();
-            merged.setId(existing.getId());
-            merged.setRoom(course.getRoom() != null ? course.getRoom() : existing.getRoom());
-            merged.setWeek(course.getWeek() != null ? course.getWeek() : existing.getWeek());
-            merged.setSegment(course.getSegment() != null ? course.getSegment() : existing.getSegment());
-            merged.setStatus(course.getStatus() != null ? course.getStatus() : existing.getStatus());
+            Course merged = slotAfterUpdate(course, existing);
             checkRoomOccupied(merged);
             courseMapper.updateById(merged);
             return;
         }
         stripWeights(course);
-        checkRoomOccupied(course);
+        // 按改完之后的教室、时段和状态查占用：只改状态（把已结课的课重新开起来）时，原来的时段可能已经排给别的课了
+        checkRoomOccupied(slotAfterUpdate(course, existing));
         super.updateById(course);
+        if (course.getTeacherId() != null && !course.getTeacherId().equals(existing.getTeacherId())) {
+            choiceMapper.updateTeacherOfCourse(course.getId(), course.getTeacherId());
+        }
+    }
+
+    /** 这次修改之后课程的教室、星期、大节与状态：没传的字段沿用原值 */
+    private static Course slotAfterUpdate(Course update, Course existing) {
+        Course merged = new Course();
+        merged.setId(existing.getId());
+        merged.setRoom(update.getRoom() != null ? update.getRoom() : existing.getRoom());
+        merged.setWeek(update.getWeek() != null ? update.getWeek() : existing.getWeek());
+        merged.setSegment(update.getSegment() != null ? update.getSegment() : existing.getSegment());
+        merged.setStatus(update.getStatus() != null ? update.getStatus() : existing.getStatus());
+        return merged;
     }
 
     /**
@@ -134,10 +161,11 @@ public class CourseService extends CrudService<Course> {
 
     /**
      * 教室占用校验：同一「教室 + 星期 + 大节」不允许两门课重叠；
-     * room/week/segment 任一为空（未排课）时跳过；更新时排除自身 id。
+     * room/week/segment 任一为空（未排课）或课程已结课（不再占教室）时跳过；更新时排除自身 id。
      */
     private void checkRoomOccupied(Course course) {
-        if (course == null || isBlank(course.getRoom()) || isBlank(course.getWeek()) || isBlank(course.getSegment())) {
+        if (course == null || isBlank(course.getRoom()) || isBlank(course.getWeek()) || isBlank(course.getSegment())
+                || STATUS_FINISHED.equals(course.getStatus())) {
             return;
         }
         Course probe = new Course();
