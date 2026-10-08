@@ -1,8 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { useMessageStore } = await import('@/stores/message')
+const { useMessageStore, applyMessageBadge } = await import('@/stores/message')
+const { useUserStore } = await import('@/stores/user')
+const { MESSAGES_TAB_INDEX } = await import('@/utils/tabbar')
 const { clearStorage } = await import('./setup')
+
+const uniMock = globalThis.uni
+
+/** 让下一次 uni.request 成功返回 { code: '200', data } */
+const respondWith = (data) => {
+  uniMock.request.mockImplementationOnce((opts) => {
+    opts.success({ statusCode: 200, data: { code: '200', data } })
+    if (opts.complete) opts.complete()
+  })
+}
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -10,77 +22,60 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('message store 消息中心', () => {
-  it('push：落库、一分钟内同内容去重、未读计数', () => {
-    const store = useMessageStore()
-    store.loadForUser(1)
-    store.push({ title: '成绩发布', content: '高数 92 分' })
-    store.push({ title: '成绩发布', content: '高数 92 分' })
-    expect(store.messages.length).toBe(1)
-    expect(store.unreadCount).toBe(1)
-    expect(store.messages[0].read).toBe(false)
+describe('applyMessageBadge 消息 tab 角标', () => {
+  it('有未读时挂在「消息」tab 上，超过 99 显示 99+', () => {
+    applyMessageBadge(3)
+    expect(uniMock.setTabBarBadge).toHaveBeenCalledWith(
+      expect.objectContaining({ index: MESSAGES_TAB_INDEX, text: '3' }),
+    )
+    applyMessageBadge(120)
+    expect(uniMock.setTabBarBadge.mock.calls.at(-1)[0].text).toBe('99+')
   })
 
-  it('按用户隔离：不同账号载入各自历史', () => {
+  it('没有未读时移除角标', () => {
+    applyMessageBadge(0)
+    expect(uniMock.removeTabBarBadge).toHaveBeenCalledWith(expect.objectContaining({ index: MESSAGES_TAB_INDEX }))
+  })
+})
+
+describe('message store 未读数', () => {
+  it('refresh：已登录时从后端拉未读数并更新角标', async () => {
+    useUserStore().updateUser({ id: 1, role: 'STUDENT', token: 'tk' })
+    respondWith(5)
     const store = useMessageStore()
-    store.loadForUser(1)
-    store.push({ title: '通知A', content: '' })
-    store.loadForUser(2)
-    expect(store.messages.length).toBe(0)
-    store.loadForUser(1)
-    expect(store.messages.length).toBe(1)
+    await store.refresh()
+    expect(uniMock.request.mock.calls[0][0].url).toMatch(/\/message\/unreadCount$/)
+    expect(store.unread).toBe(5)
+    expect(uniMock.setTabBarBadge).toHaveBeenCalledWith(expect.objectContaining({ text: '5' }))
   })
 
-  it('markAllRead 与 clear', () => {
+  it('refresh：未登录时不请求，直接清零', async () => {
     const store = useMessageStore()
-    store.loadForUser(1)
-    store.push({ title: '作业批改', content: '已批改' })
+    store.unread = 4
+    await store.refresh()
+    expect(uniMock.request).not.toHaveBeenCalled()
+    expect(store.unread).toBe(0)
+  })
+
+  it('markOneRead 不会减成负数；markAllRead、reset 清零', () => {
+    const store = useMessageStore()
+    store.setUnread(1)
+    store.markOneRead()
+    store.markOneRead()
+    expect(store.unread).toBe(0)
+    store.setUnread(9)
     store.markAllRead()
-    expect(store.unreadCount).toBe(0)
-    store.clear()
-    expect(store.messages.length).toBe(0)
+    expect(store.unread).toBe(0)
+    store.setUnread(2)
+    store.reset()
+    expect(store.unread).toBe(0)
   })
 
-  it('open：按关键词映射跳转页并标记已读', () => {
+  it('退出登录（clearUser）时未读数随之清零', () => {
     const store = useMessageStore()
-    store.loadForUser(1)
-    store.push({ title: '成绩发布通知', content: '' })
-    const target = store.open(store.messages[0])
-    expect(target).toBe('/pages/score/score')
-    expect(store.messages[0].read).toBe(true)
-  })
-
-  it('open：学业预警推送跳预警页（建议文字里含「成绩」也不会误跳成绩页）', () => {
-    const store = useMessageStore()
-    store.loadForUser('STUDENT-1')
-    store.push({ title: '学业预警提醒', content: '你的学业风险指数 42（中风险）：成绩或出勤存在明显波动' })
-    expect(store.open(store.messages[0])).toBe('/pages/warning/warning')
-  })
-
-  it('按账号（角色-id）隔离：1 号管理员看不到 1 号学生的推送', () => {
-    const store = useMessageStore()
-    store.loadForUser('STUDENT-1')
-    store.push({ title: '学业预警提醒', content: '' })
-    store.loadForUser('ADMIN-1')
-    expect(store.messages.length).toBe(0)
-    store.loadForUser('STUDENT-1')
-    expect(store.messages.length).toBe(1)
-  })
-
-  it('open：无匹配关键词返回 null', () => {
-    const store = useMessageStore()
-    store.loadForUser(1)
-    store.push({ title: 'hello', content: '' })
-    expect(store.open(store.messages[0])).toBe(null)
-  })
-
-  it('push：超过上限截断到 50 条且最新在前', () => {
-    const store = useMessageStore()
-    store.loadForUser(1)
-    for (let i = 0; i < 55; i += 1) {
-      store.push({ title: 't' + i, content: '' })
-    }
-    expect(store.messages.length).toBe(50)
-    expect(store.messages[0].title).toBe('t54')
+    useUserStore().updateUser({ id: 1, role: 'STUDENT', token: 'tk' })
+    store.setUnread(7)
+    useUserStore().clearUser()
+    expect(store.unread).toBe(0)
   })
 })

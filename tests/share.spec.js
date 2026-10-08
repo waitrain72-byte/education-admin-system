@@ -8,16 +8,15 @@ afterEach(() => {
 })
 
 describe('shareMessage 转发内容', () => {
-  it('公开信息页转发当前页，标题带页面名', () => {
-    expect(shareMessage('pages/notice/notice')).toEqual({
-      title: '教务通知 - 教务管理系统',
-      path: '/pages/notice/notice',
+  it('公开信息页（课程广场）转发当前页，标题带页面名', () => {
+    expect(shareMessage('pages-course/square/square')).toEqual({
+      title: '选课广场 - 教务管理系统',
+      path: '/pages-course/square/square',
     })
-    expect(shareMessage('pages/examplan/examplan').path).toBe('/pages/examplan/examplan')
   })
 
-  it('个人 / 管理类页面转发首页', () => {
-    for (const route of ['pages/person/person', 'pages/score/score', 'admin/admin', '']) {
+  it('个人 / 课程空间 / 管理类页面转发首页', () => {
+    for (const route of ['pages/person/person', 'pages-course/space/space', 'pages-admin/people/people', '']) {
       expect(shareMessage(route)).toEqual({ title: '教务管理系统', path: '/pages/home/home' })
     }
   })
@@ -30,8 +29,8 @@ describe('shareMessage 转发内容', () => {
 
 describe('currentRoute 当前页面路由', () => {
   it('取页面栈栈顶；没有页面时为空串', () => {
-    globalThis.getCurrentPages = () => [{ route: 'pages/home/home' }, { route: 'pages/notice/notice' }]
-    expect(currentRoute()).toBe('pages/notice/notice')
+    globalThis.getCurrentPages = () => [{ route: 'pages/home/home' }, { route: 'pages/messages/messages' }]
+    expect(currentRoute()).toBe('pages/messages/messages')
     globalThis.getCurrentPages = () => []
     expect(currentRoute()).toBe('')
   })

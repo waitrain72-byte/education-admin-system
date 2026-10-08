@@ -6,8 +6,10 @@ import { useMessageStore } from '@/stores/message'
  * 实时通知 WebSocket（与 Web 端共用后端端点 ws://主机:9091/ws/notice/{token}）：
  * - token 拼在 URL 路径里（后端从路径鉴权），规避小程序 connectSocket 无法可靠携带自定义 header 的限制。
  *   已知取舍：token 会出现在服务器访问日志中，生产化改造应改为「连接后首条消息鉴权」，需后端同步调整
- * - 收到推送后：静默入列（「首页」tab 角标未读数 + uni.$emit('ws:push', 消息) 供页面实时刷新），
- *   不再逐条弹 toast 打断用户（对齐高星项目的消息中心式体验）
+ * - 带 title 的推送（成绩发布、作业批改、请假审批、新教务通知等，后端已落库到消息中心）：
+ *   重新拉取未读数（「消息」tab 角标）+ uni.$emit('ws:push', 消息)，不逐条弹 toast 打断用户
+ * - 不带 title 的是课程空间的静默事件 { type: 'course', event, courseId }（签到人数变化、新作业、新公告、新资料）：
+ *   只 uni.$emit('ws:course', 事件)，打开着的课程页据此实时刷新（composables/useCourseEvents）
  * - 断线按指数退避自动重连；网络恢复 / 切回前台时立即补连；退出登录由 closeWs() 主动断开
  * - 心跳附带「入站静默检测」：长时间收不到任何消息判定为半开连接，主动断开触发重连
  *
@@ -20,11 +22,8 @@ import { useMessageStore } from '@/stores/message'
  * 使用方式：
  * - App.vue onLaunch 调 initWs()（注册网络监听，仅一次），onShow 调 connectWs()（幂等，有 token 才连）
  * - 登录成功后 login.vue 调 connectWs()；退出登录 / 修改密码 / 请求 401 处调 closeWs()
- * - 首页 onShow 调 resetWsUnread() 清角标，并监听 'ws:push' 刷新通知列表
  */
 
-/** 首页在 tabBar 中的位置（pages.json tabBar.list 顺序） */
-const HOME_TAB_INDEX = 0
 /** 心跳间隔：后端 @OnMessage 收到 "ping" 后静默忽略，仅用于防止长连接空闲过久被中间层断开 */
 const HEARTBEAT_INTERVAL = 25000
 /** 入站静默阈值：超过该时长未收到任何消息判定为「僵尸连接」，主动断开交给重连逻辑。
@@ -41,25 +40,8 @@ let manuallyClosed = false
 let retryCount = 0
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-let unread = 0
 let networkListenerBound = false
 let lastInboundAt = 0
-
-function updateBadge() {
-  try {
-    if (unread > 0) {
-      uni.setTabBarBadge({
-        index: HOME_TAB_INDEX,
-        text: unread > 99 ? '99+' : String(unread),
-        fail: () => {},
-      })
-    } else {
-      uni.removeTabBarBadge({ index: HOME_TAB_INDEX, fail: () => {} })
-    }
-  } catch {
-    // 非 tabBar 场景忽略角标错误
-  }
-}
 
 /** 心跳保活：SocketTask 与全局模式分别用各自的发送通道；顺带做入站静默检测 */
 function startHeartbeat() {
@@ -116,17 +98,25 @@ function handlePush(raw: any) {
   } catch {
     return
   }
-  if (!msg || !msg.title) return
+  if (!msg || typeof msg !== 'object') return
   lastInboundAt = Date.now()
-  unread += 1
-  updateBadge()
-  // 落库消息中心（本地按用户持久化，供用户回看历史通知）；已退出登录（无 token）时丢弃
+  // 已退出登录（无 token）时到达的推送直接丢弃
   try {
-    if (useUserStore().token) useMessageStore().push(msg)
+    if (!useUserStore().token) return
   } catch {
-    // Pinia 未就绪时跳过落库
+    return
   }
-  // 静默入列：角标计数 + 广播事件（页面可监听 uni.$on('ws:push') 做实时刷新，如首页通知列表）
+  if (!msg.title) {
+    // 课程空间的静默事件：只广播给打开着的课程页
+    if (msg.type === 'course') uni.$emit('ws:course', msg)
+    return
+  }
+  // 消息已由后端落库：重新拉未读数（「消息」tab 角标），再广播给页面（首页、消息页据此刷新）
+  try {
+    useMessageStore().refresh()
+  } catch {
+    // Pinia 未就绪时忽略
+  }
   uni.$emit('ws:push', msg)
 }
 
@@ -188,7 +178,7 @@ export function connectWs() {
   }
 }
 
-/** 主动断开（退出登录 / 修改密码后旧 token 失效时调用），并清零未读角标 */
+/** 主动断开（退出登录 / 修改密码后旧 token 失效时调用） */
 export function closeWs() {
   manuallyClosed = true
   stopHeartbeat()
@@ -212,14 +202,6 @@ export function closeWs() {
       // 未建立连接时忽略
     }
   }
-  unread = 0
-  updateBadge()
-}
-
-/** 清零未读数并去掉「首页」tab 角标（回到首页时调用） */
-export function resetWsUnread() {
-  unread = 0
-  updateBadge()
 }
 
 /** 应用启动时调用一次：网络恢复时自动补连 */

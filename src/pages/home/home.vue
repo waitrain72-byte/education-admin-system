@@ -4,51 +4,45 @@
     :class="themeClass"
     :style="themeStyle"
   >
-    <home-hero :now="now" />
-    <home-quick-entry />
-
-    <!-- 骨架屏：无缓存首次加载时的占位（有缓存则秒开，不经过此分支） -->
-    <view
-      v-if="firstLoading"
-      class="xm-card"
-    >
-      <view class="skeleton skeleton-title"></view>
-      <view class="skeleton skeleton-line"></view>
-      <view class="skeleton skeleton-line"></view>
-      <view class="skeleton skeleton-line short"></view>
-    </view>
-
-    <template v-else>
-      <home-today-card
-        v-if="userStore.role === 'STUDENT' || userStore.role === 'TEACHER'"
-        :courses="todayCourses"
-      />
-
-      <!-- 分组标签页：动态（推荐/通知/考试）与 统计（考勤/成绩） -->
-      <view class="home-tabs">
-        <view
-          class="home-tab"
-          :class="{ on: homeTab === 'feed' }"
-          @click="homeTab = 'feed'"
-          >{{ $t('home.tabFeed') }}</view
-        >
-        <view
-          class="home-tab"
-          :class="{ on: homeTab === 'stats' }"
-          @click="homeTab = 'stats'"
-          >{{ $t('home.tabStats') }}</view
-        >
+    <!-- 没有缓存的首次加载：骨架屏占位 -->
+    <view v-if="!data && loading">
+      <view class="xm-card">
+        <view class="skeleton skeleton-title" />
+        <view class="skeleton skeleton-line" />
+        <view class="skeleton skeleton-line short" />
       </view>
-      <home-feed-panel
-        v-if="homeTab === 'feed'"
-        :recommends="userStore.role === 'STUDENT' ? recommends : []"
-        :notices="notices"
-        :examplans="examplans"
+      <view class="xm-card">
+        <view class="skeleton skeleton-title" />
+        <view class="skeleton skeleton-line" />
+        <view class="skeleton skeleton-line" />
+        <view class="skeleton skeleton-line short" />
+      </view>
+    </view>
+    <view
+      v-else-if="!data && failed"
+      class="failed"
+    >
+      <view class="failed-text">{{ $t('workbench.loadFailed') }}</view>
+      <button
+        class="xm-btn xm-btn-primary"
+        @click="load(false)"
+      >
+        {{ $t('workbench.retry') }}
+      </button>
+    </view>
+    <template v-else-if="data">
+      <student-home
+        v-if="data.role === 'STUDENT'"
+        :data="data"
       />
-      <home-stats-panel
-        v-else
-        :attendance-stats="attendanceStats"
-        :score-stats="scoreStats"
+      <teacher-home
+        v-else-if="data.role === 'TEACHER'"
+        ref="teacherRef"
+        :data="data"
+      />
+      <admin-home
+        v-else-if="data.role === 'ADMIN'"
+        :data="data"
       />
     </template>
     <xm-loader />
@@ -57,177 +51,106 @@
 
 <script setup>
 import { ref } from 'vue'
-import { onShow, onHide } from '@dcloudio/uni-app'
+import { onHide, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+import { workbenchApi } from '@/api'
+import { SILENT } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { ensureLoggedIn } from '@/utils/authGuard'
-import { useMessageStore } from '@/stores/message'
-import { usePermission } from '@/composables/usePermission'
-import { useTodayCourses } from '@/composables/useTodayCourses'
-import { SILENT } from '@/utils/request'
 import { readUserCache, writeUserCache } from '@/utils/userCache'
-import { noticeApi, examplanApi, attendanceApi, scoreApi, courseApi } from '@/api'
-import { resetWsUnread } from '@/utils/websocket'
+import { syncServerClock } from '@/composables/useServerClock'
+import { usePermission } from '@/composables/usePermission'
 import { t } from '@/i18n'
-import { themeClass } from '@/composables/useTheme'
-import HomeHero from './components/home-hero.vue'
-import HomeQuickEntry from './components/home-quick-entry.vue'
-import HomeTodayCard from './components/home-today-card.vue'
-import HomeFeedPanel from './components/home-feed-panel.vue'
-import HomeStatsPanel from './components/home-stats-panel.vue'
+import StudentHome from './StudentHome.vue'
+import TeacherHome from './TeacherHome.vue'
+import AdminHome from './AdminHome.vue'
 
-/**
- * 系统首页：只负责数据拉取、本地缓存与标签页切换，各区块的展示与样式在 ./components 下：
- * 头卡 home-hero / 功能入口 home-quick-entry / 今日课程 home-today-card /
- * 动态 home-feed-panel / 统计 home-stats-panel
- */
 const userStore = useUserStore()
-const messageStore = useMessageStore()
 const { pullPermissions } = usePermission()
-const { todayCourses, loadTodayCourses } = useTodayCourses(userStore)
 
-// 当前时间：每次回到首页刷新，头卡问候语（早上好 / 下午好…）与日期随之更新
-const now = ref(Date.now())
-
-// 首页压缩（方案 B）：动态 / 统计 分组标签页
-const homeTab = ref('feed')
-
-const notices = ref([])
-const examplans = ref([])
-// 课程推荐（基于物品的协同过滤）：仅学生角色请求与展示
-const recommends = ref([])
-const attendanceStats = ref({ late: 0, absent: 0, earlyLeave: 0, normal: 0 })
-const scoreStats = ref({ excellent: 0, good: 0, fail: 0 })
-
-// 教务通知拉取：进入首页与收到 WebSocket 推送（新教务通知）时都会调用（返回 Promise 供缓存写回时机使用）
-const loadNotices = () =>
-  noticeApi.selectAll(undefined, SILENT).then((rows) => {
-    notices.value = rows || []
-  })
-const onWsPush = () => loadNotices().catch(() => {})
-
-const loadExamplans = () =>
-  examplanApi.selectAll(undefined, SILENT).then((rows) => {
-    examplans.value = rows || []
-  })
-
-// 后端按中文状态分组统计，这里按中文键匹配（数据库存储值为中文）
-const ATTENDANCE_KEYS = { 迟到: 'late', 缺勤: 'absent', 早退: 'earlyLeave', 正常: 'normal' }
-const loadAttendanceStats = () =>
-  attendanceApi.getPie(SILENT).then((pie) => {
-    const stats = { late: 0, absent: 0, earlyLeave: 0, normal: 0 }
-    ;((pie && pie.data) || []).forEach((item) => {
-      const key = ATTENDANCE_KEYS[item.name]
-      if (key) stats[key] = item.value || 0
-    })
-    attendanceStats.value = stats
-  })
-
-const loadScoreStats = () =>
-  scoreApi.getLine(SILENT).then((line) => {
-    const yAxis = (line && line.yAxis) || []
-    if (yAxis.length >= 5) {
-      scoreStats.value = {
-        excellent: yAxis[0] || 0,
-        good: yAxis[1] || 0,
-        fail: yAxis[yAxis.length - 1] || 0,
-      }
-    }
-  })
-
-const loadRecommends = () =>
-  courseApi.recommend({ limit: 4 }, SILENT).then((rows) => {
-    recommends.value = rows || []
-  })
-
-// 首页数据本地缓存（按账号隔离，防止切换账号闪现他人数据）：
-// 进入首页先渲染缓存（秒开不白屏），静默刷新完成后写回；无缓存时显示骨架屏
-const firstLoading = ref(true)
+/** /workbench/summary 按角色返回不同内容；先渲染本账号上次的缓存（秒开、弱网也有内容），再静默刷新 */
+const data = ref(null)
+const loading = ref(false)
+const failed = ref(false)
+const teacherRef = ref(null)
+let cachedFor = ''
 
 const applyCache = () => {
-  try {
-    const cached = readUserCache('home', userStore.accountKey)
-    if (cached && typeof cached === 'object' && Array.isArray(cached.notices)) {
-      notices.value = cached.notices || []
-      examplans.value = cached.examplans || []
-      if (cached.attendanceStats) attendanceStats.value = cached.attendanceStats
-      if (cached.scoreStats) scoreStats.value = cached.scoreStats
-      if (Array.isArray(cached.recommends)) recommends.value = cached.recommends
-      return true
-    }
-  } catch {}
-  return false
+  const account = userStore.accountKey
+  if (cachedFor === account) return
+  cachedFor = account
+  const cached = readUserCache('home', account)
+  // 角色对不上的缓存（理论上不会出现）不用
+  data.value = cached && cached.role === userStore.role ? cached : null
 }
 
-const saveCache = () => {
-  writeUserCache('home', userStore.accountKey, {
-    notices: notices.value,
-    examplans: examplans.value,
-    attendanceStats: attendanceStats.value,
-    scoreStats: scoreStats.value,
-    recommends: recommends.value,
-  })
+const load = async (silent = true) => {
+  loading.value = true
+  failed.value = false
+  try {
+    const summary = await workbenchApi.summary(silent ? SILENT : undefined)
+    syncServerClock(summary && summary.now)
+    data.value = summary
+    writeUserCache('home', userStore.accountKey, summary)
+  } catch {
+    failed.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+/** 静默刷新：签到开始 / 结束、布置作业、成绩发布时后端推事件，首页跟着变；同一批事件只刷新一次 */
+let refreshTimer = null
+const scheduleRefresh = () => {
+  if (refreshTimer) return
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null
+    load()
+  }, 600)
+}
+const onCourseEvent = (message) => {
+  if (['attendance', 'assignments'].includes(String(message && message.event))) scheduleRefresh()
 }
 
 onShow(() => {
   if (!ensureLoggedIn()) return
-  now.value = Date.now()
-  // 动态设置导航栏标题，跟随语言切换
-  uni.setNavigationBarTitle({ title: t('menu.home') })
-
-  // 载入当前用户的推送消息历史（铃铛未读角标）
-  messageStore.loadForUser(userStore.accountKey)
-  // 回到首页即视为已读：清掉推送未读角标
-  resetWsUnread()
-  // 收到 WebSocket 推送时实时刷新首页通知列表（先解绑再绑定，防止页面反复进出后重复触发）
-  uni.$off('ws:push', onWsPush)
-  uni.$on('ws:push', onWsPush)
-
-  // 权限码缺失（如旧版本登录留下的缓存）时补拉，保证菜单过滤与 Web 端授权一致
-  if (userStore.role !== 'ADMIN' && !userStore.permissions.length) {
-    pullPermissions()
-  }
-
-  // 首页数据：先渲染缓存（秒开），再静默刷新；无缓存时显示骨架屏。
-  // 请求全部走 SILENT：占位由缓存/骨架屏负责，切回首页 tab 不再弹全屏加载蒙层。
-  // 每个请求单独 catch（网络失败不应打断其它请求），全部结束后写缓存并撤骨架屏
-  firstLoading.value = !applyCache()
-  const tasks = [loadNotices(), loadExamplans(), loadAttendanceStats(), loadScoreStats(), loadTodayCourses()]
-  // 学生角色追加课程推荐（协同过滤）
-  if (userStore.role === 'STUDENT') tasks.push(loadRecommends())
-  Promise.all(tasks.map((p) => p.catch(() => {}))).then(() => {
-    saveCache()
-    firstLoading.value = false
-  })
+  uni.setNavigationBarTitle({ title: t('nav.home') })
+  // 权限码缺失（如旧版本登录留下的缓存）时补拉，保证按权限显示的入口与 Web 端授权一致
+  if (userStore.role !== 'ADMIN' && !userStore.permissions.length) pullPermissions()
+  applyCache()
+  load()
+  uni.$off('ws:course', onCourseEvent)
+  uni.$on('ws:course', onCourseEvent)
+  uni.$off('ws:push', scheduleRefresh)
+  uni.$on('ws:push', scheduleRefresh)
 })
 
 onHide(() => {
-  uni.$off('ws:push', onWsPush)
+  uni.$off('ws:course', onCourseEvent)
+  uni.$off('ws:push', scheduleRefresh)
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
+})
+
+onPullDownRefresh(async () => {
+  await load()
+  if (teacherRef.value && teacherRef.value.reloadExtras) teacherRef.value.reloadExtras()
+  uni.stopPullDownRefresh()
 })
 </script>
 
 <style lang="scss" scoped>
-/* 动态 / 统计 分组标签页 */
-.home-tabs {
+.failed {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 20rpx;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+  padding: 160rpx 0;
 }
 
-.home-tab {
-  flex: 1;
-  text-align: center;
-  padding: 14rpx 0;
-  border-radius: 14rpx;
-  font-size: 26rpx;
+.failed-text {
+  font-size: 28rpx;
   color: var(--xm-text-2);
-  background: var(--xm-bg-card);
-  border: 1rpx solid var(--xm-border);
-}
-
-.home-tab.on {
-  background: var(--xm-brand);
-  color: #ffffff;
-  font-weight: bold;
-  border-color: var(--xm-brand);
 }
 </style>

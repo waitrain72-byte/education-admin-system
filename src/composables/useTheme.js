@@ -2,7 +2,9 @@ import { ref, computed, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { SILENT } from '@/utils/request'
 import { accountApi } from '@/api'
-import { STORAGE_KEY as THEME_COLOR_KEY, nativeChromeColors } from '@/utils/themeColor'
+import { STORAGE_KEY as THEME_COLOR_KEY, nativeChromeColors, normalizeColor } from '@/utils/themeColor'
+import { TABS, tabItem } from '@/utils/tabbar'
+import { locale } from '@/i18n'
 
 /**
  * 主题偏好（与 Web 端 useTheme 语义一致）：
@@ -48,29 +50,87 @@ export const themeClass = computed(() => (isDark.value ? 'theme-dark' : 'theme-l
 /** 三档切换按钮的图标名（xm-icon）：浅色 / 深色 / 跟随系统 */
 export const themeModeIcon = computed(() => ({ light: 'sun', dark: 'moon' })[themeMode.value] || 'theme-auto')
 
-/** 与 useTheme 原生层取值一致：导航栏 / tabBar 的深浅两套配色 */
+/** 与 theme.json 取值一致：导航栏（与页面同色的中性底）/ 窗口背景 / tabBar 的深浅两套配色 */
 const NATIVE_CHROME = {
-  light: { navBg: '#4f6cff', tabBg: '#ffffff', tabColor: '#8a90a0', tabSelected: '#5b6cff' },
-  dark: { navBg: '#1a1f29', tabBg: '#1a1f29', tabColor: '#99a0af', tabSelected: '#7d89ff' },
+  light: {
+    navBg: '#f3f5f4',
+    navFront: '#000000',
+    tabBg: '#ffffff',
+    tabColor: '#7d8a84',
+    tabSelected: '#0f7b63',
+    tabBorder: 'white',
+  },
+  dark: {
+    navBg: '#0e1311',
+    navFront: '#ffffff',
+    tabBg: '#151c19',
+    tabColor: '#7d8a84',
+    tabSelected: '#3fb08f',
+    tabBorder: 'black',
+  },
+}
+
+/** 最近一次成功应用到 tabBar 的「角色 | 深浅 | 自定义色 | 语言」，没变化时不重复设置 */
+let appliedTabs = ''
+
+/**
+ * tabBar 五个位置的文字（随语言）与图标（随角色、深浅色、是否自定义主题色）。
+ * tabBar 接口只能在 tabBar 页面调用，其他页面会失败——失败不记录，下次进入 tabBar 页面再设。
+ */
+function syncTabBarItems(dark, custom) {
+  let role = ''
+  try {
+    role = useUserStore().role
+  } catch {
+    // Pinia 未就绪时按未登录处理
+  }
+  const key = [role, dark, custom, locale.value].join('|')
+  if (key === appliedTabs) return
+  TABS.forEach((_, index) => {
+    try {
+      uni.setTabBarItem({
+        ...tabItem(index, role, { dark, custom }),
+        success: () => {
+          appliedTabs = key
+        },
+        fail: () => {},
+      })
+    } catch {
+      // 平台不支持时忽略
+    }
+  })
 }
 
 /**
- * 原生导航栏 / tabBar 配色跟随应用内主题，
- * 避免出现「页面已变暗、导航栏还是亮蓝」的割裂（H5 端无原生层，静默忽略）。
- * 模块加载、主题切换、App onShow（App.vue 兜底）三个时机都会调用。
+ * 原生导航栏 / 窗口背景 / tabBar 跟随应用内主题，
+ * 避免出现「页面已变暗、导航栏还是浅色」的割裂（H5 端部分接口不存在，静默忽略）。
+ * 模块加载、主题切换、每个页面 onShow（main.js 全局混入）、App onShow 都会调用。
  */
 export function syncNativeChrome() {
-  // 叠加自定义主题色：原生层读不到 CSS 变量，只能在这里按主题色覆盖导航栏 / tabBar 选中色。
+  // 叠加自定义主题色：原生层读不到 CSS 变量，只能在这里按主题色覆盖 tabBar 选中色。
   // 从 storage 读取（useThemeColor 总是先写 storage 再调本函数），避免两个模块互相 import 形成循环依赖
   let brand = ''
   try {
-    brand = uni.getStorageSync(THEME_COLOR_KEY) || ''
+    brand = normalizeColor(uni.getStorageSync(THEME_COLOR_KEY))
   } catch {
     // 存储不可用时按内置配色
   }
-  const c = { ...(isDark.value ? NATIVE_CHROME.dark : NATIVE_CHROME.light), ...nativeChromeColors(brand, isDark.value) }
+  const dark = isDark.value
+  const c = { ...(dark ? NATIVE_CHROME.dark : NATIVE_CHROME.light), ...nativeChromeColors(brand, dark) }
   try {
-    uni.setNavigationBarColor({ frontColor: '#ffffff', backgroundColor: c.navBg, fail: () => {} })
+    uni.setNavigationBarColor({ frontColor: c.navFront, backgroundColor: c.navBg, fail: () => {} })
+  } catch {
+    // 平台不支持时忽略
+  }
+  try {
+    if (typeof uni.setBackgroundColor === 'function') {
+      uni.setBackgroundColor({
+        backgroundColor: c.navBg,
+        backgroundColorTop: c.navBg,
+        backgroundColorBottom: c.navBg,
+        fail: () => {},
+      })
+    }
   } catch {
     // 平台不支持时忽略
   }
@@ -79,14 +139,17 @@ export function syncNativeChrome() {
       backgroundColor: c.tabBg,
       color: c.tabColor,
       selectedColor: c.tabSelected,
+      borderStyle: c.tabBorder,
       fail: () => {},
     })
   } catch {
     // 平台不支持时忽略
   }
+  syncTabBarItems(dark, !!brand)
 }
 
-watch(isDark, syncNativeChrome)
+// 深浅色切换要换整套原生配色；语言切换要换 tabBar 文字
+watch([isDark, locale], syncNativeChrome)
 // 冷启动时立即应用一次（首屏原生层即与主题一致）
 syncNativeChrome()
 

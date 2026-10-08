@@ -1,98 +1,27 @@
 {
   "pages": [
     { "path": "pages/login/login", "style": { "navigationStyle": "custom" } },
-    { "path": "pages/register/register", "style": { "navigationBarTitleText": "注册" } },
-    { "path": "pages/home/home", "style": { "navigationBarTitleText": "系统首页" } },
+    { "path": "pages/register/register", "style": { "navigationStyle": "custom" } },
+    {
+      "path": "pages/home/home",
+      "style": { "navigationBarTitleText": "首页", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/courses/courses",
+      "style": { "navigationBarTitleText": "课程", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/schedule/schedule",
+      "style": { "navigationBarTitleText": "日程", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/messages/messages",
+      "style": { "navigationBarTitleText": "消息", "enablePullDownRefresh": true }
+    },
     { "path": "pages/mine/mine", "style": { "navigationBarTitleText": "我的" } },
-    { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人信息" } },
-    { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } },
-    {
-      "path": "pages/notice/notice",
-      "style": { "navigationBarTitleText": "教务通知", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/examplan/examplan",
-      "style": { "navigationBarTitleText": "考试安排", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/roomplan/roomplan",
-      "style": { "navigationBarTitleText": "教室安排", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/course/course",
-      "style": { "navigationBarTitleText": "课程信息", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/choice/choice",
-      "style": { "navigationBarTitleText": "我的选课", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/curriculum/curriculum",
-      "style": { "navigationBarTitleText": "我的课表", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/score/score",
-      "style": { "navigationBarTitleText": "我的成绩", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/warning/warning",
-      "style": { "navigationBarTitleText": "学业预警", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/comment/comment",
-      "style": { "navigationBarTitleText": "网上评教", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/apply/apply",
-      "style": { "navigationBarTitleText": "请假申请", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/homework/homework",
-      "style": { "navigationBarTitleText": "作业提交", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/attendance/attendance",
-      "style": { "navigationBarTitleText": "考勤信息", "enablePullDownRefresh": true }
-    },
-    { "path": "pages/message/message", "style": { "navigationBarTitleText": "消息中心" } }
+    { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人资料" } },
+    { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } }
   ],
-  "subPackages": [
-    {
-      "root": "pages-admin",
-      "pages": [
-        {
-          "path": "admin/admin",
-          "style": { "navigationBarTitleText": "管理员信息", "enablePullDownRefresh": true }
-        },
-        {
-          "path": "teacher/teacher",
-          "style": { "navigationBarTitleText": "教师信息", "enablePullDownRefresh": true }
-        },
-        {
-          "path": "student/student",
-          "style": { "navigationBarTitleText": "学生信息", "enablePullDownRefresh": true }
-        },
-        {
-          "path": "college/college",
-          "style": { "navigationBarTitleText": "学院信息", "enablePullDownRefresh": true }
-        },
-        {
-          "path": "speciality/speciality",
-          "style": { "navigationBarTitleText": "专业信息", "enablePullDownRefresh": true }
-        },
-        {
-          "path": "classes/classes",
-          "style": { "navigationBarTitleText": "班级信息", "enablePullDownRefresh": true }
-        }
-      ]
-    }
-  ],
-  "preloadRule": {
-    "pages/home/home": {
-      "network": "wifi",
-      "packages": ["pages-admin"]
-    }
-  },
   "tabBar": {
     "color": "@tabColor",
     "selectedColor": "@tabSelectedColor",
@@ -103,13 +32,31 @@
         "pagePath": "pages/home/home",
         "text": "首页",
         "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png"
+        "selectedIconPath": "static/tabbar/home-on.png"
+      },
+      {
+        "pagePath": "pages/courses/courses",
+        "text": "课程",
+        "iconPath": "static/tabbar/courses.png",
+        "selectedIconPath": "static/tabbar/courses-on.png"
+      },
+      {
+        "pagePath": "pages/schedule/schedule",
+        "text": "日程",
+        "iconPath": "static/tabbar/schedule.png",
+        "selectedIconPath": "static/tabbar/schedule-on.png"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "消息",
+        "iconPath": "static/tabbar/messages.png",
+        "selectedIconPath": "static/tabbar/messages-on.png"
       },
       {
         "pagePath": "pages/mine/mine",
         "text": "我的",
         "iconPath": "static/tabbar/mine.png",
-        "selectedIconPath": "static/tabbar/mine-active.png"
+        "selectedIconPath": "static/tabbar/mine-on.png"
       }
     ]
   },

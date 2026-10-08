@@ -4,102 +4,78 @@
     :class="themeClass"
     :style="themeStyle"
   >
+    <!-- 基本资料（与 Web 端个人中心「基本资料」一致）：头像点一下就换、立即保存；姓名、电话、邮箱改完点保存 -->
     <view class="xm-card">
-      <!-- 头像：点击更换（管理员/教师/学生共用，与 Web 端一致） -->
       <view
         class="avatar-row"
         @click="chooseAvatar"
       >
-        <image
-          v-if="user.avatar"
-          :src="avatarUrl"
-          class="avatar"
-          mode="aspectFill"
+        <xm-user-avatar
+          :name="user.name || user.username"
+          :avatar="user.avatar"
+          :size="128"
         />
-        <view
-          v-else
-          class="avatar avatar-placeholder"
-          >{{ (user.name || user.username || '?').slice(0, 1) }}</view
-        >
-        <view class="xm-label">{{ $t('pages.person.avatarTip') }}</view>
+        <view class="avatar-text">
+          <view class="avatar-name">{{ user.name || user.username }}</view>
+          <view class="xm-link">{{ $t('profile.changeAvatar') }}</view>
+        </view>
       </view>
 
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{
-          isAdminOrTeacher ? $t('pages.person.usernameLabel') : $t('pages.person.accountLabel')
-        }}</view>
-        <input
-          class="xm-input"
-          v-model="user.username"
-          disabled
-        />
+      <view class="xm-kv">
+        <text class="xm-kv-key">{{ $t('login.account') }}</text>
+        <text class="xm-kv-value xm-num">{{ user.username }}</text>
       </view>
-      <view class="xm-form-item">
-        <view class="xm-form-label">{{ $t('pages.person.nameLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.name"
-        />
+      <view class="xm-kv">
+        <text class="xm-kv-key">{{ $t('pages.person.roleLabel') }}</text>
+        <text class="xm-kv-value">{{ $t('shell.roles.' + user.role) }}</text>
       </view>
       <view
-        class="xm-form-item"
-        v-if="isStudent"
+        v-if="user.role === 'TEACHER'"
+        class="xm-kv"
       >
-        <view class="xm-form-label">{{ $t('pages.person.creditLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.score"
-          disabled
-        />
+        <text class="xm-kv-key">{{ $t('pages.person.titleLabel') }}</text>
+        <text class="xm-kv-value">{{ user.title || '—' }}</text>
       </view>
-      <view
-        class="xm-form-item"
-        v-if="isStudent"
-      >
-        <view class="xm-form-label">{{ $t('pages.person.roleLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.role"
-          disabled
-        />
-      </view>
-      <view
-        class="xm-form-item"
-        v-if="user.phone !== undefined"
-      >
-        <view class="xm-form-label">{{ $t('pages.person.phoneLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.phone"
-          type="number"
-          maxlength="11"
-        />
-      </view>
-      <view
-        class="xm-form-item"
-        v-if="user.email !== undefined"
-      >
-        <view class="xm-form-label">{{ $t('pages.person.emailLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.email"
-        />
-      </view>
-      <view
-        class="xm-form-item"
-        v-if="user.title !== undefined"
-      >
-        <view class="xm-form-label">{{ $t('pages.person.titleLabel') }}</view>
-        <input
-          class="xm-input"
-          v-model="user.title"
-          disabled
-        />
-      </view>
+    </view>
 
+    <view class="xm-card">
+      <view class="xm-form-item">
+        <view class="xm-form-label required">{{ $t('pages.person.nameLabel') }}</view>
+        <input
+          class="xm-input"
+          v-model="info.name"
+          maxlength="20"
+        />
+      </view>
+      <template v-if="user.role !== 'STUDENT'">
+        <view class="xm-form-item">
+          <view class="xm-form-label">{{ $t('pages.person.phoneLabel') }}</view>
+          <input
+            class="xm-input"
+            v-model="info.phone"
+            type="number"
+            maxlength="20"
+          />
+        </view>
+        <view class="xm-form-item">
+          <view class="xm-form-label">{{ $t('pages.person.emailLabel') }}</view>
+          <input
+            class="xm-input"
+            v-model="info.email"
+            maxlength="50"
+          />
+        </view>
+      </template>
+      <view
+        v-else
+        class="note"
+        >{{ $t('profile.studentNote') }}</view
+      >
       <button
-        class="xm-btn xm-btn-primary xm-btn-block"
-        @click="update"
+        class="xm-btn xm-btn-primary xm-btn-block xm-btn-lg"
+        :loading="saving"
+        :disabled="saving"
+        @click="saveInfo"
       >
         {{ $t('common.save') }}
       </button>
@@ -109,52 +85,72 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { resolveFileUrl } from '@/utils/request'
 import { userApiOf } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { t } from '@/i18n'
+import { ensureLoggedIn } from '@/utils/authGuard'
 import { chooseImage, uploadFile } from '@/utils/upload'
+import { t } from '@/i18n'
 
 const userStore = useUserStore()
-const user = reactive({ ...userStore.user })
+const user = computed(() => userStore.user || {})
+const info = reactive({ name: '', phone: '', email: '' })
+const saving = ref(false)
 
-// 头像展示地址归一化（老 localhost 绝对地址 / 新 /api 相对路径 → 当前 baseUrl 完整地址）。
-// user.avatar 本身保持后端原始值，保存资料时原样回传，避免把本机 IP 写进数据库
-const avatarUrl = computed(() => resolveFileUrl(user.avatar))
-
-const isStudent = computed(() => user.role === 'STUDENT')
-const isAdminOrTeacher = computed(() => user.role === 'ADMIN' || user.role === 'TEACHER')
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 onShow(() => {
-  uni.setNavigationBarTitle({ title: t('menu.person') })
+  if (!ensureLoggedIn()) return
+  uni.setNavigationBarTitle({ title: t('profile.tabs.info') })
+  info.name = user.value.name || ''
+  info.phone = user.value.phone || ''
+  info.email = user.value.email || ''
 })
 
-// 头像：选图（压缩图、超限本地拦截）后上传，失败提示由上传层统一弹出
-const chooseAvatar = async () => {
-  const picked = await chooseImage()
-  if (!picked) return
+/** 只提交本人可改的字段；账号、角色、学分等由后端白名单兜底，不会被改动 */
+const saveInfo = async () => {
+  if (!info.name.trim()) {
+    uni.showToast({ title: t('profile.nameRequired'), icon: 'none' })
+    return
+  }
+  if (user.value.role !== 'STUDENT' && info.email.trim() && !EMAIL_RE.test(info.email.trim())) {
+    uni.showToast({ title: t('profile.emailInvalid'), icon: 'none' })
+    return
+  }
+  const api = userApiOf(user.value.role)
+  if (!api) return
+  const payload = { id: user.value.id, name: info.name.trim() }
+  if (user.value.role !== 'STUDENT') {
+    payload.phone = info.phone.trim()
+    payload.email = info.email.trim()
+  }
+  saving.value = true
   try {
-    user.avatar = await uploadFile(picked.path)
-    uni.showToast({ title: t('common.operationSuccess'), icon: 'success' })
+    await api.update(payload)
+    userStore.patchUser(payload)
+    uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })
   } catch {
-    // 提示已由上传层统一弹出
+    // 提示已由请求层统一弹出
+  } finally {
+    saving.value = false
   }
 }
 
-const update = () => {
-  const api = userApiOf(user.role)
+/** 头像：选图（压缩、超限本地拦截）→ 上传 → 立即保存（不必再点「保存」） */
+const chooseAvatar = async () => {
+  const picked = await chooseImage()
+  if (!picked) return
+  const api = userApiOf(user.value.role)
   if (!api) return
-  api
-    .update(user)
-    .then(() => {
-      userStore.patchUser({ ...user })
-      uni.showToast({ title: t('common.saveSuccess'), icon: 'success' })
-    })
-    .catch(() => {
-      // 提示已由请求层统一弹出
-    })
+  try {
+    const url = await uploadFile(picked.path)
+    await api.update({ id: user.value.id, avatar: url })
+    userStore.patchUser({ avatar: url })
+    uni.showToast({ title: t('profile.avatarSaved'), icon: 'success' })
+  } catch {
+    // 上传 / 保存失败的提示已由上传层、请求层统一弹出
+  }
 }
 </script>
 
@@ -162,22 +158,29 @@ const update = () => {
 .avatar-row {
   display: flex;
   align-items: center;
-  gap: 24rpx;
-  margin-bottom: 32rpx;
+  gap: 28rpx;
+  margin-bottom: 16rpx;
 }
 
-.avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 50%;
-  background: var(--xm-bg-input);
+.avatar-text {
+  flex: 1;
+  min-width: 0;
 }
 
-.avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48rpx;
+.avatar-name {
+  margin-bottom: 8rpx;
+  font-size: 34rpx;
+  font-weight: bold;
+  color: var(--xm-text);
+}
+
+.note {
+  margin-bottom: 28rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 14rpx;
+  background: var(--xm-bg-sunken);
+  font-size: 24rpx;
+  line-height: 1.6;
   color: var(--xm-text-2);
 }
 </style>

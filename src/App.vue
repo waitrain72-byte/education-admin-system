@@ -1,6 +1,7 @@
 <script>
 import { initWs, connectWs } from '@/utils/websocket'
 import { useUserStore } from '@/stores/user'
+import { useMessageStore } from '@/stores/message'
 import { syncNativeChrome } from '@/composables/useTheme'
 import { installAuthInterceptor } from '@/utils/authGuard'
 import { reportError } from '@/utils/errorReport'
@@ -17,8 +18,12 @@ export default {
     checkAppUpdate()
   },
   onShow() {
-    // 冷启动带登录态 / 切回前台时恢复实时通知连接（connectWs 幂等，无 token 不连）
-    if (useUserStore().token) connectWs()
+    // 冷启动带登录态 / 切回前台时恢复实时通知连接（connectWs 幂等，无 token 不连），
+    // 并拉一次未读消息数（在后台期间收到的推送不会触发刷新）
+    if (useUserStore().token) {
+      connectWs()
+      useMessageStore().refresh()
+    }
     // 兜底同步原生导航栏/tabBar 配色（模块加载时页面可能尚未就绪）
     syncNativeChrome()
   },

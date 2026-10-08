@@ -5,6 +5,8 @@ import { installI18n } from './i18n'
 import { themeClass, syncNativeChrome } from './composables/useTheme'
 import { themeStyle } from './composables/useThemeColor'
 import { shareMessage, currentRoute } from './utils/share'
+import { isTabPage } from './utils/tabbar'
+import { applyMessageBadge, useMessageStore } from './stores/message'
 
 export function createApp() {
   const app = createSSRApp(App)
@@ -23,9 +25,18 @@ export function createApp() {
       },
     },
     // 原生导航栏配色（setNavigationBarColor）只作用于当前页：每个页面显示时按当前主题补同步一次，
-    // 否则「应用内选了深色、系统是浅色」时，新打开的页面导航栏仍是 app.json 默认的亮蓝色
+    // 否则「应用内选了深色、系统是浅色」时，新打开的页面导航栏仍是 theme.json 的浅色；
+    // tabBar 接口只能在 tabBar 页面调用，所以 tabBar 的文字、图标、未读角标也在这里补设
     onShow() {
-      if (this.$mpType === 'page') syncNativeChrome()
+      if (this.$mpType !== 'page') return
+      syncNativeChrome()
+      if (isTabPage(currentRoute())) {
+        try {
+          applyMessageBadge(useMessageStore().unread)
+        } catch {
+          // Pinia 未就绪时忽略
+        }
+      }
     },
     // 右上角「转发」：公开信息页转发当前页，其余转发首页（规则见 utils/share.js）
     onShareAppMessage() {

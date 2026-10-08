@@ -1,19 +1,31 @@
 /**
- * 课程配色：按课程名哈希从固定色板取色，同一课程稳定同色、不同课程尽量错开。
- * 供首页「今日课程」与「我的课表」周视图共用，保证两处颜色语言一致。
- * 色板与演示稿一致（蓝/绿/橙/紫/天蓝…），不含红色——红色保留给「缺勤/删除」等语义。
+ * 课程封面色：按课程名哈希从固定色板取色，同一门课在首页、课程列表、课程空间、日程里颜色一致。
+ *
+ * 色板、哈希与 Web 端 vue/src/utils/courseColor.ts 完全相同，同一门课两端是同一个颜色。
+ * 白字压在色块上，每个颜色与白字的对比度都 ≥ 5（WCAG AA），深浅主题下都不需要换色。
+ * 不含正红：红色留给「缺勤」「逾期」「删除」这类语义。
  */
-const COURSE_COLORS = ['#5b6cff', '#22b866', '#f59e0b', '#06b6d4', '#3b82f6', '#8b5cf6', '#e64980', '#10b981']
+export const COURSE_COLORS = [
+  '#4f5bd5', // 靛
+  '#1d7a4a', // 绿
+  '#9a5b06', // 琥珀
+  '#0e7490', // 青
+  '#2563eb', // 蓝
+  '#6d48c9', // 紫
+  '#b8336a', // 玫
+  '#0f7b63', // 玉绿
+] as const
 
-export function courseColor(name: string): string {
+/** 字符串哈希（hash * 31 + charCode，无符号 32 位；只取第一行） */
+export function nameHash(name: string): number {
   const text = String(name || '').split('\n')[0]
   let hash = 0
-  for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) >>> 0
-  return COURSE_COLORS[hash % COURSE_COLORS.length]
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0
+  }
+  return hash
 }
 
-/** 软色底 + 同色描边 + 深色文字的色块样式 */
-export function courseBlockStyle(text: string): Record<string, string> {
-  const color = courseColor(text)
-  return { background: color + '24', border: '1rpx solid ' + color + '59', color }
+export function courseColor(name: string | null | undefined): string {
+  return COURSE_COLORS[nameHash(name || '') % COURSE_COLORS.length]
 }

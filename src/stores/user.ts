@@ -66,9 +66,9 @@ export const useUserStore = defineStore('user', {
     clearUser() {
       this.user = {}
       uni.removeStorageSync(STORAGE_KEY)
-      // 重置消息仓库归属：防止极端时序下推送落库到上一用户名下
+      // 清零未读角标：下一位用户登录后重新拉取自己的未读数
       try {
-        useMessageStore().resetOwnership()
+        useMessageStore().reset()
       } catch {
         // Pinia 未就绪时忽略
       }

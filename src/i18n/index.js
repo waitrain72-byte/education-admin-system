@@ -7,6 +7,18 @@ import groupBZh from '@/locales/pages/zh-CN/groupB'
 import groupBEn from '@/locales/pages/en-US/groupB'
 import groupCZh from '@/locales/pages/zh-CN/groupC'
 import groupCEn from '@/locales/pages/en-US/groupC'
+// 改版后的页面词条：shell / space / campus / console 与 Web 端 locales/pages 下同名模块逐字一致（两端共用），
+// mobile 是小程序自己的补充
+import shellZh from '@/locales/pages/zh-CN/shell'
+import shellEn from '@/locales/pages/en-US/shell'
+import spaceZh from '@/locales/pages/zh-CN/space'
+import spaceEn from '@/locales/pages/en-US/space'
+import campusZh from '@/locales/pages/zh-CN/campus'
+import campusEn from '@/locales/pages/en-US/campus'
+import consoleZh from '@/locales/pages/zh-CN/console'
+import consoleEn from '@/locales/pages/en-US/console'
+import mobileZh from '@/locales/pages/zh-CN/mobile'
+import mobileEn from '@/locales/pages/en-US/mobile'
 
 /**
  * 轻量国际化（与 Web 端 vue-i18n 词条键完全一致）：
@@ -33,8 +45,8 @@ const STORAGE_KEY = 'xm-locale'
 export const locale = ref(uni.getStorageSync(STORAGE_KEY) || 'zh-CN')
 
 const messages = {
-  'zh-CN': deepMerge(zhCN, deepMerge(groupAZh, deepMerge(groupBZh, groupCZh))),
-  'en-US': deepMerge(enUS, deepMerge(groupAEn, deepMerge(groupBEn, groupCEn))),
+  'zh-CN': [groupAZh, groupBZh, groupCZh, shellZh, spaceZh, campusZh, consoleZh, mobileZh].reduce(deepMerge, zhCN),
+  'en-US': [groupAEn, groupBEn, groupCEn, shellEn, spaceEn, campusEn, consoleEn, mobileEn].reduce(deepMerge, enUS),
 }
 
 export function isZh() {

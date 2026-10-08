@@ -86,29 +86,36 @@ describe('推送处理', () => {
     task.handlers.open()
   })
 
-  it('合法推送：未读数 +1、首页 tab 角标、广播 ws:push 事件', () => {
-    task.handlers.message({ data: JSON.stringify({ title: '成绩发布', content: '高数 90' }) })
-    expect(uniMock.setTabBarBadge).toHaveBeenCalledWith(expect.objectContaining({ index: 0, text: '1' }))
-    expect(uniMock.$emit).toHaveBeenCalledWith('ws:push', { title: '成绩发布', content: '高数 90' })
+  /** 是否请求过未读数接口（消息已由后端落库，前端只重新拉未读数） */
+  const unreadRequested = () =>
+    uniMock.request.mock.calls.some(([opts]) => String(opts.url).endsWith('/message/unreadCount'))
+
+  it('带标题的推送：重新拉未读数（消息 tab 角标），并广播 ws:push', () => {
+    task.handlers.message({ data: JSON.stringify({ title: '成绩发布', content: '高数 90', link: '/grades' }) })
+    expect(unreadRequested()).toBe(true)
+    expect(uniMock.$emit).toHaveBeenCalledWith('ws:push', { title: '成绩发布', content: '高数 90', link: '/grades' })
   })
 
-  it('未读超过 99 时角标显示 99+', () => {
-    for (let i = 0; i < 100; i++) task.handlers.message({ data: JSON.stringify({ title: 't' + i }) })
-    const last = uniMock.setTabBarBadge.mock.calls.at(-1)[0]
-    expect(last.text).toBe('99+')
+  it('课程空间的静默事件：只广播 ws:course，不当成消息', () => {
+    const event = { type: 'course', event: 'attendance', courseId: 8 }
+    task.handlers.message({ data: JSON.stringify(event) })
+    expect(uniMock.$emit).toHaveBeenCalledWith('ws:course', event)
+    expect(uniMock.$emit).not.toHaveBeenCalledWith('ws:push', expect.anything())
+    expect(unreadRequested()).toBe(false)
   })
 
-  it('非 JSON 或缺少 title 的消息直接忽略', () => {
+  it('非 JSON、缺少 title 又不是课程事件的消息直接忽略', () => {
     task.handlers.message({ data: 'not json' })
     task.handlers.message({ data: JSON.stringify({ content: 'no title' }) })
     expect(uniMock.$emit).not.toHaveBeenCalled()
-    expect(uniMock.setTabBarBadge).not.toHaveBeenCalled()
+    expect(unreadRequested()).toBe(false)
   })
 
-  it('resetWsUnread 清零并移除角标', () => {
-    task.handlers.message({ data: JSON.stringify({ title: 'x' }) })
-    ws.resetWsUnread()
-    expect(uniMock.removeTabBarBadge).toHaveBeenCalled()
+  it('已退出登录（没有 token）时到达的推送丢弃', async () => {
+    const { useUserStore } = await import('@/stores/user')
+    useUserStore().clearUser()
+    task.handlers.message({ data: JSON.stringify({ title: '迟到的推送' }) })
+    expect(uniMock.$emit).not.toHaveBeenCalledWith('ws:push', expect.anything())
   })
 })
 
@@ -192,12 +199,11 @@ describe('断线重连（指数退避）', () => {
 })
 
 describe('closeWs 主动断开（退出登录 / 改密码）', () => {
-  it('关闭连接、停止心跳、清零角标', () => {
+  it('关闭连接、停止心跳', () => {
     ws.connectWs()
     task.handlers.open()
     ws.closeWs()
     expect(task.close).toHaveBeenCalled()
-    expect(uniMock.removeTabBarBadge).toHaveBeenCalled()
     vi.advanceTimersByTime(60000)
     expect(task.send).not.toHaveBeenCalled()
   })
