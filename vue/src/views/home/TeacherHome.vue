@@ -69,6 +69,8 @@
           </div>
         </section>
 
+        <AttentionPanel />
+
         <ExamsPanel :exams="data.exams" />
       </aside>
     </div>
@@ -82,6 +84,7 @@ import { useUser } from '@/components/useUser'
 import CourseCard from '@/components/CourseCard.vue'
 import HomeHero from './HomeHero.vue'
 import NextClassCard from './NextClassCard.vue'
+import AttentionPanel from './AttentionPanel.vue'
 import TodayClasses from './TodayClasses.vue'
 import ExamsPanel from './ExamsPanel.vue'
 import { useHomeText } from './useHomeText'

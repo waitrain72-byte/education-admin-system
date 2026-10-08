@@ -5,7 +5,7 @@
     <main id="main" class="app-main">
       <router-view v-slot="{ Component }">
         <transition name="page-fade" mode="out-in">
-          <div :key="pageKey" class="app-page" :class="{ 'legacy-page': route.meta.legacy && !isAdminArea }">
+          <div :key="pageKey" class="app-page">
             <component :is="Component" />
           </div>
         </transition>
@@ -33,8 +33,6 @@ const { pullPermissions } = usePermission()
 const messageStore = useMessageStore()
 
 const searchOpen = ref(false)
-
-const isAdminArea = computed(() => route.path.startsWith('/admin'))
 
 /**
  * 切页动画的 key：按「布局下第一级路由」计算，而不是完整路径——

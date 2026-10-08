@@ -6,6 +6,7 @@
         <p class="page-sub">{{ $t('courses.sub.' + roleKey) }}</p>
       </div>
       <div class="page-actions">
+        <el-button v-if="role === 'STUDENT'" plain @click="router.push('/grades')">{{ $t('transcript.entry') }}</el-button>
         <el-button v-if="role === 'STUDENT'" type="primary" @click="router.push('/square')">
           {{ $t('courses.goSelect') }}
         </el-button>

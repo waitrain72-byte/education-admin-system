@@ -15,7 +15,7 @@ export interface NavItem {
 
 const MAIN_NAV: Array<NavItem & { roles?: string[] }> = [
     { key: 'home', label: 'nav.home', to: '/home', prefixes: ['/home'] },
-    { key: 'courses', label: 'nav.courses', to: '/courses', prefixes: ['/courses', '/course/', '/square'] },
+    { key: 'courses', label: 'nav.courses', to: '/courses', prefixes: ['/courses', '/course/', '/square', '/grades'] },
     { key: 'schedule', label: 'nav.schedule', to: '/schedule', prefixes: ['/schedule'], roles: ['STUDENT', 'TEACHER'] },
     { key: 'messages', label: 'nav.messages', to: '/messages', prefixes: ['/messages'] },
     { key: 'admin', label: 'nav.admin', to: '/admin', prefixes: ['/admin'], roles: ['ADMIN'] },

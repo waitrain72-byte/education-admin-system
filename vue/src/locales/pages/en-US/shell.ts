@@ -10,7 +10,6 @@ export default {
         square: 'Catalogue',
         messages: 'Messages',
         admin: 'Admin',
-        more: 'More',
         menu: 'Navigation',
     },
 
@@ -134,6 +133,20 @@ export default {
                 pendingLeaves: 'Leave requests',
                 ungraded: 'Ungraded homework',
                 loginToday: 'Sign-ins today',
+            },
+        },
+        attention: {
+            title: 'Students at risk',
+            hint: 'Risk is worked out from published grades and attendance; highest first',
+            meta: 'Risk {index} · {failed} failed · {absent}% irregular attendance',
+            notify: 'Remind',
+            notified: 'Reminder sent to {name}',
+            empty: 'No students at risk',
+            more: '{n} more',
+            levels: {
+                high: 'High',
+                medium: 'Medium',
+                low: 'Low',
             },
         },
     },

@@ -10,7 +10,6 @@ export default {
         square: '选课广场',
         messages: '消息',
         admin: '教务后台',
-        more: '全部功能',
         menu: '导航菜单',
     },
 
@@ -134,6 +133,20 @@ export default {
                 pendingLeaves: '待审批请假',
                 ungraded: '待批改作业',
                 loginToday: '今日登录',
+            },
+        },
+        attention: {
+            title: '需要关注的学生',
+            hint: '按已发布的成绩和考勤算出的学业风险，风险高的在前',
+            meta: '风险指数 {index} · 不及格 {failed} 门 · 异常考勤 {absent}%',
+            notify: '提醒',
+            notified: '已提醒 {name}',
+            empty: '没有需要关注的学生',
+            more: '还有 {n} 人',
+            levels: {
+                high: '高风险',
+                medium: '中风险',
+                low: '低风险',
             },
         },
     },

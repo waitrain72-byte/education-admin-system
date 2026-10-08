@@ -35,6 +35,11 @@ public interface ChoiceMapper extends CrudMapper<Choice> {
     @Select("select course_id from choice where student_id = #{studentId}")
     List<Integer> selectCourseIdsByStudentId(Integer studentId);
 
+    /** 这名学生有没有选这位老师的课（老师只能给自己的学生发预警提醒） */
+    @Select("select count(*) from choice ch join course c on c.id = ch.course_id"
+            + " where ch.student_id = #{studentId} and c.teacher_id = #{teacherId}")
+    int countByStudentAndTeacher(@Param("studentId") Integer studentId, @Param("teacherId") Integer teacherId);
+
     /** 课程换了任课教师：选课记录上冗余的教师一起改（旧版按 choice.teacher_id 筛「我的学生」） */
     @Update("update choice set teacher_id = #{teacherId} where course_id = #{courseId}")
     int updateTeacherOfCourse(@Param("courseId") Integer courseId, @Param("teacherId") Integer teacherId);

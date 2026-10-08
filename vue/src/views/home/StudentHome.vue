@@ -55,6 +55,7 @@
         <section class="panel">
           <div class="panel__head">
             <span class="panel__title">{{ $t('workbench.progress') }}</span>
+            <router-link to="/grades" class="panel__more">{{ $t('transcript.entry') }} ›</router-link>
           </div>
           <div class="panel__body progress">
             <ProgressRing

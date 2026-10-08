@@ -9,6 +9,7 @@ import com.example.entity.excel.ScoreExcel;
 import com.example.service.CrudService;
 import com.example.service.MessageService;
 import com.example.service.ScoreService;
+import com.example.service.TranscriptService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -32,6 +33,14 @@ public class ScoreController extends CrudController<Score> {
     private ScoreService scoreService;
     @Resource
     private MessageService messageService;
+    @Resource
+    private TranscriptService transcriptService;
+
+    /** 学生本人的成绩单：所有课的已发布成绩，以及学分、绩点汇总 */
+    @GetMapping("/transcript")
+    public Result transcript() {
+        return Result.success(transcriptService.mine());
+    }
 
     @Override
     protected CrudService<Score> getService() {

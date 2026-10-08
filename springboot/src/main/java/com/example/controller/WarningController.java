@@ -41,6 +41,7 @@ public class WarningController {
      */
     @PostMapping("/notify/{studentId}")
     public Result notify(@PathVariable Integer studentId) {
+        warningService.requireCanNotify(studentId);
         // 只算这一个学生，不必把全量预警列表重算一遍再线性查找
         Map<String, Object> target = warningService.warningOf(studentId);
         if (target == null) {

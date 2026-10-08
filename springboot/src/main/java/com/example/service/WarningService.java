@@ -1,11 +1,14 @@
 package com.example.service;
 
+import com.example.common.enums.ResultCodeEnum;
 import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
 import com.example.entity.Attendance;
 import com.example.entity.Score;
 import com.example.entity.Student;
+import com.example.exception.CustomException;
 import com.example.mapper.AttendanceMapper;
+import com.example.mapper.ChoiceMapper;
 import com.example.mapper.ScoreMapper;
 import com.example.mapper.StudentMapper;
 import com.example.utils.TokenUtils;
@@ -57,6 +60,8 @@ public class WarningService {
     @Resource
     private ScoreMapper scoreMapper;
     @Resource
+    private ChoiceMapper choiceMapper;
+    @Resource
     private AttendanceMapper attendanceMapper;
     @Resource
     private StudentMapper studentMapper;
@@ -103,6 +108,17 @@ public class WarningService {
 
         result.sort((a, b) -> Integer.compare((int) b.get("riskIndex"), (int) a.get("riskIndex")));
         return result;
+    }
+
+    /**
+     * 发预警提醒前的检查：老师只能提醒选了自己课的学生（管理员不限），免得给全校任意学生发消息。
+     */
+    public void requireCanNotify(Integer studentId) {
+        Account current = TokenUtils.getCurrentUser();
+        if (RoleEnum.TEACHER.name().equals(current.getRole())
+                && (studentId == null || choiceMapper.countByStudentAndTeacher(studentId, current.getId()) == 0)) {
+            throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+        }
     }
 
     /**

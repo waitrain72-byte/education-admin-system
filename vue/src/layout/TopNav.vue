@@ -29,21 +29,6 @@
             {{ messageStore.unread > 99 ? '99+' : messageStore.unread }}
           </span>
         </router-link>
-
-        <!-- 过渡期：还没迁到新界面的旧功能页 -->
-        <el-dropdown v-if="legacyLinks.length" trigger="click" @command="(path: string) => router.push(path)">
-          <button type="button" class="nav-link nav-link--more" :class="{ 'is-active': route.path.startsWith('/legacy/') }">
-            {{ $t('nav.more') }}
-            <el-icon class="nav-link__caret"><ArrowDown /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item v-for="link in legacyLinks" :key="link.path" :command="link.path">
-                {{ $t(link.label) }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </nav>
 
       <div class="top-nav__tools">
@@ -77,11 +62,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, Bell, Menu, Moon, Search, Sunny } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
+import { Bell, Menu, Moon, Search, Sunny } from '@element-plus/icons-vue'
 import BrandMark from '@/layout/BrandMark.vue'
 import UserMenu from '@/layout/UserMenu.vue'
-import { childLinks, isNavActive, mainNav } from '@/layout/nav'
+import { isNavActive, mainNav } from '@/layout/nav'
 import { useUser } from '@/components/useUser'
 import { useMessageStore } from '@/stores/messages'
 import { isDark, setThemeMode } from '@/composables/useTheme'
@@ -89,7 +74,6 @@ import { isDark, setThemeMode } from '@/composables/useTheme'
 defineEmits<{ (e: 'open-search'): void }>()
 
 const route = useRoute()
-const router = useRouter()
 const { user } = useUser()
 const messageStore = useMessageStore()
 
@@ -102,15 +86,6 @@ watch(
 )
 
 const items = computed(() => mainNav(user.value.role))
-
-/** 「全部功能」：AppLayout 下 meta.legacy 的旧页面（只给学生、教师；管理员的旧页面都在教务后台里） */
-const legacyLinks = computed(() => {
-  const layout = router.options.routes.find((r) => r.path === '/')
-  return childLinks(layout?.children || [], '', user.value.role, (meta) => !!meta.legacy).map((link) => ({
-    ...link,
-    path: link.path.replace(/^\/+/, '/'),
-  }))
-})
 </script>
 
 <style scoped>
@@ -205,10 +180,6 @@ const legacyLinks = computed(() => {
   font-weight: 700;
   line-height: 18px;
   text-align: center;
-}
-
-.nav-link__caret {
-  font-size: 12px;
 }
 
 .top-nav__tools {

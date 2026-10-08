@@ -86,16 +86,17 @@ const active = ref(0)
 const inputEl = ref<HTMLInputElement>()
 const remote = ref<Record<string, any[]>>({})
 
-/** 本地可跳转的页面：主导航、个人中心、旧功能页、教务后台各页（按角色） */
+/** 本地可跳转的页面：主导航、选课广场、成绩单、个人中心、教务后台各页（按角色） */
 const pages = computed(() => {
   const role = user.value.role
   const list: Array<{ title: string; to: string }> = mainNav(role).map((item) => ({ title: t(item.label), to: item.to }))
+  list.push({ title: t('nav.square'), to: '/square' })
+  if (role === 'STUDENT') {
+    list.push({ title: t('transcript.title'), to: '/grades' })
+  }
   list.push({ title: t('shell.profile'), to: '/profile' }, { title: t('shell.password'), to: '/profile?tab=password' })
   const layout = router.options.routes.find((r) => r.path === '/')
   const children = layout?.children || []
-  for (const link of childLinks(children, '', role, (meta) => !!meta.legacy)) {
-    list.push({ title: t(link.label), to: link.path })
-  }
   const admin = children.find((r) => r.path === 'admin')
   if (admin && role === 'ADMIN') {
     for (const link of childLinks(admin.children || [], '/admin', role)) {

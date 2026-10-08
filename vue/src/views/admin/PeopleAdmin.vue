@@ -186,7 +186,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { FormInstance, FormRules, UploadProps } from 'element-plus'
+import type { CascaderOption, FormInstance, FormRules, UploadProps } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import request, { type PageResult } from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
@@ -222,12 +222,6 @@ const isSelf = (row: Record<string, any>) => tab.value === 'admins' && row.id ==
 
 // ---------- 组织架构（筛选与学生表单共用） ----------
 const orgTree = ref<Record<string, any>[]>([])
-
-interface CascaderOption {
-  value: number
-  label: string
-  children?: CascaderOption[]
-}
 
 const orgOptions = computed<CascaderOption[]>(() =>
   orgTree.value.map((c) => {

@@ -1,33 +1,25 @@
-import { createRouter, createWebHistory, type RouteRecordRaw, type RouteRecordSingleView } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 /**
  * 路由表：meta.name 是页面名称的 i18n 键（导航、命令面板、后台侧栏都从这里取，单一数据源）；
  * meta.roles 限定可访问的角色（子路由继承父路由的限制）；meta.permission 是需要的权限码。
  *
- * meta.legacy 标记「还没迁到新界面的旧页面」：学生、教师在顶栏「全部功能」里进入，
- * 管理员的旧页面都挂在教务后台侧栏下（meta.section 决定侧栏分组）。
+ * meta.legacy 标记沿用旧版界面的教务后台页面（教学记录、考试安排、学业预警、权限与日志）：
+ * 它们没有自己的页头，由教务后台布局补标题（meta.section 决定侧栏分组）。
  */
-const Course = () => import('@/views/manager/Course.vue')
-const Choice = () => import('@/views/manager/Choice.vue')
-const Score = () => import('@/views/manager/Score.vue')
-const Attendance = () => import('@/views/manager/Attendance.vue')
-const Homework = () => import('@/views/manager/Homework.vue')
-const Comment = () => import('@/views/manager/Comment.vue')
-const Apply = () => import('@/views/manager/Apply.vue')
-const Warning = () => import('@/views/manager/Warning.vue')
-const Examplan = () => import('@/views/manager/Examplan.vue')
-const Roomplan = () => import('@/views/manager/Roomplan.vue')
 
-/** 学生、教师过渡期的旧页面 */
-const legacy = (path: string, name: string, component: RouteRecordSingleView['component'], roles: string[]): RouteRecordSingleView => ({
-    path: `legacy/${path}`,
-    name: `Legacy${name}`,
-    meta: { name: `menu.${path}`, roles, legacy: true },
-    component,
-})
-
-const BOTH = ['TEACHER', 'STUDENT']
+/** 改版前学生、教师用的旧页面地址（书签、旧消息里可能还有）→ 新页面 */
+const LEGACY_REDIRECTS: Record<string, string> = {
+    course: '/courses',
+    choice: '/square',
+    curriculum: '/schedule',
+    score: '/grades',
+    attendance: '/courses',
+    homework: '/courses',
+    comment: '/courses',
+    apply: '/schedule?view=month',
+}
 
 const routes: RouteRecordRaw[] = [
     {
@@ -100,6 +92,12 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/views/square/CourseSquarePage.vue'),
             },
             {
+                path: 'grades',
+                name: 'Transcript',
+                meta: { name: 'transcript.title', roles: ['STUDENT'] },
+                component: () => import('@/views/grades/TranscriptPage.vue'),
+            },
+            {
                 path: 'schedule',
                 name: 'Schedule',
                 meta: { name: 'nav.schedule', roles: ['STUDENT', 'TEACHER'] },
@@ -118,17 +116,15 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/views/profile/ProfilePage.vue'),
             },
 
-            legacy('course', 'Course', Course, BOTH),
-            legacy('choice', 'Choice', Choice, BOTH),
-            legacy('curriculum', 'Curriculum', () => import('@/views/manager/Curriculum.vue'), ['STUDENT']),
-            legacy('score', 'Score', Score, BOTH),
-            legacy('attendance', 'Attendance', Attendance, BOTH),
-            legacy('homework', 'Homework', Homework, BOTH),
-            legacy('comment', 'Comment', Comment, BOTH),
-            legacy('apply', 'Apply', Apply, BOTH),
-            legacy('warning', 'Warning', Warning, BOTH),
-            legacy('examplan', 'Examplan', Examplan, BOTH),
-            legacy('roomplan', 'Roomplan', Roomplan, BOTH),
+            {
+                path: 'legacy/:page(.*)*',
+                redirect: (to) => {
+                    const page = String([to.params.page].flat()[0] || '')
+                    // 成绩单只有学生有，老师的旧成绩页转到课程（成绩册在课程空间里）
+                    if (page === 'score' && useUserStore().role !== 'STUDENT') return '/courses'
+                    return LEGACY_REDIRECTS[page] || '/home'
+                },
+            },
 
             {
                 path: 'admin',
@@ -140,14 +136,14 @@ const routes: RouteRecordRaw[] = [
                     { path: 'courses', name: 'AdminCourses', meta: { name: 'admin.menu.courses', section: 'teaching' }, component: () => import('@/views/admin/CourseAdmin.vue') },
                     { path: 'rooms', name: 'AdminRooms', meta: { name: 'admin.menu.rooms', section: 'teaching' }, component: () => import('@/views/admin/RoomsAdmin.vue') },
                     { path: 'leaves', name: 'AdminLeaves', meta: { name: 'admin.menu.leaves', section: 'teaching' }, component: () => import('@/views/admin/LeaveBoard.vue') },
-                    { path: 'exams', name: 'AdminExams', meta: { name: 'menu.examplan', section: 'teaching', legacy: true }, component: Examplan },
-                    { path: 'warnings', name: 'AdminWarnings', meta: { name: 'menu.warning', section: 'teaching', legacy: true }, component: Warning },
+                    { path: 'exams', name: 'AdminExams', meta: { name: 'menu.examplan', section: 'teaching', legacy: true }, component: () => import('@/views/manager/Examplan.vue') },
+                    { path: 'warnings', name: 'AdminWarnings', meta: { name: 'menu.warning', section: 'teaching', legacy: true }, component: () => import('@/views/manager/Warning.vue') },
                     // 教学记录
-                    { path: 'choices', name: 'AdminChoices', meta: { name: 'admin.menu.choices', section: 'records', legacy: true }, component: Choice },
-                    { path: 'scores', name: 'AdminScores', meta: { name: 'admin.menu.scores', section: 'records', legacy: true }, component: Score },
-                    { path: 'attendance', name: 'AdminAttendance', meta: { name: 'menu.attendance', section: 'records', legacy: true }, component: Attendance },
-                    { path: 'homework', name: 'AdminHomework', meta: { name: 'admin.menu.homework', section: 'records', legacy: true }, component: Homework },
-                    { path: 'comments', name: 'AdminComments', meta: { name: 'menu.comment', section: 'records', legacy: true }, component: Comment },
+                    { path: 'choices', name: 'AdminChoices', meta: { name: 'admin.menu.choices', section: 'records', legacy: true }, component: () => import('@/views/manager/Choice.vue') },
+                    { path: 'scores', name: 'AdminScores', meta: { name: 'admin.menu.scores', section: 'records', legacy: true }, component: () => import('@/views/manager/Score.vue') },
+                    { path: 'attendance', name: 'AdminAttendance', meta: { name: 'menu.attendance', section: 'records', legacy: true }, component: () => import('@/views/manager/Attendance.vue') },
+                    { path: 'homework', name: 'AdminHomework', meta: { name: 'admin.menu.homework', section: 'records', legacy: true }, component: () => import('@/views/manager/Homework.vue') },
+                    { path: 'comments', name: 'AdminComments', meta: { name: 'menu.comment', section: 'records', legacy: true }, component: () => import('@/views/manager/Comment.vue') },
                     // 档案
                     { path: 'org', name: 'AdminOrg', meta: { name: 'admin.menu.org', section: 'archives' }, component: () => import('@/views/admin/OrgAdmin.vue') },
                     { path: 'people', name: 'AdminPeople', meta: { name: 'admin.menu.people', section: 'archives' }, component: () => import('@/views/admin/PeopleAdmin.vue') },
