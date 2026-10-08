@@ -1,10 +1,11 @@
 package com.example.service;
 
+import com.example.common.enums.ResultCodeEnum;
 import com.example.entity.Choice;
-import com.example.entity.Course;
 import com.example.exception.CustomException;
 import com.example.mapper.ChoiceMapper;
-import com.example.mapper.CourseMapper;
+import com.example.support.CurrentUser;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,24 +14,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 选课业务单元测试：容量校验与上课时间冲突判断。
+ * 旧版选课接口：选课规则交给 {@link EnrollmentService}（见 EnrollmentServiceTest），这里只管「替谁选、谁能退」。
  *
- * <p>覆盖两处曾经的缺陷：</p>
- * <ul>
- *   <li>满员判断用 {@code num.equals(size)} 相等比较，一旦并发导致人数超过 num 就再也拦不住；</li>
- *   <li>冲突判断在循环里逐条查课程（N+1），现由一条 join 查询取回未结课课程的时段。</li>
- * </ul>
+ * <p>回归用例：改版前学生的选课请求里带什么 studentId 就给谁选，按 ID 删选课记录也不看是谁的。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class ChoiceServiceTest {
@@ -41,163 +36,91 @@ class ChoiceServiceTest {
     @Mock
     private ChoiceMapper choiceMapper;
     @Mock
-    private CourseMapper courseMapper;
+    private EnrollmentService enrollmentService;
 
     @InjectMocks
     private ChoiceService service;
 
-    private Course course(int id, String name, String week, String segment, int num) {
-        Course c = new Course();
-        c.setId(id);
-        c.setName(name);
-        c.setWeek(week);
-        c.setSegment(segment);
-        c.setNum(num);
-        return c;
+    @AfterEach
+    void tearDown() {
+        CurrentUser.clear();
     }
 
-    private Choice choice() {
+    private static Choice choice(Integer id, Integer studentId) {
         Choice ch = new Choice();
-        ch.setStudentId(STUDENT_ID);
+        ch.setId(id);
+        ch.setStudentId(studentId);
         ch.setCourseId(COURSE_ID);
-        ch.setTeacherId(1);
         return ch;
     }
 
-    // ========== 容量校验 ==========
-
     @Test
-    @DisplayName("未满员：正常写入选课记录")
-    void notFullAllowsSelection() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(49);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID)).thenReturn(Collections.emptyList());
+    @DisplayName("学生选课：一律给自己选，请求里带的别人的学号不算数")
+    void studentAlwaysEnrollsSelf() {
+        CurrentUser.as("STUDENT", STUDENT_ID, "李四");
 
-        Choice ch = choice();
-        service.add(ch);
+        service.add(choice(null, 99));
 
-        verify(choiceMapper).insert(ch);
+        verify(enrollmentService).enroll(STUDENT_ID, COURSE_ID);
     }
 
     @Test
-    @DisplayName("人数正好等于上限：拒绝选课")
-    void exactlyFullIsRejected() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(50);
+    @DisplayName("管理员可以替学生选课")
+    void adminEnrollsGivenStudent() {
+        CurrentUser.as("ADMIN", 1, "管理员");
 
-        CustomException ex = assertThrows(CustomException.class, () -> service.add(choice()));
-        assertEquals("5006", ex.getCode());
-        verify(choiceMapper, never()).insert(any());
+        service.add(choice(null, 7));
+
+        verify(enrollmentService).enroll(7, COURSE_ID);
     }
 
     @Test
-    @DisplayName("人数已超上限（历史脏数据/并发）：仍然拒绝——回归用例，原先用相等比较会放行")
-    void overCapacityIsStillRejected() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(53);
+    @DisplayName("老师不能选课")
+    void teacherCannotEnroll() {
+        CurrentUser.as("TEACHER", 3, "陈敏");
 
-        assertThrows(CustomException.class, () -> service.add(choice()));
-        verify(choiceMapper, never()).insert(any());
+        assertEquals(ResultCodeEnum.PERMISSION_DENIED_ERROR.code, codeOf(() -> service.add(choice(null, 7))));
+        verify(enrollmentService, never()).enroll(anyInt(), anyInt());
     }
 
     @Test
-    @DisplayName("课程未设置人数上限：不做容量限制")
-    void nullCapacitySkipsCheck() {
-        Course c = course(COURSE_ID, "线性代数", "星期五", "第三大节", 0);
-        c.setNum(null);
-        when(courseMapper.selectByIdForUpdate(COURSE_ID)).thenReturn(c);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID)).thenReturn(Collections.emptyList());
+    @DisplayName("学生只能退自己的选课记录；退选按 EnrollmentService 的规则走")
+    void studentDropsOnlyOwnChoice() {
+        CurrentUser.as("STUDENT", STUDENT_ID, "李四");
+        when(choiceMapper.selectById(10)).thenReturn(choice(10, STUDENT_ID));
+        when(choiceMapper.selectById(11)).thenReturn(choice(11, 8));
 
-        service.add(choice());
+        service.deleteById(10);
+        verify(enrollmentService).drop(STUDENT_ID, COURSE_ID);
 
-        verify(choiceMapper).insert(any());
-    }
-
-    // ========== 时间冲突 ==========
-
-    @Test
-    @DisplayName("与已选课程同一星期同一大节：拒绝并提示冲突课程名")
-    void sameSlotIsRejected() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(1);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID))
-                .thenReturn(Collections.singletonList(course(6, "中国近代史纲要", "星期五", "第三大节", 50)));
-
-        CustomException ex = assertThrows(CustomException.class, () -> service.add(choice()));
-        assertTrue(ex.getMsg().contains("中国近代史纲要"), "提示中应包含冲突课程名，实际: " + ex.getMsg());
-        verify(choiceMapper, never()).insert(any());
+        assertEquals(ResultCodeEnum.PERMISSION_DENIED_ERROR.code, codeOf(() -> service.deleteById(11)));
+        verify(enrollmentService, never()).drop(8, COURSE_ID);
     }
 
     @Test
-    @DisplayName("同一星期但不同大节：放行")
-    void sameWeekDifferentSegmentIsAllowed() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(1);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID))
-                .thenReturn(Collections.singletonList(course(6, "中国近代史纲要", "星期五", "第一大节", 50)));
+    @DisplayName("批量退选逐条检查：碰到别人的记录就拒绝")
+    void batchDropChecksEachRow() {
+        CurrentUser.as("STUDENT", STUDENT_ID, "李四");
+        when(choiceMapper.selectById(10)).thenReturn(choice(10, STUDENT_ID));
+        when(choiceMapper.selectById(11)).thenReturn(choice(11, 8));
 
-        service.add(choice());
-
-        verify(choiceMapper).insert(any());
+        assertThrows(CustomException.class, () -> service.deleteBatch(Arrays.asList(10, 11)));
+        verify(enrollmentService).drop(STUDENT_ID, COURSE_ID);
     }
 
     @Test
-    @DisplayName("同一大节但不同星期：放行")
-    void sameSegmentDifferentWeekIsAllowed() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(1);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID))
-                .thenReturn(Collections.singletonList(course(6, "高等数学", "星期一", "第三大节", 50)));
+    @DisplayName("删除不存在的选课记录：静默返回")
+    void deletingMissingChoiceIsNoop() {
+        CurrentUser.as("STUDENT", STUDENT_ID, "李四");
+        when(choiceMapper.selectById(99)).thenReturn(null);
 
-        service.add(choice());
+        service.deleteById(99);
 
-        verify(choiceMapper).insert(any());
+        verify(enrollmentService, never()).drop(anyInt(), anyInt());
     }
 
-    @Test
-    @DisplayName("多门已选课程中只要有一门冲突就拒绝")
-    void conflictAmongSeveralSelectedCourses() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(1);
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID)).thenReturn(Arrays.asList(
-                course(6, "高等数学", "星期一", "第一大节", 50),
-                course(7, "大学英语", "星期五", "第三大节", 50)
-        ));
-
-        CustomException ex = assertThrows(CustomException.class, () -> service.add(choice()));
-        assertTrue(ex.getMsg().contains("大学英语"));
-    }
-
-    @Test
-    @DisplayName("已结课的课程不占用时段——由 SQL 过滤，冲突判断拿不到这类记录")
-    void finishedCoursesDoNotBlock() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID))
-                .thenReturn(course(COURSE_ID, "线性代数", "星期五", "第三大节", 50));
-        when(choiceMapper.countByCourseId(COURSE_ID)).thenReturn(1);
-        // selectActiveSlotsByStudentId 的 SQL 带 status <> '已结课'，已结课课程不会出现在结果里
-        when(choiceMapper.selectActiveSlotsByStudentId(STUDENT_ID)).thenReturn(Collections.emptyList());
-
-        service.add(choice());
-
-        verify(choiceMapper).insert(any());
-    }
-
-    // ========== 异常 ==========
-
-    @Test
-    @DisplayName("课程不存在：抛参数异常而不是 NPE 落 500")
-    void missingCourseThrowsParamError() {
-        when(courseMapper.selectByIdForUpdate(COURSE_ID)).thenReturn(null);
-
-        CustomException ex = assertThrows(CustomException.class, () -> service.add(choice()));
-        assertEquals("400", ex.getCode());
-        verify(choiceMapper, never()).insert(any());
+    private static String codeOf(Runnable action) {
+        CustomException e = assertThrows(CustomException.class, action::run);
+        return e.getCode();
     }
 }

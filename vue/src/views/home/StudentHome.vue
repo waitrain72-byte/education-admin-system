@@ -45,7 +45,7 @@
             </div>
             <div v-else class="empty-note">
               {{ $t('workbench.noCourses') }}
-              <router-link to="/legacy/course" class="panel__more">{{ $t('workbench.goSelect') }} ›</router-link>
+              <router-link to="/square" class="panel__more">{{ $t('workbench.goSelect') }} ›</router-link>
             </div>
           </div>
         </section>

@@ -85,3 +85,48 @@ export function greetingKey(nowHHmm: string): string {
     if (hour >= 13 && hour < 18) return 'workbench.greeting.afternoon'
     return 'workbench.greeting.evening'
 }
+
+// ---------- 日期（只处理 yyyy-MM-dd 墙上日期，一律按 UTC 承载，不受浏览器时区影响） ----------
+
+/** 「2026-10-08」→ 承载这一天的 Date（UTC 零点）；格式不对返回 null */
+export function isoToDate(iso: string | null | undefined): Date | null {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '')
+    if (!m) return null
+    return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+}
+
+/** Date（UTC 承载）→「2026-10-08」 */
+export function dateToIso(d: Date): string {
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
+
+/** 日期加减天数 */
+export function addDays(iso: string, n: number): string {
+    const d = isoToDate(iso)
+    if (!d) return iso
+    d.setUTCDate(d.getUTCDate() + n)
+    return dateToIso(d)
+}
+
+/** 两个日期相差几天（b - a） */
+export function daysBetween(a: string, b: string): number {
+    const da = isoToDate(a)
+    const db = isoToDate(b)
+    if (!da || !db) return 0
+    return Math.round((db.getTime() - da.getTime()) / 86400000)
+}
+
+/** 「yyyy-MM」加减月份 */
+export function addMonths(month: string, n: number): string {
+    const m = /^(\d{4})-(\d{2})/.exec(month)
+    if (!m) return month
+    const total = +m[1] * 12 + (+m[2] - 1) + n
+    return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`
+}
+
+/** 按界面语言格式化日期，如中文「10月8日」、英文「Oct 8」 */
+export function formatDay(iso: string, locale: string, options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }): string {
+    const d = isoToDate(iso)
+    if (!d) return iso
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(d)
+}

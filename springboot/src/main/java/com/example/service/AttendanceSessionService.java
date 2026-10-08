@@ -325,6 +325,7 @@ public class AttendanceSessionService {
         for (Attendance a : courseSpaceMapper.selectAttendanceOfDate(courseId, date)) {
             byStudent.put(a.getStudentId(), a);
         }
+        List<Apply> leaves = approvedLeaves();
         List<Map<String, Object>> rows = new ArrayList<>();
         for (Student s : courseSpaceMapper.selectMembers(courseId)) {
             Attendance a = byStudent.get(s.getId());
@@ -336,6 +337,8 @@ public class AttendanceSessionService {
             row.put("className", s.getClassName());
             row.put("status", a == null ? null : a.getStatus());
             row.put("bySession", a != null && a.getSessionId() != null && NORMAL.equals(a.getStatus()));
+            // 当天有已批准的请假：名单上提示老师，签到结束时也会记成请假
+            row.put("onLeave", onLeave(leaves, s.getId(), date));
             rows.add(row);
         }
         return rows;

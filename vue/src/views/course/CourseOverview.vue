@@ -191,6 +191,27 @@
       <section class="panel panel--pad relation">
         <span class="pill" :class="relationPill">{{ $t('space.relation.' + overview.relation) }}</span>
         <p class="relation__text">{{ $t('space.relationHint.' + overview.relation) }}</p>
+        <!-- 没选这门课的学生：直接在这里选 -->
+        <template v-if="overview.enroll">
+          <p v-if="overview.enroll.conflict" class="relation__warn">
+            {{ $t('square.conflict', { name: overview.enroll.conflict }) }}
+          </p>
+          <p v-else-if="overview.enroll.seatsLeft != null" class="relation__text num">
+            {{ overview.enroll.seatsLeft > 0 ? $t('square.seatsLeft', { n: overview.enroll.seatsLeft }) : $t('square.full') }}
+          </p>
+          <el-button
+            v-if="!overview.enroll.ended"
+            type="primary"
+            :disabled="!!overview.enroll.conflict || overview.enroll.seatsLeft === 0"
+            :loading="enrolling"
+            @click="enroll"
+          >
+            {{ $t('square.enroll') }}
+          </el-button>
+        </template>
+        <el-button v-else-if="overview.canDrop" size="small" plain :loading="enrolling" @click="drop">
+          {{ $t('square.drop') }}
+        </el-button>
       </section>
     </aside>
 
@@ -260,6 +281,40 @@ const capacityPercent = computed(() => {
 })
 
 const relationPill = computed(() => (relation.value === 'visitor' ? '' : 'pill--brand'))
+
+// ---------- 选课 / 退选（学生） ----------
+const enrolling = ref(false)
+
+const enroll = async () => {
+  enrolling.value = true
+  try {
+    await request.post(`/course/${courseId.value}/enroll`)
+    ElMessage.success(t('square.enrolledMsg', { name: course.value.name }))
+    emit('refresh')
+  } catch {
+    // 满员、冲突等提示已由拦截器统一处理
+  } finally {
+    enrolling.value = false
+  }
+}
+
+const drop = async () => {
+  try {
+    await ElMessageBox.confirm(t('square.dropConfirm', { name: course.value.name }), t('square.drop'), { type: 'warning' })
+  } catch {
+    return
+  }
+  enrolling.value = true
+  try {
+    await request.delete(`/course/${courseId.value}/enroll`)
+    ElMessage.success(t('square.droppedMsg', { name: course.value.name }))
+    emit('refresh')
+  } catch {
+    // 错误提示已由拦截器统一处理
+  } finally {
+    enrolling.value = false
+  }
+}
 
 // ---------- 成绩构成 ----------
 const weightParts = computed(() => {
@@ -761,6 +816,11 @@ const removePost = async (post: Post) => {
 .relation__text {
   font-size: 13px;
   color: var(--xm-text-secondary);
+}
+
+.relation__warn {
+  font-size: 13px;
+  color: var(--xm-warn);
 }
 
 @media (max-width: 960px) {

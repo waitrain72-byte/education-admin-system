@@ -8,6 +8,7 @@ import com.example.entity.Course;
 import com.example.entity.Notice;
 import com.example.service.CourseService;
 import com.example.service.CourseSpaceService;
+import com.example.service.CourseSquareService;
 import com.example.service.CrudService;
 import com.example.service.RecommendService;
 import com.example.service.RoomplanService;
@@ -48,6 +49,9 @@ public class CourseController extends CrudController<Course> {
     @Resource
     private CourseSpaceService courseSpaceService;
 
+    @Resource
+    private CourseSquareService courseSquareService;
+
     @Override
     protected CrudService<Course> getService() {
         return courseService;
@@ -57,6 +61,40 @@ public class CourseController extends CrudController<Course> {
     @GetMapping("/mine")
     public Result mine() {
         return Result.success(workbenchService.myCourses());
+    }
+
+    /** 课程广场：全部课程（默认不含已结课），学生看到的卡片带已选、时间冲突与推荐理由 */
+    @GetMapping("/square")
+    public Result square(@RequestParam(required = false) String keyword,
+                         @RequestParam(required = false) String type,
+                         @RequestParam(required = false) String week,
+                         @RequestParam(required = false) String status,
+                         @RequestParam(defaultValue = "false") boolean available,
+                         @RequestParam(defaultValue = "false") boolean includeEnded) {
+        CourseSquareService.Query query = new CourseSquareService.Query();
+        query.keyword = keyword;
+        query.type = type;
+        query.week = week;
+        query.status = status;
+        query.available = available;
+        query.includeEnded = includeEnded;
+        return Result.success(courseSquareService.square(query));
+    }
+
+    /** 学生选课 */
+    @NoRepeatSubmit(interval = 1000)
+    @RequirePermission("choice:manage")
+    @PostMapping("/{id}/enroll")
+    public Result enroll(@PathVariable Integer id) {
+        return Result.success(courseSquareService.enroll(id));
+    }
+
+    /** 学生退选 */
+    @RequirePermission("choice:manage")
+    @DeleteMapping("/{id}/enroll")
+    public Result drop(@PathVariable Integer id) {
+        courseSquareService.drop(id);
+        return Result.success();
     }
 
     /** 课程空间概览：课程信息、任课教师、选课人数、当前登录人与这门课的关系、简介、权重与待办提醒 */

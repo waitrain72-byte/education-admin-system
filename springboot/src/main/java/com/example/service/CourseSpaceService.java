@@ -81,6 +81,8 @@ public class CourseSpaceService {
     private AttendanceSessionMapper attendanceSessionMapper;
     @Resource
     private MessageService messageService;
+    @Resource
+    private EnrollmentService enrollmentService;
 
     /** 课程（带任课教师姓名）；不存在时报参数错误 */
     public Course requireCourse(Integer courseId) {
@@ -152,8 +154,22 @@ public class CourseSpaceService {
         data.put("relation", relation);
         data.put("intro", course.getIntro());
         data.put("weights", GradebookService.weightMap(GradeCalculator.weightsOf(course)));
+        Account me = TokenUtils.getCurrentUser();
         if (REL_VISITOR.equals(relation)) {
+            // 没选这门课的学生在概览里直接选：给出能不能选、剩几个名额、和哪门课冲突
+            if (RoleEnum.STUDENT.name().equals(me.getRole())) {
+                int count = choiceMapper.countByCourseId(courseId);
+                Map<String, Object> enroll = new LinkedHashMap<>();
+                enroll.put("ended", EnrollmentService.FINISHED.equals(course.getStatus()));
+                enroll.put("seatsLeft", course.getNum() == null ? null : Math.max(0, course.getNum() - count));
+                Course clash = EnrollmentService.conflictOf(course, choiceMapper.selectActiveSlotsByStudentId(me.getId()));
+                enroll.put("conflict", clash == null ? null : clash.getName());
+                data.put("enroll", enroll);
+            }
             return data;
+        }
+        if (REL_STUDENT.equals(relation)) {
+            data.put("canDrop", enrollmentService.canDrop(me.getId(), course));
         }
 
         data.put("signing", isSigning(courseId));
@@ -161,10 +177,9 @@ public class CourseSpaceService {
         List<Homework> submissions = courseSpaceMapper.selectSubmissionsOfCourse(courseId);
         String now = LocalDateTime.now(AppTime.clock()).format(MINUTES);
         if (REL_STUDENT.equals(relation)) {
-            Integer me = TokenUtils.getCurrentUser().getId();
             Set<Integer> done = new HashSet<>();
             for (Homework h : submissions) {
-                if (me.equals(h.getStudentId())) {
+                if (me.getId().equals(h.getStudentId())) {
                     done.add(h.getAssignmentId());
                 }
             }

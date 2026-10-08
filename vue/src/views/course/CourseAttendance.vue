@@ -114,7 +114,10 @@
               <UserAvatar :name="row.name" :avatar="row.avatar" :size="36" />
               <div class="roster__who">
                 <div class="roster__name">{{ row.name }}</div>
-                <div class="roster__sub num">{{ row.username }}</div>
+                <div class="roster__sub num">
+                  {{ row.username }}
+                  <span v-if="row.onLeave && row.status !== '请假'" class="roster__leave">{{ $t('leave.onLeave') }}</span>
+                </div>
               </div>
               <el-dropdown trigger="click" @command="(status: string) => mark(row, status)">
                 <button
@@ -655,6 +658,16 @@ const checkin = async () => {
   border: 0;
   cursor: pointer;
   font-family: inherit;
+}
+
+.roster__leave {
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--xm-info-soft);
+  color: var(--xm-info);
+  font-family: inherit;
+  font-size: 11px;
 }
 
 /* ---------- 学生签到 ---------- */

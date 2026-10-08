@@ -94,6 +94,18 @@ const routes: RouteRecordRaw[] = [
                 ],
             },
             {
+                path: 'square',
+                name: 'Square',
+                meta: { name: 'nav.square' },
+                component: () => import('@/views/square/CourseSquarePage.vue'),
+            },
+            {
+                path: 'schedule',
+                name: 'Schedule',
+                meta: { name: 'nav.schedule', roles: ['STUDENT', 'TEACHER'] },
+                component: () => import('@/views/schedule/SchedulePage.vue'),
+            },
+            {
                 path: 'messages',
                 name: 'Messages',
                 meta: { name: 'nav.messages' },

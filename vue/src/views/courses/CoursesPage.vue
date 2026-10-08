@@ -6,9 +6,10 @@
         <p class="page-sub">{{ $t('courses.sub.' + roleKey) }}</p>
       </div>
       <div class="page-actions">
-        <el-button v-if="role === 'STUDENT'" type="primary" @click="router.push('/legacy/course')">
+        <el-button v-if="role === 'STUDENT'" type="primary" @click="router.push('/square')">
           {{ $t('courses.goSelect') }}
         </el-button>
+        <el-button v-else plain @click="router.push('/square')">{{ $t('nav.square') }}</el-button>
         <el-button v-if="role === 'ADMIN'" type="primary" @click="router.push('/admin/courses')">
           {{ $t('courses.openCourse') }}
         </el-button>
@@ -122,42 +123,6 @@ onMounted(async () => {
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 16px;
-}
-
-.chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--xm-border);
-  border-radius: 999px;
-  background: var(--xm-bg-card);
-  color: var(--xm-text-regular);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.chip:hover {
-  border-color: var(--xm-brand);
-}
-
-.chip.is-on {
-  border-color: var(--xm-brand);
-  background: var(--xm-brand);
-  color: var(--xm-on-brand);
-}
-
-.chip__count {
-  font-size: 12px;
-  opacity: 0.75;
 }
 
 .toolbar__search {

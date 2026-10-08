@@ -121,6 +121,43 @@
     color: var(--xm-brand);
 }
 
+/* ---------- 筛选胶囊（课程列表、课程广场共用） ---------- */
+.chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--xm-border);
+    border-radius: 999px;
+    background: var(--xm-bg-card);
+    color: var(--xm-text-regular);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.chip:hover {
+    border-color: var(--xm-brand);
+}
+
+.chip.is-on {
+    border-color: var(--xm-brand);
+    background: var(--xm-brand);
+    color: var(--xm-on-brand);
+}
+
+.chip__count {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
 /* ---------- 数字 ---------- */
 .num {
     font-family: var(--xm-font-num);

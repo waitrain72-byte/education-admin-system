@@ -7,6 +7,7 @@ export default {
         home: 'Home',
         courses: 'Courses',
         schedule: 'Schedule',
+        square: 'Catalogue',
         messages: 'Messages',
         admin: 'Admin',
         more: 'More',

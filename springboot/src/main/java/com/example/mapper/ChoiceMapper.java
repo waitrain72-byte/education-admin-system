@@ -2,6 +2,7 @@ package com.example.mapper;
 
 import com.example.entity.Choice;
 import com.example.entity.Course;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -24,8 +25,16 @@ public interface ChoiceMapper extends CrudMapper<Choice> {
      * 该学生已选且未结课课程的上课时段（一次 join 取回，替代「逐条 selectById」的 N+1）。
      * 返回的 Course 只保证 name/week/segment 可用，供选课时间冲突判断使用。
      */
-    @Select("select c.name, c.week, c.segment from choice ch "
+    @Select("select c.id, c.name, c.week, c.segment from choice ch "
             + "join course c on ch.course_id = c.id "
             + "where ch.student_id = #{studentId} and ifnull(c.status, '') <> '已结课'")
     List<Course> selectActiveSlotsByStudentId(Integer studentId);
+
+    /** 该学生选了的全部课程 ID（课程广场标「已选」用） */
+    @Select("select course_id from choice where student_id = #{studentId}")
+    List<Integer> selectCourseIdsByStudentId(Integer studentId);
+
+    /** 退选：同一学生同一门课的选课记录（历史数据里可能重复）一并删除 */
+    @Delete("delete from choice where student_id = #{studentId} and course_id = #{courseId}")
+    int deleteByStudentAndCourse(@Param("studentId") Integer studentId, @Param("courseId") Integer courseId);
 }

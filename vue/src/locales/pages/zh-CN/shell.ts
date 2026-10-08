@@ -7,6 +7,7 @@ export default {
         home: '首页',
         courses: '课程',
         schedule: '日程',
+        square: '选课广场',
         messages: '消息',
         admin: '教务后台',
         more: '全部功能',

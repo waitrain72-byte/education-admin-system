@@ -6,11 +6,9 @@ import com.example.common.enums.SegmentEnum;
 import com.example.common.enums.WeekEnum;
 import com.example.entity.Account;
 import com.example.entity.Choice;
-import com.example.entity.Course;
 import com.example.entity.Curriculum;
 import com.example.exception.CustomException;
 import com.example.mapper.ChoiceMapper;
-import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
 import com.example.utils.TokenUtils;
 import org.springframework.stereotype.Service;
@@ -31,7 +29,7 @@ public class ChoiceService extends CrudService<Choice> {
     @Resource
     private ChoiceMapper choiceMapper;
     @Resource
-    private CourseMapper courseMapper;
+    private EnrollmentService enrollmentService;
 
     @Override
     protected CrudMapper<Choice> getMapper() {
@@ -39,34 +37,48 @@ public class ChoiceService extends CrudService<Choice> {
     }
 
     /**
-     * 新增（选课）：先判断课程是否存在/是否满员，再判断与该学生已选课程是否有上课时间冲突
+     * 新增（选课）：规则见 {@link EnrollmentService#enroll}。学生只能给自己选；管理员可以替学生选。
      */
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void add(Choice choice) {
-        // 当前选的课：带行锁读取，锁住该课程行直到事务提交，避免并发选课同时读到「未满」而超额
-        // （不存在时明确报参数错误，避免 NPE 落 500）
-        Course course = courseMapper.selectByIdForUpdate(choice.getCourseId());
-        if (course == null) {
-            throw new CustomException(ResultCodeEnum.PARAM_ERROR);
+        Account current = TokenUtils.getCurrentUser();
+        Integer studentId = RoleEnum.STUDENT.name().equals(current.getRole()) ? current.getId() : choice.getStudentId();
+        if (!RoleEnum.STUDENT.name().equals(current.getRole()) && !RoleEnum.ADMIN.name().equals(current.getRole())) {
+            throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
         }
-        // 1. 判断该门课是否已选满：用 >= 而不是相等判断，否则历史数据一旦超过 num 就再也拦不住
-        if (course.getNum() != null && choiceMapper.countByCourseId(choice.getCourseId()) >= course.getNum()) {
-            throw new CustomException(ResultCodeEnum.COURSE_NUM_ERROR);
-        }
-        // 2. 判断该学生所选课程与他之前选的课时间是否冲突（已结课课程不再占用时段，由 SQL 过滤）
-        for (Course selected : choiceMapper.selectActiveSlotsByStudentId(choice.getStudentId())) {
-            if (isSameSlot(course, selected)) {
-                throw new CustomException("-1", "您之前已经选过" + selected.getName() + ", 与该门课的上课时间冲突，请重新选择");
-            }
-        }
-        choiceMapper.insert(choice);
+        enrollmentService.enroll(studentId, choice.getCourseId());
     }
 
-    /** 两门课是否占用同一「星期 + 大节」时段 */
-    private boolean isSameSlot(Course a, Course b) {
-        return a.getWeek() != null && a.getSegment() != null
-                && a.getWeek().equals(b.getWeek()) && a.getSegment().equals(b.getSegment());
+    /**
+     * 删除（退选）：规则见 {@link EnrollmentService#drop}。学生只能退自己的课；管理员可以替学生退。
+     */
+    @Override
+    public void deleteById(Integer id) {
+        Choice row = id == null ? null : choiceMapper.selectById(id);
+        if (row == null) {
+            return;
+        }
+        Account current = TokenUtils.getCurrentUser();
+        boolean student = RoleEnum.STUDENT.name().equals(current.getRole());
+        if (student && !current.getId().equals(row.getStudentId())) {
+            throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+        }
+        if (!student && !RoleEnum.ADMIN.name().equals(current.getRole())) {
+            throw new CustomException(ResultCodeEnum.PERMISSION_DENIED_ERROR);
+        }
+        enrollmentService.drop(row.getStudentId(), row.getCourseId());
+    }
+
+    /** 批量退选：逐条走 {@link #deleteById}，每一条都做归属与规则检查 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBatch(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        for (Integer id : ids) {
+            deleteById(id);
+        }
     }
 
     /**

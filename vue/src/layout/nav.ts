@@ -15,12 +15,13 @@ export interface NavItem {
 
 const MAIN_NAV: Array<NavItem & { roles?: string[] }> = [
     { key: 'home', label: 'nav.home', to: '/home', prefixes: ['/home'] },
-    { key: 'courses', label: 'nav.courses', to: '/courses', prefixes: ['/courses', '/course/'] },
+    { key: 'courses', label: 'nav.courses', to: '/courses', prefixes: ['/courses', '/course/', '/square'] },
+    { key: 'schedule', label: 'nav.schedule', to: '/schedule', prefixes: ['/schedule'], roles: ['STUDENT', 'TEACHER'] },
     { key: 'messages', label: 'nav.messages', to: '/messages', prefixes: ['/messages'] },
     { key: 'admin', label: 'nav.admin', to: '/admin', prefixes: ['/admin'], roles: ['ADMIN'] },
 ]
 
-/** 顶部主导航：首页 / 课程 / 消息，管理员多一个「教务后台」 */
+/** 顶部主导航：首页 / 课程 / 日程 / 消息（日程只给学生和老师），管理员多一个「教务后台」 */
 export function mainNav(role: string): NavItem[] {
     return MAIN_NAV.filter((item) => !item.roles || item.roles.includes(role))
 }

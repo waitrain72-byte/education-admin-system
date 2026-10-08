@@ -31,6 +31,12 @@ public enum ResultCodeEnum {
     EVAL_NOT_OPEN_ERROR("5020","课程结课后才能评价"),
     EVAL_ALREADY_ERROR("5021","你已经评价过这门课了"),
     HOMEWORK_SCORE_ERROR("5022","分数需在 0 到这份作业的满分之间"),
+    COURSE_ENDED_ERROR("5023","这门课已结课，不能再选"),
+    ALREADY_ENROLLED_ERROR("5024","你已经选了这门课"),
+    DROP_LOCKED_ERROR("5025","这门课已结课或成绩已发布，不能退选"),
+    SCHEDULE_CONFLICT_ERROR("5026","和已选的课上课时间冲突"),
+    LEAVE_LOCKED_ERROR("5027","请假申请已审核，不能再修改或撤回"),
+    LEAVE_RANGE_ERROR("5028","请假日期不正确：最早可补请 7 天前的假，一次最多连续 30 天"),
     CAPTCHA_ERROR("402", "验证码错误"),
     PERMISSION_DENIED_ERROR("403", "无权限执行该操作"),
     ;
