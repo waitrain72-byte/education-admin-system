@@ -20,7 +20,15 @@ export const DOC_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx
 export interface PickedFile {
   path: string
   size: number
+  /** 原文件名（作业附件、课程资料按原名显示；相册图片没有原名时取临时路径的文件名） */
+  name: string
 }
+
+/** 临时路径里的文件名（相册图片没有原文件名时用） */
+const baseName = (path: string): string =>
+  String(path || '')
+    .split(/[\\/]/)
+    .pop() || ''
 
 const isCancel = (err: any): boolean => /cancel/i.test((err && err.errMsg) || '')
 
@@ -33,45 +41,77 @@ function tooLarge(size: number): boolean {
   return false
 }
 
-/** 从相册 / 相机选一张图片（压缩图）；用户取消或超限时 resolve null */
-export function chooseImage(): Promise<PickedFile | null> {
+/**
+ * 调起一个选择接口，返回选中的文件（超限的提示后剔除；用户取消返回空数组）。
+ * - chooseImage：相册 / 相机（压缩图），所有端都有
+ * - chooseMessageFile：微信聊天记录里的文件，只有微信小程序有
+ * - chooseFile：本机文件，只有 H5 / App 有
+ */
+function pickFrom(api: 'chooseImage' | 'chooseMessageFile' | 'chooseFile', count: number): Promise<PickedFile[]> {
   return new Promise((resolve) => {
-    uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
+    const options: Record<string, any> = {
+      count,
       success: (res: any) => {
-        const file = (res.tempFiles && res.tempFiles[0]) || { path: res.tempFilePaths[0], size: 0 }
-        resolve(tooLarge(file.size) ? null : { path: file.path, size: file.size })
+        const files: any[] =
+          res.tempFiles && res.tempFiles.length
+            ? res.tempFiles
+            : (res.tempFilePaths || []).map((path: string) => ({ path, size: 0 }))
+        resolve(
+          files
+            .filter((file) => !tooLarge(file.size))
+            .map((file) => ({ path: file.path, size: file.size, name: file.name || baseName(file.path) })),
+        )
       },
       fail: (err: any) => {
         if (!isCancel(err)) uni.showToast({ title: t('request.failed'), icon: 'none' })
-        resolve(null)
+        resolve([])
       },
-    })
+    }
+    if (api === 'chooseImage') options.sizeType = ['compressed']
+    if (api === 'chooseMessageFile') {
+      options.type = 'file'
+      options.extension = DOC_EXTENSIONS
+    }
+    ;(uni as any)[api](options)
   })
 }
+
+const first = (list: PickedFile[]): PickedFile | null => list[0] || null
+
+/** 从相册 / 相机选一张图片（压缩图）；用户取消或超限时 resolve null */
+export const chooseImage = (): Promise<PickedFile | null> => pickFrom('chooseImage', 1).then(first)
 
 /** 当前平台能否从微信聊天记录选文件（仅微信小程序提供 chooseMessageFile） */
 export const canChooseChatFile = (): boolean => typeof (uni as any).chooseMessageFile === 'function'
 
 /** 从微信聊天记录选一个文档（PDF / Word / Excel …）；用户取消或超限时 resolve null */
-export function chooseChatFile(): Promise<PickedFile | null> {
+export const chooseChatFile = (): Promise<PickedFile | null> => pickFrom('chooseMessageFile', 1).then(first)
+
+/** 当前平台能否从本机选文件（H5 / App 提供 chooseFile；微信小程序没有，只能从聊天记录选） */
+export const canChooseDeviceFile = (): boolean => typeof (uni as any).chooseFile === 'function'
+
+/**
+ * 选附件（作业、课程资料）：列出当前平台能用的来源让用户挑——
+ * 微信小程序是「聊天记录里的文件 / 相册图片」，H5 是「本机文件 / 相册图片」。
+ * 只有一个来源时直接打开；用户取消时返回空数组。count 是最多选几个。
+ */
+export function pickAttachments(count = 1): Promise<PickedFile[]> {
+  const sources: Array<{ label: string; api: 'chooseImage' | 'chooseMessageFile' | 'chooseFile' }> = []
+  if (canChooseChatFile()) sources.push({ label: t('mobile.file.fromChat'), api: 'chooseMessageFile' })
+  if (canChooseDeviceFile()) sources.push({ label: t('mobile.file.fromDevice'), api: 'chooseFile' })
+  sources.push({ label: t('mobile.file.fromAlbum'), api: 'chooseImage' })
+  if (sources.length === 1) return pickFrom(sources[0].api, count)
   return new Promise((resolve) => {
-    ;(uni as any).chooseMessageFile({
-      count: 1,
-      type: 'file',
-      extension: DOC_EXTENSIONS,
-      success: (res: any) => {
-        const file = res.tempFiles[0]
-        resolve(tooLarge(file.size) ? null : { path: file.path, size: file.size })
-      },
-      fail: (err: any) => {
-        if (!isCancel(err)) uni.showToast({ title: t('request.failed'), icon: 'none' })
-        resolve(null)
-      },
+    uni.showActionSheet({
+      itemList: sources.map((s) => s.label),
+      success: (res: any) => resolve(pickFrom(sources[res.tapIndex].api, count)),
+      fail: () => resolve([]),
     })
   })
 }
+
+/** 选一个附件；用户取消时 resolve null */
+export const pickAttachment = (): Promise<PickedFile | null> => pickAttachments(1).then(first)
 
 export interface UploadOptions {
   /** 是否显示统一加载动画，默认开启；页面自己展示进度时可关闭 */

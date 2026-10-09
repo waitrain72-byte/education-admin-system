@@ -22,6 +22,32 @@
     { "path": "pages/person/person", "style": { "navigationBarTitleText": "个人资料" } },
     { "path": "pages/password/password", "style": { "navigationBarTitleText": "修改密码" } }
   ],
+  "subPackages": [
+    {
+      "root": "pages-course",
+      "pages": [
+        {
+          "path": "space/space",
+          "style": { "navigationBarTitleText": "课程", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "assignment/assignment",
+          "style": { "navigationBarTitleText": "作业", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "square/square",
+          "style": { "navigationBarTitleText": "选课广场", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "transcript/transcript",
+          "style": { "navigationBarTitleText": "成绩单", "enablePullDownRefresh": true }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/courses/courses": { "network": "all", "packages": ["pages-course"] }
+  },
   "tabBar": {
     "color": "@tabColor",
     "selectedColor": "@tabSelectedColor",

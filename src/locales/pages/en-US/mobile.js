@@ -35,6 +35,18 @@ export default {
   mobile: {
     consoleNote:
       'Teaching records (enrolments, grades, attendance, homework, ratings), permissions and logs are managed in the web console on a computer.',
+    file: {
+      fromChat: 'Choose a file from WeChat chats',
+      fromDevice: 'Choose a file on this device',
+      fromAlbum: 'Choose a photo',
+      uploading: 'Uploading {p}%',
+      open: 'Open',
+    },
+    datetime: {
+      date: 'Pick a date',
+      time: 'Pick a time',
+      incomplete: 'Please pick both a date and a time',
+    },
   },
 
   // Display text for timetable fields (stored in Chinese in the database)

@@ -75,7 +75,7 @@ export const checkinApi = {
   finish: (courseId, sessionId, opts) =>
     post(`/course/${courseId}/attendance/sessions/${sessionId}/finish`, undefined, opts),
   checkin: (courseId, code, opts) => post(`/course/${courseId}/attendance/checkin`, { code }, opts),
-  /** 老师手工改考勤：{ date, records: [{ studentId, status }] } */
+  /** 老师手工改一个学生某天的考勤：{ studentId, time: 'yyyy-MM-dd', status } */
   saveRecords: (courseId, data, opts) => put(`/course/${courseId}/attendance/records`, data, opts),
 }
 

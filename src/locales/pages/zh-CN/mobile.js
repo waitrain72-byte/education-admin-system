@@ -34,6 +34,18 @@ export default {
 
   mobile: {
     consoleNote: '选课、成绩、考勤、作业、评价等教学记录，以及权限与日志，请在电脑上的教务后台处理',
+    file: {
+      fromChat: '从微信聊天记录选择文件',
+      fromDevice: '从本机选择文件',
+      fromAlbum: '从相册选择图片',
+      uploading: '上传中 {p}%',
+      open: '打开',
+    },
+    datetime: {
+      date: '选择日期',
+      time: '选择时间',
+      incomplete: '请把日期和时间都选上',
+    },
   },
 
   // 课表字段（库里按中文存）的显示文字，英文界面下也能读
