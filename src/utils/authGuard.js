@@ -1,4 +1,5 @@
 import { useUserStore } from '@/stores/user'
+import { t } from '@/i18n'
 
 /**
  * 登录守卫（对照 unibest / uniapp-vue3-template 的做法：路由拦截 + 页面级兜底两层）。
@@ -44,6 +45,27 @@ export function isPublicPage(url) {
 export function ensureLoggedIn() {
   if (isLoggedIn()) return true
   uni.reLaunch({ url: LOGIN_PAGE })
+  return false
+}
+
+/**
+ * 只给某些角色用的页面（教务后台）：未登录跳登录页；角色不对提示无权限并返回上一页（没有上一页回首页）。
+ * 后端接口有同样的角色校验，这里只是不让人看到一个点什么都报 403 的页面。
+ */
+export function ensureRole(roles) {
+  if (!ensureLoggedIn()) return false
+  let role = ''
+  try {
+    role = useUserStore().role
+  } catch {
+    // Pinia 未就绪时按无权限处理
+  }
+  if (roles.includes(role)) return true
+  uni.showToast({ title: t('forbidden.message'), icon: 'none' })
+  setTimeout(() => {
+    if (getCurrentPages().length > 1) uni.navigateBack()
+    else uni.switchTab({ url: '/pages/home/home' })
+  }, 800)
   return false
 }
 

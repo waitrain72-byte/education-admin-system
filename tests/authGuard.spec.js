@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-const { authInterceptor, ensureLoggedIn, installAuthInterceptor, isPublicPage } = await import('@/utils/authGuard')
+const { authInterceptor, ensureLoggedIn, ensureRole, installAuthInterceptor, isPublicPage } =
+  await import('@/utils/authGuard')
 const { useUserStore } = await import('@/stores/user')
 const { clearStorage } = await import('./setup')
 
@@ -56,6 +57,31 @@ describe('ensureLoggedIn 页面级兜底', () => {
     useUserStore().updateUser({ id: 1, token: 'tk' })
     expect(ensureLoggedIn()).toBe(true)
     expect(uniMock.reLaunch).not.toHaveBeenCalled()
+  })
+})
+
+describe('ensureRole 只给某些角色的页面', () => {
+  it('角色对得上：返回 true，不提示', () => {
+    useUserStore().updateUser({ id: 1, token: 'tk', role: 'ADMIN' })
+    expect(ensureRole(['ADMIN'])).toBe(true)
+    expect(uniMock.showToast).not.toHaveBeenCalled()
+  })
+
+  it('角色不对：提示无权限，稍后返回上一页（没有上一页回首页）', () => {
+    vi.useFakeTimers()
+    useUserStore().updateUser({ id: 2, token: 'tk', role: 'STUDENT' })
+    globalThis.getCurrentPages = () => [{ route: 'pages-admin/people/people' }]
+    expect(ensureRole(['ADMIN'])).toBe(false)
+    expect(uniMock.showToast).toHaveBeenCalled()
+    vi.advanceTimersByTime(1000)
+    expect(uniMock.switchTab).toHaveBeenCalledWith({ url: '/pages/home/home' })
+    delete globalThis.getCurrentPages
+    vi.useRealTimers()
+  })
+
+  it('未登录：先跳登录页', () => {
+    expect(ensureRole(['ADMIN'])).toBe(false)
+    expect(uniMock.reLaunch).toHaveBeenCalledWith({ url: '/pages/login/login' })
   })
 })
 

@@ -35,6 +35,7 @@ export default {
   mobile: {
     consoleNote:
       'Teaching records (enrolments, grades, attendance, homework, ratings), permissions and logs are managed in the web console on a computer.',
+    warningNormal: 'Normal',
     file: {
       fromChat: 'Choose a file from WeChat chats',
       fromDevice: 'Choose a file on this device',

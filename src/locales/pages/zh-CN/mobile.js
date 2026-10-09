@@ -34,6 +34,7 @@ export default {
 
   mobile: {
     consoleNote: '选课、成绩、考勤、作业、评价等教学记录，以及权限与日志，请在电脑上的教务后台处理',
+    warningNormal: '正常',
     file: {
       fromChat: '从微信聊天记录选择文件',
       fromDevice: '从本机选择文件',

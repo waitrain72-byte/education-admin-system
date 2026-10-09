@@ -43,10 +43,46 @@
           "style": { "navigationBarTitleText": "成绩单", "enablePullDownRefresh": true }
         }
       ]
+    },
+    {
+      "root": "pages-admin",
+      "pages": [
+        {
+          "path": "courses/courses",
+          "style": { "navigationBarTitleText": "课程管理", "enablePullDownRefresh": true }
+        },
+        { "path": "course-form/course-form", "style": { "navigationBarTitleText": "开课" } },
+        {
+          "path": "rooms/rooms",
+          "style": { "navigationBarTitleText": "教室", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "leaves/leaves",
+          "style": { "navigationBarTitleText": "请假审批", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "exams/exams",
+          "style": { "navigationBarTitleText": "考试安排", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "warnings/warnings",
+          "style": { "navigationBarTitleText": "学业预警", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "org/org",
+          "style": { "navigationBarTitleText": "组织架构", "enablePullDownRefresh": true }
+        },
+        {
+          "path": "people/people",
+          "style": { "navigationBarTitleText": "人员", "enablePullDownRefresh": true }
+        },
+        { "path": "semester/semester", "style": { "navigationBarTitleText": "学期设置" } }
+      ]
     }
   ],
   "preloadRule": {
-    "pages/courses/courses": { "network": "all", "packages": ["pages-course"] }
+    "pages/courses/courses": { "network": "all", "packages": ["pages-course"] },
+    "pages/schedule/schedule": { "network": "all", "packages": ["pages-admin"] }
   },
   "tabBar": {
     "color": "@tabColor",
