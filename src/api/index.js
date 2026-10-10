@@ -14,12 +14,10 @@ import { createCrudApi } from './crud'
 export { createCrudApi } from './crud'
 export { accountApi } from './account'
 
-/* ---------- 首页、搜索、学期、消息 ---------- */
+/* ---------- 首页、学期、消息 ---------- */
 export const workbenchApi = {
   /** 分角色首页数据：今天的课、待办、学分绩点、预警、管理员指标等（带服务器当前时间 now） */
   summary: (opts) => get('/workbench/summary', undefined, opts),
-  /** 全局搜索：课程、通知、学生、教师 */
-  search: (q, opts) => get('/search', { q }, opts),
 }
 
 export const configApi = {
@@ -63,8 +61,6 @@ export const courseApi = {
   updateIntro: (id, intro, opts) => put(`/course/${id}/intro`, { intro }, opts),
   /** 某时段空着、坐得下的教室（按容量就近排序）：{ week, segment, num?, typeFilter?, excludeId? } */
   roomFree: (params, opts) => get('/course/roomFree', params, opts),
-  /** 为当前学生推荐课程（协同过滤）：{ limit? } */
-  recommend: (params, opts) => get('/course/recommend', params, opts),
 }
 
 /** 课堂签到与考勤（课程空间「签到」页） */
@@ -132,9 +128,6 @@ export const applyApi = {
 }
 
 export const scoreApi = {
-  ...createCrudApi('/score'),
-  /** 成绩分布统计 */
-  getLine: (opts) => get('/score/getLine', undefined, opts),
   /** 学生本人的成绩单：所有课的已发布成绩与学分、绩点汇总 */
   transcript: (opts) => get('/score/transcript', undefined, opts),
 }
@@ -143,18 +136,6 @@ export const scoreApi = {
 export const warningApi = {
   list: (opts) => get('/warning/list', undefined, opts),
   notify: (studentId, opts) => post(`/warning/notify/${studentId}`, undefined, opts),
-}
-
-/* ---------- 旧版接口（教学记录类页面在用，页面替换完后删除） ---------- */
-export const choiceApi = {
-  ...createCrudApi('/choice'),
-  getCurriculum: (opts) => get('/choice/getCurriculum', undefined, opts),
-}
-export const commentApi = createCrudApi('/comment')
-export const homeworkApi = createCrudApi('/homework')
-export const attendanceApi = {
-  ...createCrudApi('/attendance'),
-  getPie: (opts) => get('/attendance/getPie', undefined, opts),
 }
 
 /* ---------- 人员：管理员 / 教师 / 学生分表存储，另有重置密码 ---------- */

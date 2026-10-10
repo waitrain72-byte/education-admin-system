@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearStorage } from './setup'
 
-const { chooseImage, chooseChatFile, pickAttachments, uploadFile, MAX_UPLOAD_MB, DOC_EXTENSIONS } =
+const { chooseImage, pickAttachment, pickAttachments, uploadFile, MAX_UPLOAD_MB, DOC_EXTENSIONS } =
   await import('@/utils/upload')
 const { ApiError } = await import('@/utils/request')
 const { useUserStore } = await import('@/stores/user')
@@ -66,7 +66,7 @@ describe('uploadFile 上传', () => {
   })
 })
 
-describe('chooseImage / chooseChatFile 选择文件', () => {
+describe('chooseImage 选择图片', () => {
   it('超过大小上限：提示并返回 null，不进入上传', async () => {
     uniMock.chooseImage.mockImplementationOnce((o) =>
       o.success({ tempFiles: [{ path: 'big.png', size: (MAX_UPLOAD_MB + 1) * 1024 * 1024 }] }),
@@ -81,19 +81,6 @@ describe('chooseImage / chooseChatFile 选择文件', () => {
     expect(uniMock.showToast).not.toHaveBeenCalled()
   })
 
-  it('聊天文件：按后端白名单限制扩展名，带回原文件名', async () => {
-    uniMock.chooseMessageFile = vi.fn((o) =>
-      o.success({ tempFiles: [{ path: 'wxfile://tmp_3f2a.pdf', size: 1024, name: '第6章 集合框架.pdf' }] }),
-    )
-    await expect(chooseChatFile()).resolves.toEqual({
-      path: 'wxfile://tmp_3f2a.pdf',
-      size: 1024,
-      name: '第6章 集合框架.pdf',
-    })
-    expect(uniMock.chooseMessageFile.mock.calls[0][0].extension).toEqual(DOC_EXTENSIONS)
-    delete uniMock.chooseMessageFile
-  })
-
   it('相册图片没有原文件名：取临时路径的文件名', async () => {
     uniMock.chooseImage.mockImplementationOnce((o) =>
       o.success({ tempFiles: [{ path: 'wxfile://tmp/abc.png', size: 10 }] }),
@@ -103,6 +90,20 @@ describe('chooseImage / chooseChatFile 选择文件', () => {
 })
 
 describe('pickAttachments 选附件', () => {
+  it('聊天文件：按后端白名单限制扩展名，带回原文件名', async () => {
+    uniMock.chooseMessageFile = vi.fn((o) =>
+      o.success({ tempFiles: [{ path: 'wxfile://tmp_3f2a.pdf', size: 1024, name: '第6章 集合框架.pdf' }] }),
+    )
+    uniMock.showActionSheet = vi.fn((o) => o.success({ tapIndex: 0 }))
+    await expect(pickAttachment()).resolves.toEqual({
+      path: 'wxfile://tmp_3f2a.pdf',
+      size: 1024,
+      name: '第6章 集合框架.pdf',
+    })
+    expect(uniMock.chooseMessageFile.mock.calls[0][0].extension).toEqual(DOC_EXTENSIONS)
+    delete uniMock.chooseMessageFile
+  })
+
   it('只有相册一个来源时直接打开，不弹菜单', async () => {
     uniMock.chooseImage.mockImplementationOnce((o) => o.success({ tempFiles: [{ path: 'a.png', size: 1 }] }))
     uniMock.showActionSheet = vi.fn()

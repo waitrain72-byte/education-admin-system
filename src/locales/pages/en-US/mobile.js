@@ -1,7 +1,6 @@
 /**
- * Mini-program-only strings: the tab bar and mobile-specific pages and hints,
- * plus login / register strings the web core pack gained in the redesign (same keys as the web).
- * Deep-merged with shell / space / campus / console (modules shared with the web).
+ * Mini-program-only strings: the tab bar, mobile-specific pages and hints, and display text for timetable fields.
+ * Deep-merged with groupA/B/C and shell / space / campus / console (modules shared with the web).
  */
 export default {
   tab: {
@@ -11,25 +10,6 @@ export default {
     console: 'Admin',
     messages: 'Messages',
     mine: 'Me',
-  },
-
-  login: {
-    tagline: 'Courses, schedule and messages in one place',
-    heading: 'Sign in',
-    hint: 'Enter your account and password. We work out whether you are a student, teacher or admin.',
-    account: 'Account',
-    password: 'Password',
-    captcha: 'CAPTCHA',
-    captchaAlt: 'CAPTCHA image, tap for a new one',
-    pickRole: 'Choose who you are signing in as',
-    pickRoleHint: 'This account belongs to more than one role. Choose one, then enter a new CAPTCHA.',
-    welcomeBack: 'Welcome back, {name}',
-  },
-
-  register: {
-    heading: 'Create a student account',
-    hint: 'Teacher and administrator accounts are created by the academic office',
-    confirm: 'Confirm password',
   },
 
   mobile: {

@@ -4,7 +4,6 @@ import {
   examCountdown,
   countdownTag,
   countdownTagClass,
-  sortByExamTime,
   splitExamTime,
   joinExamTime,
   isCompleteExamTime,
@@ -74,23 +73,6 @@ describe('countdownTag 文案与配色', () => {
     expect(countdownTagClass({ status: 'upcoming', days: 4 })).toBe('xm-tag-warning')
     expect(countdownTagClass({ status: 'upcoming', days: 7 })).toBe('xm-tag-warning')
     expect(countdownTagClass({ status: 'upcoming', days: 8 })).toBe('xm-tag-brand')
-  })
-})
-
-describe('sortByExamTime 首页排序', () => {
-  it('未结束的由近到远 → 已结束的（刚结束的在前）→ 没有考试时间的保持原顺序；不修改原数组', () => {
-    const rows = [
-      { id: 1, examTime: null },
-      { id: 2, examTime: '2026-09-20 09:00' },
-      { id: 3, examTime: '2026-11-02 09:00' },
-      { id: 4, examTime: '2026-09-25 08:00' },
-      { id: 5, examTime: '' },
-      { id: 6, examTime: '2024-11-29 19:00' },
-      { id: 7, examTime: '2026-09-26 08:30' },
-    ]
-    expect(sortByExamTime(rows, NOW).map((r) => r.id)).toEqual([4, 7, 3, 2, 6, 1, 5])
-    expect(rows.map((r) => r.id)).toEqual([1, 2, 3, 4, 5, 6, 7])
-    expect(sortByExamTime(undefined, NOW)).toEqual([])
   })
 })
 

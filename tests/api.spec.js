@@ -46,7 +46,7 @@ describe('createCrudApi：与后端 CrudController 的 7 个标准接口一一�
 })
 
 describe('业务模块：标准接口 + 各 Controller 的额外接口', () => {
-  it('16 个业务模块都具备标准接口', () => {
+  it('增删改查类模块都具备标准接口', () => {
     const modules = [
       'noticeApi',
       'examplanApi',
@@ -55,12 +55,7 @@ describe('业务模块：标准接口 + 各 Controller 的额外接口', () => {
       'specialityApi',
       'classesApi',
       'courseApi',
-      'choiceApi',
-      'scoreApi',
-      'commentApi',
       'applyApi',
-      'homeworkApi',
-      'attendanceApi',
       'adminApi',
       'teacherApi',
       'studentApi',
@@ -74,19 +69,67 @@ describe('业务模块：标准接口 + 各 Controller 的额外接口', () => {
     expect(req.get).toHaveBeenCalledWith('/course/selectPage', { pageNum: 1 }, undefined)
   })
 
-  it('额外接口的路径与参数', () => {
+  it('课程与课程广场：我的课程、广场、选课 / 退选、空闲教室', () => {
+    api.courseApi.mine(SILENT)
     api.courseApi.roomFree({ week: '星期一', segment: 's1' }, SILENT)
-    api.courseApi.recommend({ limit: 4 }, SILENT)
-    api.choiceApi.getCurriculum(SILENT)
-    api.attendanceApi.getPie(SILENT)
-    api.scoreApi.getLine(SILENT)
+    api.courseApi.square({ keyword: '数据' }, SILENT)
+    api.courseApi.enroll(8)
+    api.courseApi.drop(8)
     expect(req.get.mock.calls).toEqual([
+      ['/course/mine', undefined, SILENT],
       ['/course/roomFree', { week: '星期一', segment: 's1' }, SILENT],
-      ['/course/recommend', { limit: 4 }, SILENT],
-      ['/choice/getCurriculum', undefined, SILENT],
-      ['/attendance/getPie', undefined, SILENT],
-      ['/score/getLine', undefined, SILENT],
+      ['/course/square', { keyword: '数据' }, SILENT],
     ])
+    expect(req.post).toHaveBeenCalledWith('/course/8/enroll', undefined, undefined)
+    expect(req.del).toHaveBeenCalledWith('/course/8/enroll', undefined, undefined)
+  })
+
+  it('课程空间：概览、公告、签到、作业、成绩册、评价、资料都挂在 /course/{id} 下', () => {
+    api.courseApi.overview(8, SILENT)
+    api.courseApi.updateIntro(8, '简介')
+    api.checkinApi.view(8, { date: '2026-10-08' }, SILENT)
+    api.checkinApi.checkin(8, '1234')
+    api.checkinApi.saveRecords(8, { studentId: 1, time: '2026-10-08', status: '迟到' })
+    api.assignmentApi.submit(8, 5, { content: 'x' })
+    api.assignmentApi.grade(8, 31, { score: 18 })
+    api.gradebookApi.publish(8)
+    api.evaluationApi.submit(8, { attitude: 5 })
+    api.resourceApi.remove(8, 3)
+    expect(req.get.mock.calls).toEqual([
+      ['/course/8/overview', undefined, SILENT],
+      ['/course/8/attendance', { date: '2026-10-08' }, SILENT],
+    ])
+    expect(req.put.mock.calls).toEqual([
+      ['/course/8/intro', { intro: '简介' }, undefined],
+      ['/course/8/attendance/records', { studentId: 1, time: '2026-10-08', status: '迟到' }, undefined],
+      ['/course/8/assignments/submissions/31', { score: 18 }, undefined],
+    ])
+    expect(req.post.mock.calls).toEqual([
+      ['/course/8/attendance/checkin', { code: '1234' }, undefined],
+      ['/course/8/assignments/5/submit', { content: 'x' }, undefined],
+      ['/course/8/gradebook/publish', undefined, undefined],
+      ['/course/8/evaluations', { attitude: 5 }, undefined],
+    ])
+    expect(req.del).toHaveBeenCalledWith('/course/8/resources/3', undefined, undefined)
+  })
+
+  it('首页、日程、消息、请假、成绩单、人员', () => {
+    api.workbenchApi.summary(SILENT)
+    api.scheduleApi.month({ month: '2026-10' }, SILENT)
+    api.messageApi.page({ pageNum: 1, pageSize: 10, unreadOnly: true }, SILENT)
+    api.applyApi.preview({ from: '2026-10-08', days: 2 }, SILENT)
+    api.scoreApi.transcript(SILENT)
+    api.peopleApi.students({ classId: 2, pageNum: 1, pageSize: 10 }, SILENT)
+    api.messageApi.readAll()
+    expect(req.get.mock.calls.map((c) => c[0])).toEqual([
+      '/workbench/summary',
+      '/schedule/month',
+      '/message/page',
+      '/apply/preview',
+      '/score/transcript',
+      '/people/students',
+    ])
+    expect(req.put).toHaveBeenCalledWith('/message/readAll', undefined, undefined)
   })
 
   it('三类账号：重置密码走各自的表；userApiOf 按角色取接口', () => {

@@ -1,6 +1,9 @@
 /**
- * 核心语言包（与 Web 端词条键保持一致，便于两端共用文案）。
- * 业务页面词条在各页面开发时补充到 pages.* 命名空间。
+ * 核心语言包：与 Web 端 vue/src/locales/zh-CN.ts 的键名、文案一致（两端共用）；
+ * Web 端独有页面（多标签栏、数据大屏、权限、日志、旧课表）的词条不搬过来。
+ * 小程序多出来的：common 里列表加载 / 计数类词条、layout.logoutConfirm（退出确认）、
+ * request（文件 / 网络提示）、update（新版本提示）。
+ * 业务页面文案按分组放在 locales/pages/ 下，和 Web 端同名同结构。
  */
 export default {
   common: {
@@ -13,8 +16,6 @@ export default {
     reset: '重置',
     add: '新增',
     batchDelete: '批量删除',
-    manage: '管理',
-    done: '完成',
     edit: '编辑',
     delete: '删除',
     resetPassword: '重置密码',
@@ -28,16 +29,13 @@ export default {
     page: '页面',
     loadMore: '加载更多',
     noMore: '没有更多了',
-    empty: '暂无数据',
+    empty: '暂无信息',
     loading: '加载中…',
     reload: '重新加载',
     all: '全部',
-    searchKeyword: '输入关键字搜索',
-    noMatch: '没有匹配的选项',
     addTitle: '新增{name}',
     editTitle: '编辑{name}',
     totalCount: '共 {n} 条',
-    selectedCount: '已选 {n} 项',
   },
 
   menu: {
@@ -62,8 +60,6 @@ export default {
     student: '学生信息',
     person: '个人信息',
     password: '修改密码',
-    mine: '我的',
-    message: '消息中心',
   },
 
   layout: {
@@ -91,7 +87,6 @@ export default {
         auto: '当前跟随系统，点击切换',
       },
     },
-    // 键名与 Web 端 vue/src/locales/zh-CN.ts 的 layout.themeColor 完全一致
     themeColor: {
       title: '主题色',
       switch: '自定义主题色',
@@ -131,10 +126,20 @@ export default {
     roleTeacher: '教师',
     roleStudent: '学生',
     submit: '登 录',
-    noAccount: '还没有账号？去',
+    noAccount: '还没有账号？请',
     goRegister: '注册',
     captchaFailed: '获取验证码失败',
     loginFailed: '登录失败',
+    tagline: '课程、日程、消息，一处办好',
+    heading: '登录',
+    hint: '输入账号和密码即可，系统会自动识别你是学生、教师还是管理员',
+    account: '账号',
+    password: '密码',
+    captcha: '验证码',
+    captchaAlt: '图形验证码，点击换一张',
+    pickRole: '请选择登录身份',
+    pickRoleHint: '这个账号对应多个身份，请选择本次登录的身份，再输入一次验证码。',
+    welcomeBack: '欢迎回来，{name}',
   },
 
   register: {
@@ -144,7 +149,7 @@ export default {
     passwordPlaceholder: '请输入密码',
     confirmPlaceholder: '请确认密码',
     submit: '注 册',
-    hasAccount: '已有账号？去',
+    hasAccount: '已有账号？请',
     goLogin: '登录',
     success: '注册成功',
     failed: '注册失败',
@@ -155,6 +160,9 @@ export default {
     rulePasswordLength: '密码长度在 6 到 20 个字符',
     ruleConfirmRequired: '请确认密码',
     ruleConfirmMismatch: '两次输入的密码不一致',
+    heading: '注册学生账号',
+    hint: '教师和管理员账号由教务后台统一创建',
+    confirm: '确认密码',
   },
 
   home: {
@@ -162,34 +170,6 @@ export default {
     notice: '教务通知',
     examplan: '考试安排',
     viewAll: '查看全部',
-    attendanceStats: '考勤统计',
-    scoreStats: '成绩统计',
-    quickEntry: '功能入口',
-    recommend: '为你推荐',
-    prefs: '偏好设置',
-    statusNormal: '正常',
-    statusLate: '迟到',
-    statusEarlyLeave: '早退',
-    statusAbsent: '缺勤',
-    bandExcellent: '优秀',
-    bandGood: '良好',
-    bandFail: '不及格',
-    todayTitle: '今日课程',
-    noClassToday: '今天没有课，好好休息！',
-    classDoing: '进行中',
-    classTodo: '未开始',
-    classDone: '已结束',
-    donutTotal: '总计',
-    tabFeed: '动态',
-    tabStats: '统计',
-    todayCount: '今日 {n} 节课',
-    nextClass: '下一节',
-    expand: '展开',
-    collapse: '收起',
-    greetMorning: '早上好，{name}',
-    greetNoon: '中午好，{name}',
-    greetAfternoon: '下午好，{name}',
-    greetEvening: '晚上好，{name}',
   },
 
   notFound: {
@@ -206,13 +186,6 @@ export default {
     offline: '网络不可用，请检查网络连接',
     tooLarge: '文件不能超过 {mb}MB',
     uploadFailed: '上传失败，请重试',
-  },
-
-  message: {
-    markAllRead: '全部已读',
-    clear: '清空',
-    clearConfirm: '确定要清空所有消息吗？',
-    empty: '暂无消息',
   },
 
   // 小程序新版本提示（utils/appUpdate.js）
@@ -291,14 +264,6 @@ export default {
       creditLabel: '学分',
       roleLabel: '角色',
       titleLabel: '职称',
-      avatarTip: '点击更换头像',
-    },
-
-    college: {
-      dialogTitle: '学院信息',
-      nameLabel: '学院名称',
-      namePlaceholder: '请输入学院名称',
-      ruleNameRequired: '请输入学院名称',
     },
   },
 }

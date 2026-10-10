@@ -119,17 +119,6 @@ page {
   }
 }
 
-/* 区块标题：左侧主色竖条 */
-.xm-card-title {
-  font-size: 30rpx;
-  font-weight: bold;
-  margin-bottom: 20rpx;
-  padding-left: 18rpx;
-  border-left: 8rpx solid var(--xm-brand);
-  border-radius: 4rpx;
-  line-height: 1.3;
-}
-
 /* 区块头：标题 + 右侧「查看全部」类链接 */
 .xm-section-head {
   display: flex;
@@ -145,12 +134,6 @@ page {
   color: var(--xm-text);
 }
 
-.xm-section-sub {
-  font-size: 24rpx;
-  color: var(--xm-text-2);
-  margin-top: 4rpx;
-}
-
 .xm-link {
   color: var(--xm-brand);
   font-size: 26rpx;
@@ -159,13 +142,6 @@ page {
 .xm-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-}
-
-.xm-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 16rpx;
 }
 
@@ -179,16 +155,6 @@ page {
 
 .xm-label {
   font-size: 24rpx;
-  color: var(--xm-text-2);
-}
-
-.xm-value {
-  font-size: 28rpx;
-  color: var(--xm-text);
-  word-break: break-all;
-}
-
-.xm-muted {
   color: var(--xm-text-2);
 }
 
@@ -237,11 +203,6 @@ page {
 .xm-btn-danger {
   background: transparent;
   border-color: var(--xm-danger);
-  color: var(--xm-danger);
-}
-
-.xm-btn-danger-soft {
-  background: var(--xm-danger-soft);
   color: var(--xm-danger);
 }
 
@@ -395,113 +356,6 @@ page {
   box-sizing: border-box;
 }
 
-/* ================= 信息卡片版式（课程 / 人员 / 教室等字段多的列表） =================
- * 标题行（名称 + 状态标签）→ 标签行（类型 / 学分 / 人数等短信息）→ 图标信息栅格（教师 / 地点 / 时间）
- */
-.xm-card-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 30rpx;
-  font-weight: bold;
-  color: var(--xm-text);
-}
-
-.xm-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12rpx;
-  margin-top: 16rpx;
-}
-
-/* 序号等弱信息：标签行最右侧的小灰字 */
-.xm-tags-end {
-  margin-left: auto;
-  font-size: 22rpx;
-  color: var(--xm-text-2);
-}
-
-.xm-meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12rpx 24rpx;
-  margin-top: 16rpx;
-}
-
-.xm-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  min-width: 0;
-  font-size: 24rpx;
-  color: var(--xm-text-2);
-}
-
-.xm-meta-item.full {
-  grid-column: 1 / -1;
-}
-
-.xm-meta-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* 标题行右侧的序号（没有标签行的卡片用） */
-.xm-card-no {
-  flex-shrink: 0;
-  font-size: 22rpx;
-  color: var(--xm-text-2);
-}
-
-/* 标题行左侧：头像 + 名称，名称过长省略、不挤压右侧内容 */
-.xm-card-head {
-  flex: 1;
-  min-width: 0;
-}
-
-/* 列表头像：有图显示图片，无图显示姓名首字 */
-.xm-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--xm-bg-input);
-}
-
-.xm-avatar-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: var(--xm-brand);
-  background: var(--xm-brand-soft);
-}
-
-/* 标题下方的副标题（如账号） */
-.xm-card-sub {
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: var(--xm-text-2);
-}
-
-/* 卡片说明文字：弱化小字，配合 .xm-clamp-2 控制行数 */
-.xm-card-desc {
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  line-height: 1.6;
-  color: var(--xm-text-2);
-  word-break: break-all;
-}
-
-/* 信息栅格里右对齐的末项（如序号） */
-.xm-meta-end {
-  justify-content: flex-end;
-}
-
 /* 引用块：评价内容、评语、说明等正文 */
 .xm-quote {
   margin-top: 16rpx;
@@ -574,29 +428,6 @@ page {
   box-shadow: var(--xm-shadow);
 }
 
-/* 旧版分段标签（xm-tabs / xm-tab），仍有组件在用 */
-.xm-tabs {
-  display: flex;
-  gap: 12rpx;
-  padding: 16rpx 20rpx;
-}
-
-.xm-tab {
-  flex: 1;
-  text-align: center;
-  padding: 12rpx 0;
-  border-radius: 10rpx;
-  font-size: 26rpx;
-  color: var(--xm-text-2);
-  background: var(--xm-bg-hover);
-}
-
-.xm-tab.active {
-  background: var(--xm-brand);
-  color: var(--xm-on-brand);
-  font-weight: 600;
-}
-
 /* 操作行 */
 .xm-actions {
   display: flex;
@@ -633,12 +464,6 @@ page {
   min-width: 0;
   font-size: 28rpx;
   color: var(--xm-text);
-}
-
-.xm-cell-value {
-  flex-shrink: 0;
-  font-size: 26rpx;
-  color: var(--xm-text-2);
 }
 
 .xm-cell-arrow {
@@ -702,15 +527,6 @@ page {
   animation: xm-popup-up 0.25s ease-out both;
 }
 
-/* 叠在另一个弹层之上的弹层（如表单里再打开的选择器） */
-.xm-mask.is-top {
-  z-index: 101;
-}
-
-.xm-popup.is-top {
-  z-index: 102;
-}
-
 @keyframes xm-fade-in {
   from {
     opacity: 0;
@@ -736,37 +552,6 @@ page {
   font-weight: bold;
   text-align: center;
   margin-bottom: 24rpx;
-}
-
-/* 品牌头卡：品牌色底 + 反白字（我的页用户卡、登录页头部） */
-.xm-hero {
-  background: var(--xm-brand-grad);
-  border-radius: 24rpx;
-  padding: 36rpx 32rpx;
-  margin-bottom: 24rpx;
-  color: var(--xm-on-brand);
-  box-shadow: var(--xm-shadow-brand);
-}
-
-.xm-hero-title {
-  font-size: 34rpx;
-  font-weight: bold;
-}
-
-.xm-hero-sub {
-  font-size: 24rpx;
-  opacity: 0.82;
-  margin-top: 8rpx;
-}
-
-/* 头像：描边圆（在品牌色底上勾勒轮廓） */
-.xm-hero-avatar {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 50%;
-  border: 4rpx solid rgba(255, 255, 255, 0.6);
-  background: var(--xm-bg-card);
-  flex-shrink: 0;
 }
 
 /* 宫格菜单：手机 4 列，随屏宽加列 */

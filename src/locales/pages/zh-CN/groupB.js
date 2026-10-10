@@ -1,23 +1,27 @@
 /**
- * 分组 B 语言包：学院信息/教务通知/考试安排/教室安排/专业/班级。
- * 键命名空间：pages.college / pages.notice / pages.examplan / pages.roomplan / pages.speciality / pages.classes
+ * 分组 B 语言包：教务通知/考试安排/教室安排/学院/专业/班级/课程/学业预警。
+ * 键命名空间：pages.notice / pages.examplan / pages.roomplan / pages.college / pages.speciality / pages.classes / pages.course / pages.warning
  */
 export default {
   pages: {
-    college: {
-      id: '序号',
-      nameLabel: '学院名称',
-      namePlaceholder: '请输入学院名称',
-      dialogTitle: '学院信息',
-      entity: '学院',
-      ruleNameRequired: '请输入学院名称',
+    warning: {
+      desc: '基于成绩与考勤的多指标加权评分模型：不及格占比（40%）+ 平均分差距（30%）+ 异常考勤率（30%），合成 0~100 的学业风险指数；管理员可见全部，教师可见本人任课学生，学生仅见本人',
+      student: '学生',
+      courseCount: '修读门数',
+      avg: '平均分',
+      failed: '不及格门数',
+      absentRate: '异常考勤率(%)',
+      riskIndex: '风险指数',
+      level: '预警等级',
+      suggestion: '建议',
+      notify: '推送提醒',
+      notifyOk: '预警提醒已实时推送',
+      noData: '暂无预警数据',
     },
-
     notice: {
       id: '序号',
       searchPlaceholder: '请输入标题查询',
       dialogTitle: '信息',
-      entity: '通知',
       title: '标题',
       content: '内容',
       time: '创建时间',
@@ -30,23 +34,18 @@ export default {
       id: '序号',
       searchPlaceholder: '请输入标题查询',
       dialogTitle: '信息',
-      entity: '考试安排',
       title: '标题',
       content: '内容',
       time: '创建时间',
       ruleTitleRequired: '请输入标题',
       ruleContentRequired: '请输入内容',
-      // 考试时间与倒计时（与 Web 端同键）
       examTime: '考试时间',
+      examTimePlaceholder: '请选择考试时间',
       ruleExamTimeRequired: '请选择考试时间',
       countdownToday: '今天',
       countdownTomorrow: '明天',
       countdownDays: '还有 {n} 天',
       countdownEnded: '已结束',
-      // 小程序表单由「日期 + 开考时间」两个选择器组成；历史数据可能没有考试时间
-      examDatePlaceholder: '考试日期',
-      examClockPlaceholder: '开考时间',
-      examTimeUnset: '未设置考试时间',
     },
 
     roomplan: {
@@ -56,7 +55,6 @@ export default {
       searchPlaceholder: '请输入教室名称',
       statusPlaceholder: '请选择状态',
       dialogTitle: '信息',
-      entity: '教室',
       name: '教室名称',
       type: '教室类型',
       typePlaceholder: '请选择类型',
@@ -77,11 +75,19 @@ export default {
       ruleContentRequired: '请输入使用说明',
     },
 
+    college: {
+      id: '序号',
+      searchPlaceholder: '请输入学院名称',
+      dialogTitle: '信息',
+      name: '学院名称',
+      content: '学院介绍',
+      ruleNameRequired: '请输入学院名称',
+    },
+
     speciality: {
       id: '序号',
       searchPlaceholder: '请输入专业名称',
       dialogTitle: '信息',
-      entity: '专业',
       name: '专业名称',
       content: '专业描述',
       college: '所属学院',
@@ -94,7 +100,6 @@ export default {
       id: '序号',
       searchPlaceholder: '请输入班级名称',
       dialogTitle: '信息',
-      entity: '班级',
       name: '班级名称',
       content: '班级描述',
       speciality: '所属专业',
@@ -102,6 +107,47 @@ export default {
       teacher: '班主任',
       teacherPlaceholder: '请选择教师',
       ruleNameRequired: '请输入班级名称',
+    },
+
+    course: {
+      id: '序号',
+      searchPlaceholder: '请输入课程名称',
+      dialogTitle: '信息',
+      name: '课程名称',
+      type: '课程类型',
+      teacher: '授课教师',
+      score: '学分',
+      num: '上课人数',
+      room: '上课教室',
+      roomPlaceholder: '搜索并选择空闲教室（留空保存则自动分配）',
+      autoAssigned: '系统自动分配教室：{code}（{name}）',
+      week: '周几',
+      segment: '第几大节',
+      status: '上课状态',
+      typePlaceholder: '请选择类型',
+      selectPlaceholder: '请选择',
+      teacherPlaceholder: '请选择教师',
+      required: '必修',
+      elective: '选修',
+      monday: '星期一',
+      tuesday: '星期二',
+      wednesday: '星期三',
+      thursday: '星期四',
+      friday: '星期五',
+      saturday: '星期六',
+      sunday: '星期日',
+      segment1: '第一大节（08:30 ~ 10:10）',
+      segment2: '第二大节（10:30 ~ 12:10）',
+      segment3: '第三大节（14:00 ~ 15:40）',
+      segment4: '第四大节（16:00 ~ 17:40）',
+      segment5: '第五大节（19:00 ~ 20:40）',
+      notStarted: '未开课',
+      started: '已开课',
+      finished: '已结课',
+      choiceSuccess: '选课成功',
+      choice: '选课',
+      ruleNameRequired: '请输入课程名称',
+      roomOccupied: '该教室在此时间段已被《{name}》（{teacher}）占用，请更换教室或时间',
     },
   },
 }

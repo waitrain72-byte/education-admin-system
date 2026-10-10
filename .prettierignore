@@ -2,4 +2,3 @@ node_modules/
 dist/
 src/manifest.json
 package-lock.json
-src/libs/

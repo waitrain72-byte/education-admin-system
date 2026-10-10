@@ -60,26 +60,6 @@ export function countdownTag(value, now = new Date()) {
   return cd ? { text: countdownText(cd), cls: countdownTagClass(cd) } : null
 }
 
-/**
- * 首页排序：未结束的按考试时间由近到远，已结束的排在后面（刚结束的在前），
- * 没有考试时间的历史数据放最后并保持原顺序。不修改传入的数组。
- */
-export function sortByExamTime(rows, now = new Date()) {
-  const items = (rows || []).map((row, index) => {
-    const exam = parseExamTime(row.examTime)
-    const cd = examCountdown(row.examTime, now)
-    const rank = !cd ? 2 : cd.status === 'ended' ? 1 : 0
-    return { row, index, rank, time: exam ? exam.getTime() : 0 }
-  })
-  items.sort((a, b) => {
-    if (a.rank !== b.rank) return a.rank - b.rank
-    if (a.rank === 0) return a.time - b.time
-    if (a.rank === 1) return b.time - a.time
-    return a.index - b.index
-  })
-  return items.map((x) => x.row)
-}
-
 /* ---------- 表单：「日期 + 开考时间」两个选择器 ⇄ 考试时间字符串 ---------- */
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/

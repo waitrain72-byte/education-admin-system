@@ -44,11 +44,6 @@ export function formatDate(d: Date): string {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
 }
 
-/** 服务器当前时间的毫秒数（与 utils/courseSpace 的 wallMs 同一口径，可直接相减算倒计时） */
-export function serverNowMs(): number {
-  return serverNow().getTime()
-}
-
 /** 响应式的服务器时间：{ date: 'yyyy-MM-dd', hhmm: 'HH:mm' }，每 30 秒更新 */
 export function useServerClock() {
   if (!timer) {

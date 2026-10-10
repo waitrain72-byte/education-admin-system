@@ -5,7 +5,7 @@ import { hideLoading, showLoading } from './loading'
 import { handleUnauthorized, toApiError, toastRequestFail } from './request'
 
 /**
- * 文件选择与上传（头像 / 作业附件共用，替代原先 5 个页面各自复制的 uni.uploadFile 代码）：
+ * 文件选择与上传（头像、作业附件、课程资料共用）：
  * - 与请求层同一套契约：200 解包返回文件地址，业务失败提示并 reject ApiError，401 统一踢回登录页
  * - 上传前按后端限制（20MB、扩展名白名单）先在本地拦截，避免传完才失败
  * - 支持进度回调（作业附件按钮上显示百分比）
@@ -83,9 +83,6 @@ export const chooseImage = (): Promise<PickedFile | null> => pickFrom('chooseIma
 
 /** 当前平台能否从微信聊天记录选文件（仅微信小程序提供 chooseMessageFile） */
 export const canChooseChatFile = (): boolean => typeof (uni as any).chooseMessageFile === 'function'
-
-/** 从微信聊天记录选一个文档（PDF / Word / Excel …）；用户取消或超限时 resolve null */
-export const chooseChatFile = (): Promise<PickedFile | null> => pickFrom('chooseMessageFile', 1).then(first)
 
 /** 当前平台能否从本机选文件（H5 / App 提供 chooseFile；微信小程序没有，只能从聊天记录选） */
 export const canChooseDeviceFile = (): boolean => typeof (uni as any).chooseFile === 'function'

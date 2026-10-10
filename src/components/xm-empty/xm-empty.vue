@@ -21,7 +21,7 @@
 /**
  * 通用空态（easycom 自动注册）：图标 + 文案 + 可选操作按钮。
  * - 列表页默认用法：<xm-empty v-if="!list.length && !loading" :action-text="$t('common.reload')" @action="load(true)" />
- * - 自定义文案/图标：<xm-empty icon="bell" :text="$t('message.empty')" />（icon 为 xm-icon 图标名）
+ * - 自定义文案/图标：<xm-empty icon="book" :text="$t('courses.noMatch')" />（icon 为 xm-icon 图标名）
  */
 defineProps({
   icon: { type: String, default: 'inbox' },

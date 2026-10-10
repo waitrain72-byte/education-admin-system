@@ -1,5 +1,8 @@
 /**
- * Core locale pack (English) — keys identical to Web version.
+ * Core locale pack (English): keys and wording match the Web side (vue/src/locales/en-US.ts).
+ * Strings for Web-only pages (tab bar, data screen, permissions, logs, old timetable) are left out.
+ * Extra on the mini program: list loading / count words in common, layout.logoutConfirm,
+ * request (file / network tips), update (new version prompt). Page strings live in locales/pages/, grouped the same way as the Web side.
  */
 export default {
   common: {
@@ -12,8 +15,6 @@ export default {
     reset: 'Reset',
     add: 'Add',
     batchDelete: 'Delete Selected',
-    manage: 'Manage',
-    done: 'Done',
     edit: 'Edit',
     delete: 'Delete',
     resetPassword: 'Reset Password',
@@ -27,16 +28,13 @@ export default {
     page: 'Page',
     loadMore: 'Load more',
     noMore: 'No more data',
-    empty: 'No data yet',
+    empty: 'No data',
     loading: 'Loading…',
     reload: 'Reload',
     all: 'All',
-    searchKeyword: 'Type to search',
-    noMatch: 'No matching options',
     addTitle: 'New {name}',
     editTitle: 'Edit {name}',
     totalCount: '{n} items',
-    selectedCount: '{n} selected',
   },
 
   menu: {
@@ -61,8 +59,6 @@ export default {
     student: 'Students',
     person: 'Profile',
     password: 'Change Password',
-    mine: 'Mine',
-    message: 'Messages',
   },
 
   layout: {
@@ -90,7 +86,6 @@ export default {
         auto: 'Following system, click to switch',
       },
     },
-    // Keys mirror the Web side (vue/src/locales/en-US.ts, layout.themeColor)
     themeColor: {
       title: 'Theme Color',
       switch: 'Customize theme color',
@@ -130,10 +125,20 @@ export default {
     roleTeacher: 'Teacher',
     roleStudent: 'Student',
     submit: 'Sign In',
-    noAccount: 'No account yet? Go to',
+    noAccount: 'No account yet?',
     goRegister: 'Sign Up',
     captchaFailed: 'Failed to load CAPTCHA',
     loginFailed: 'Sign-in failed',
+    tagline: 'Courses, schedule and messages in one place',
+    heading: 'Sign in',
+    hint: 'Enter your account and password. We work out whether you are a student, teacher or admin.',
+    account: 'Account',
+    password: 'Password',
+    captcha: 'CAPTCHA',
+    captchaAlt: 'CAPTCHA image, click for a new one',
+    pickRole: 'Choose who you are signing in as',
+    pickRoleHint: 'This account belongs to more than one role. Choose one, then enter a new CAPTCHA.',
+    welcomeBack: 'Welcome back, {name}',
   },
 
   register: {
@@ -143,7 +148,7 @@ export default {
     passwordPlaceholder: 'Enter your password',
     confirmPlaceholder: 'Confirm your password',
     submit: 'Sign Up',
-    hasAccount: 'Already have an account? Go to',
+    hasAccount: 'Already have an account?',
     goLogin: 'Sign In',
     success: 'Registered successfully',
     failed: 'Registration failed',
@@ -154,6 +159,9 @@ export default {
     rulePasswordLength: 'Password must be 6 to 20 characters',
     ruleConfirmRequired: 'Please confirm your password',
     ruleConfirmMismatch: 'Passwords do not match',
+    heading: 'Create a student account',
+    hint: 'Teacher and administrator accounts are created by the academic office',
+    confirm: 'Confirm password',
   },
 
   home: {
@@ -161,34 +169,6 @@ export default {
     notice: 'Academic Notices',
     examplan: 'Exam Schedule',
     viewAll: 'View All',
-    attendanceStats: 'Attendance Stats',
-    scoreStats: 'Score Stats',
-    quickEntry: 'Quick Entry',
-    recommend: 'Recommended for You',
-    prefs: 'Preferences',
-    statusNormal: 'Normal',
-    statusLate: 'Late',
-    statusEarlyLeave: 'Early Leave',
-    statusAbsent: 'Absent',
-    bandExcellent: 'Excellent',
-    bandGood: 'Good',
-    bandFail: 'Fail',
-    todayTitle: "Today's Classes",
-    noClassToday: 'No classes today. Enjoy!',
-    classDoing: 'Now',
-    classTodo: 'Upcoming',
-    classDone: 'Ended',
-    donutTotal: 'Total',
-    tabFeed: 'Feed',
-    tabStats: 'Stats',
-    todayCount: '{n} classes today',
-    nextClass: 'Next',
-    expand: 'Expand',
-    collapse: 'Collapse',
-    greetMorning: 'Good morning, {name}',
-    greetNoon: 'Good afternoon, {name}',
-    greetAfternoon: 'Good afternoon, {name}',
-    greetEvening: 'Good evening, {name}',
   },
 
   notFound: {
@@ -205,13 +185,6 @@ export default {
     offline: 'Network unavailable, please check your connection',
     tooLarge: 'File must be {mb}MB or smaller',
     uploadFailed: 'Upload failed, please try again',
-  },
-
-  message: {
-    markAllRead: 'Mark all read',
-    clear: 'Clear',
-    clearConfirm: 'Clear all messages?',
-    empty: 'No messages yet',
   },
 
   // Mini program update prompt (utils/appUpdate.js)
@@ -290,14 +263,6 @@ export default {
       creditLabel: 'Credits',
       roleLabel: 'Role',
       titleLabel: 'Professional Title',
-      avatarTip: 'Tap to change avatar',
-    },
-
-    college: {
-      dialogTitle: 'College',
-      nameLabel: 'College Name',
-      namePlaceholder: 'Enter college name',
-      ruleNameRequired: 'Please enter the college name',
     },
   },
 }
