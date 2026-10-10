@@ -64,7 +64,7 @@ export default {
             ongoing: 'Current courses',
         },
         warning: 'Academic warning: risk index {index}. ',
-        todayTitle: 'Today’s classes',
+        todayTitle: "Today's classes",
         noClassToday: 'No classes today',
         myCourses: 'My courses',
         teachingCourses: 'Courses I teach',
