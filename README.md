@@ -457,7 +457,7 @@ BCrypt 无法反推原密码。用管理员账号在【教务后台 → 人员�
 | 想改什么    | 位置                                                                                                                          |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | 系统名称    | Web：`vue/src/locales/zh-CN.ts` / `en-US.ts` 的 `layout.title`（顶栏）、`login.systemName`（登录 / 注册页）、`pages.dashboard.title`（数据大屏），浏览器标签页标题在 `vue/index.html`；小程序：`BISHE-mobile/src/locales/zh-CN.js` / `en-US.js` 的 `login.systemName`（登录页）与 `layout.title`（转发标题），以及 `src/manifest.json` 的 `name`（微信里显示的小程序名称以公众平台登记的为准） |
-| Logo / 配色 | `vue/src/assets/imgs/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——Web 端登录后点顶栏的彩色圆点、小程序在「我的」页即可换，按账号保存、两端同步；要调预设色板改 `vue/src/composables/useThemeColor.ts` 与 `BISHE-mobile/src/utils/themeColor.js` 的 `PRESET_COLORS` |
+| Logo / 配色 | Logo 是 SVG 组件 `vue/src/layout/BrandMark.vue`（顶栏与登录页共用），浏览器标签图标是 `vue/public/favicon.svg` / `favicon.ico`，小程序是 `BISHE-mobile/src/components/xm-brand-mark/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——Web 端登录后点顶栏的彩色圆点、小程序在「我的」页即可换，按账号保存、两端同步；要调预设色板改 `vue/src/composables/useThemeColor.ts` 与 `BISHE-mobile/src/utils/themeColor.js` 的 `PRESET_COLORS` |
 | 页面切换动画 | `vue/src/assets/css/layout.css` 的 `.page-fade-*`（离场 0.06s + 进场 0.18s，系统开了「减少动态效果」时自动关闭）；想完全关掉就把两条 `transition` 改成 `none` |
 | 学期与教学周 | 不用改代码：【教务后台 → 学期设置】里改学期名称、开学日期、教学周数（存 `sys_config` 表）                                    |
 | 大屏样式    | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放）                                                                           |
