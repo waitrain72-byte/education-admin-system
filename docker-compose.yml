@@ -6,7 +6,7 @@ services:
     container_name: edu-mysql
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: xm_educational_manager_v2
+      MYSQL_DATABASE: xm_educational_manager
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
     ports:
       - "3306:3306"

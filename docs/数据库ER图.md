@@ -1,6 +1,6 @@
 # 数据库 ER 图
 
-> 数据库：`xm_educational_manager_v2`（MySQL 5.7，共 27 张表；表结构以种子 `sql/xm_educational_manager-full.sql` 为准）
+> 数据库：`xm_educational_manager`（MySQL 5.7，共 27 张表；表结构以种子 `sql/xm_educational_manager-full.sql` 为准）
 > 说明：系统采用**逻辑外键**设计（不建物理外键约束，由应用层保证一致性，便于批量导入与维护），下图为逻辑关系。
 > 图表使用 Mermaid 渲染，可在 GitHub 直接查看，也可粘贴到 [mermaid.live](https://mermaid.live) 导出 PNG/SVG 插入论文。
 
