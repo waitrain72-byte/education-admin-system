@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * 作业信息表业务处理（通用增删改查见 {@link CrudService}），旧版作业页和小程序在用。
+ * 作业信息表业务处理（通用增删改查见 {@link CrudService}），教务后台的旧版作业页在用。
  *
  * <p>课程空间改版后作业提交按作业任务走 {@link AssignmentService}，它们的得分会算进成绩册，
  * 所以这里的旧接口要守住同样的规矩：</p>

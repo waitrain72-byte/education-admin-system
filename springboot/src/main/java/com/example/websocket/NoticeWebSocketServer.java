@@ -110,7 +110,7 @@ public class NoticeWebSocketServer {
      * 推送任意字段给指定用户。
      *
      * <p>带 title 的消息两端都会弹通知 / 记角标；不带 title 的是「静默事件」（如课堂签到人数变化），
-     * 只给正在看对应页面的客户端刷新数据用——小程序与旧版 Web 收到没有 title 的消息会直接忽略。</p>
+     * 只给正在看对应页面的客户端刷新数据用（Web 端和小程序的课程空间都据此刷新）。</p>
      */
     public static void sendPayload(Integer userId, String role, Map<String, Object> payload) {
         if (userId == null || role == null) {

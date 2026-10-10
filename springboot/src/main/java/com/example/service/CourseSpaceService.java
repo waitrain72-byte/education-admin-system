@@ -324,7 +324,7 @@ public class CourseSpaceService {
 
     /**
      * 给课程成员（选课学生 + 任课教师）推一条静默事件：正在看课程空间的页面据此刷新数据。
-     * 不落库、不弹通知（没有 title），小程序收到会直接忽略。
+     * 不落库、不弹通知（没有 title）；Web 端和小程序打开着的课程空间收到后各自刷新。
      */
     public void emit(Integer courseId, String event) {
         Map<String, Object> payload = eventPayload(courseId, event);

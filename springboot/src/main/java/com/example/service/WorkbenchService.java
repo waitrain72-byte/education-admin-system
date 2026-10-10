@@ -306,7 +306,7 @@ public class WorkbenchService {
     }
 
     /**
-     * 平均学分绩点（与小程序端同一算法）：及格时 绩点 =（成绩 − 50）÷ 10，上限 5.0，不及格记 0，按学分加权。
+     * 平均学分绩点（成绩单也用这一个）：及格时 绩点 =（成绩 − 50）÷ 10，上限 5.0，不及格记 0，按学分加权。
      * 没有学分可加权的成绩时返回 null。
      */
     static Double gpa(List<Map<String, Object>> scoresWithCredit) {

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 成绩表的通用增删改查（见 {@link CrudService}），旧版成绩页和小程序在用；课程空间里的成绩册见 {@link GradebookService}。
+ * 成绩表的通用增删改查（见 {@link CrudService}），教务后台的旧版成绩页在用；课程空间里的成绩册见 {@link GradebookService}。
  *
  * <p>总评按课程设置的四项权重计算（{@link GradeCalculator}）。旧客户端只录平时分和期末分：
  * 课程给考勤、作业设了权重时，这两项按记录自动折算后补上。旧接口录入的成绩直接是「已发布」，

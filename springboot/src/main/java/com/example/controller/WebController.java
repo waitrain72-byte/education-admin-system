@@ -49,7 +49,7 @@ public class WebController {
      * 登录（带验证码校验、连续失败锁定与登录日志）。
      *
      * <p>身份 role 可以不传：Web 端登录页只填账号密码，由 {@link AccountLookupService#resolveRole} 按用户名判断身份；
-     * 同名账号密码也相同、实在分不出时返回 5012，前端再让用户选一次。小程序等老客户端照旧传 role。</p>
+     * 同名账号密码也相同、实在分不出时返回 5012，前端再让用户选一次，带上 role 重新提交。</p>
      */
     @PostMapping("/login")
     public Result login(@RequestBody Account account, HttpServletRequest request) {
