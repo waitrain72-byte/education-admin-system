@@ -50,7 +50,13 @@ Web 端按「课程空间」组织，顶部导航是「首页 / 课程 / 日程 
 
 ## 运行
 
+需要准备：Node.js 18 及以上、[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)（稳定版）、一个小程序 AppID（在 [mp.weixin.qq.com](https://mp.weixin.qq.com) 注册，个人主体即可；只在模拟器里看可以先用测试号），以及按 Web 端 README 跑起来的后端。
+
+小程序代码在仓库的 `mobile` 分支，Web 端与后端在 `cn-en` 分支：
+
 ```bash
+git clone -b mobile https://github.com/waitrain72-byte/education-admin-system.git BISHE-mobile
+cd BISHE-mobile
 npm install
 npm run dev:mp-weixin     # 开发模式，产物在 dist/dev/mp-weixin
 npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
@@ -60,7 +66,7 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 ### 连接后端
 
-1. 按 Web 端 README 启动后端（`springboot/`，端口 9091），数据库导入 Web 端仓库的 `sql/xm_educational_manager-full.sql`（库名 `xm_educational_manager_v2`）。
+1. 按 Web 端 README 启动后端（`springboot/`，端口 9091），数据库导入 Web 端仓库的 `sql/xm_educational_manager-full.sql`（库名 `xm_educational_manager`）。
 2. 接口地址在 `.env.development` / `.env.production` 的 `VITE_API_BASE_URL`（`src/utils/config.ts` 读取）：
    - 开发者工具模拟器：`http://localhost:9091`
    - 真机预览：电脑的局域网 IP（如 `http://192.168.x.x:9091`），手机和电脑连同一个 Wi-Fi；IP 变了要改 env 文件并**重启** `npm run dev:mp-weixin`（env 只在启动时读取）
