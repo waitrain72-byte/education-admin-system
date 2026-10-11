@@ -15,6 +15,17 @@
 
 Web 端按「**课程空间**」组织：顶部导航只有「首页 / 课程 / 日程 / 消息」，师生点进一门课就能完成签到、作业、成绩、评价、资料等这门课的全部事情；选课在课程广场，课表与请假在日程；管理员的维护工作集中在「教务后台」。
 
+## 演示视频
+
+两部 2K（2560×1440）视频放在 [Releases 发布页](https://github.com/waitrain72-byte/education-admin-system/releases/tag/videos-v2)，下载后用系统自带的播放器即可观看：
+
+| 视频                                                                                                                  | 内容                                                                           | 时长 |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---- |
+| [功能演示](https://github.com/waitrain72-byte/education-admin-system/releases/download/videos-v2/feature-demo-2k.mp4) | 管理员、教师、学生三类角色的主要功能与微信小程序；无配音，画面下方有文字说明 | 5:20 |
+| [部署教程](https://github.com/waitrain72-byte/education-admin-system/releases/download/videos-v2/deployment-tutorial-2k.mp4) | 小螃蟹 Claude 主讲：Docker 一键部署、手动部署、微信小程序、常见问题；配音 + 字幕 | 7:55 |
+
+> 部署教程没有讲到服务器上的跨域配置：用服务器 IP 或域名访问时，还要按下文「[修改配置](#修改配置改-docker-composeyml)」把 `CORS_ALLOWED_ORIGINS` 改成实际访问地址。
+
 ## 我该怎么用这个项目？（先看我）
 
 根据你的目的选择路径，每一节都是手把手步骤，照着做即可：
