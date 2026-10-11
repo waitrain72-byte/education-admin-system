@@ -175,7 +175,7 @@ docker compose up -d --build
 
 - **首次运行约 5~10 分钟**，会滚动大量英文日志——这是在下载依赖和构建镜像，属于正常现象，耐心等它结束；
 - 之后再启动就是秒级；
-- 结束后执行 `docker compose ps`，看到 mysql / backend / frontend 三行状态都是 `Up` 就说明成功了（backend 短暂 Restart 后自愈属正常，它在等数据库就绪）。
+- 结束后执行 `docker compose ps`，看到 mysql / backend / frontend 三行状态都是 `Up`（mysql 后面还带 `(healthy)`）就说明成功了。首次启动时数据库要先导入演示数据，backend 会等 mysql 健康检查通过后才启动，所以命令会在 `Waiting` 停一会儿，属于正常现象。
 
 这一条命令自动完成了：创建数据库 → 导入全部表结构和演示数据 → 启动后端 → 启动前端。**你不需要手动建库导库。**
 
@@ -187,6 +187,8 @@ docker compose up -d --build
 | -------------------------------- | --------------------------------------------------------- |
 | `http://localhost:8080`          | **系统入口**（部署在服务器上则用 `http://服务器IP:8080`） |
 | `http://localhost:9091/doc.html` | 接口文档（可选看）                                        |
+
+> 部署在服务器上、用 `http://服务器IP:8080` 或域名访问时，要先按下文「[修改配置](#修改配置改-docker-composeyml)」把 `CORS_ALLOWED_ORIGINS` 改成这个地址，否则登录会被后端拦下（403 `Invalid CORS request`）。
 
 登录页输入账号密码和图片验证码（**验证码不区分大小写**）点登录，不用选身份，系统按账号判断：
 
@@ -210,21 +212,31 @@ docker compose down -v             # ⚠️ 连数据一起清空（想彻底重
 docker compose up -d --build       # 改了代码后重新构建启动
 ```
 
-#### 环境变量（不改文件改配置）
+#### 修改配置（改 docker-compose.yml）
 
-| 变量                         | 作用               | 默认值                                        |
-| ---------------------------- | ------------------ | --------------------------------------------- |
-| `JWT_SECRET`                 | 登录令牌签名密钥   | `change-me-in-production`，**公网部署必须改** |
-| `SPRING_DATASOURCE_PASSWORD` | 数据库密码         | `123456`                                      |
-| `CORS_ALLOWED_ORIGINS`       | 允许跨域的前端来源 | `http://localhost:8080`                       |
+Docker 部署时，下面几项配置直接写在 `docker-compose.yml` 里——在命令行里先设同名环境变量再 `docker compose up` 是**不生效**的，要改就编辑这个文件：
 
-用法示例（Windows PowerShell）：
+| 位置                      | 配置项                       | 作用                                   | 默认值                                        |
+| ------------------------- | ---------------------------- | -------------------------------------- | --------------------------------------------- |
+| `backend` → `environment` | `JWT_SECRET`                 | 登录令牌签名密钥                       | `change-me-in-production`，**公网部署必须改** |
+| `backend` → `environment` | `CORS_ALLOWED_ORIGINS`       | 允许访问后端的前端地址（逗号分隔多个） | `http://localhost:8080`                       |
+| `backend` → `environment` | `SPRING_DATASOURCE_PASSWORD` | 后端连数据库用的密码                   | `123456`                                      |
+| `mysql` → `environment`   | `MYSQL_ROOT_PASSWORD`        | 数据库 root 密码                       | `123456`                                      |
 
-```powershell
-$env:JWT_SECRET="一串只有你知道的随机长字符串"; docker compose up -d --build
-```
+改完保存，执行 `docker compose up -d`，Compose 会用新配置重建对应的容器。
 
-**部署到云服务器给别人访问时**：① 编辑 `docker-compose.yml` 把 mysql 的 `"3306:3306"` 端口映射删掉或改成 `"127.0.0.1:3306:3306"`（数据库绝不暴露公网）；② 改 `JWT_SECRET` 和数据库密码；③ 登录后改掉管理员默认密码；④ 云安全组只需放行 **8080**；⑤ 要 HTTPS 就在前面加一层 nginx/Caddy 反代。
+- **`CORS_ALLOWED_ORIGINS`**：填用户在浏览器地址栏里看到的地址（协议 + IP 或域名 + 端口），如 `http://192.168.1.10:8080`、`https://edu.example.com`，多个用逗号隔开。只在本机用 `http://localhost:8080` 访问时不用改；换成服务器 IP 或域名访问却没改这里，登录会报 403（`Invalid CORS request`）。
+- **数据库密码**：`MYSQL_ROOT_PASSWORD` 和 `SPRING_DATASOURCE_PASSWORD` 必须改成同一个（`healthcheck` 那行里的 `-p123456` 不影响健康检查结果，顺手改成一样即可）。注意 `MYSQL_ROOT_PASSWORD` 只在**第一次**创建数据卷时生效：已经跑起来的环境要换密码，先在数据库里改，再改上面两处并执行 `docker compose up -d`：
+
+  ```bash
+  docker exec edu-mysql mysql -uroot -p123456 -e "ALTER USER 'root'@'%' IDENTIFIED BY '新密码'; ALTER USER 'root'@'localhost' IDENTIFIED BY '新密码';"
+  ```
+
+  不需要保留现有数据的话，也可以 `docker compose down -v` 清空后重新 `up`（会重新导入演示数据）。
+
+- **`JWT_SECRET`**：改成一串只有你知道的随机长字符串；改完后已登录的用户需要重新登录。
+
+**部署到云服务器给别人访问时**：① 编辑 `docker-compose.yml` 把 mysql 的 `"3306:3306"` 端口映射删掉或改成 `"127.0.0.1:3306:3306"`（数据库绝不暴露公网）；② 按上面「修改配置」把 `CORS_ALLOWED_ORIGINS` 改成实际访问地址，并改掉 `JWT_SECRET` 和数据库密码；③ 登录后改掉管理员默认密码；④ 云安全组只需放行 **8080**；⑤ 要 HTTPS 就在前面加一层 nginx/Caddy 反代（`CORS_ALLOWED_ORIGINS` 相应写成 `https://你的域名`）。
 
 ### 方式二：手动部署（适合二次开发）
 
@@ -441,6 +453,9 @@ BCrypt 无法反推原密码。用管理员账号在【教务后台 → 人员�
 
 **9. 小程序验证码不显示 / 真机连不上后端**
 按 App 端部署"第 5 步真机预览"的清单逐项检查（`VITE_API_BASE_URL`、同一 Wi-Fi、防火墙、不校验合法域名、代理设置）；小程序 `src/utils/config.ts` 头部也有同样的排错清单。电脑的局域网 IP 变了的话，改两个 env 文件后重启 `npm run dev:mp-weixin`。
+
+**10. Docker 部署到服务器后，页面能打开但登录失败（403 / `Invalid CORS request`）**
+后端只放行 `CORS_ALLOWED_ORIGINS` 里的地址，默认只有 `http://localhost:8080`。把 `docker-compose.yml` 里的这一项改成浏览器地址栏里的地址（如 `http://服务器IP:8080`），再执行 `docker compose up -d`，见 Web 端部署「[修改配置](#修改配置改-docker-composeyml)」。
 
 ## 维护约定（两端必读）
 
