@@ -150,6 +150,10 @@ export default defineConfig({
     },
     server: {
         port: 8080,
+        // 启动时就把布局和各页面编译好：路由都是懒加载，不预热的话第一次切到某页要等 Vite 现场编译，会明显顿一下
+        warmup: {
+            clientFiles: ['./src/layout/*.vue', './src/views/**/*.vue'],
+        },
         proxy: {
             '/api': {
                 // 用 127.0.0.1 而不是 localhost：Node 17+ 解析 localhost 时优先 IPv6（::1），

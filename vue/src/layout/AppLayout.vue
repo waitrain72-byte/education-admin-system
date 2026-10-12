@@ -25,6 +25,7 @@ import { useUser } from '@/components/useUser'
 import { usePermission } from '@/composables/usePermission'
 import { useMessageStore } from '@/stores/messages'
 import { onSocketMessage, setNotificationClickHandler, type SocketMessage } from '@/composables/useNoticeSocket'
+import { prefetchRoutes } from '@/router/router-index.ts'
 
 const route = useRoute()
 const router = useRouter()
@@ -96,6 +97,8 @@ onMounted(() => {
   pullPermissions()
   refreshCurrentUser()
   messageStore.refresh()
+  // 空闲时预取其他页面的代码，第一次切页不用再等加载
+  prefetchRoutes()
   offSocket = onSocketMessage((message: SocketMessage) => {
     if (message.title && message.type !== 'notice') {
       messageStore.refresh()

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteMeta, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 /**
@@ -184,6 +184,17 @@ const router = createRouter({
     },
 })
 
+/**
+ * 当前账号能否进入带这份 meta 的页面：meta.roles 存在时角色必须在允许列表内；
+ * meta.permission（如 dashboard:view）存在时必须有该权限码（ADMIN 放行）。
+ */
+function canEnter(meta: RouteMeta, role: string, permissions: string[]): boolean {
+    const roles = meta.roles as string[] | undefined
+    if (roles && roles.length && !roles.includes(role)) return false
+    const perm = meta.permission as string | undefined
+    return !perm || role === 'ADMIN' || permissions.includes(perm)
+}
+
 // ========== 路由守卫 ==========
 router.beforeEach((to, _from, next) => {
     // 从统一状态管理读取登录态
@@ -205,21 +216,46 @@ router.beforeEach((to, _from, next) => {
         return
     }
 
-    // 路由级权限：meta.roles 存在时，当前角色必须在允许列表内（子路由的 meta 已合并父路由）
-    const roles = to.meta?.roles as string[] | undefined
-    if (roles && roles.length && !roles.includes(userStore.role)) {
-        next('/403')
-        return
-    }
-
-    // 权限码校验：meta.permission（如 dashboard:view）存在时，当前用户必须拥有该权限码（ADMIN 放行）
-    const perm = to.meta?.permission as string | undefined
-    if (perm && userStore.role !== 'ADMIN' && !userStore.permissions.includes(perm)) {
+    // 路由级权限：角色与权限码（子路由的 meta 已合并父路由）
+    if (!canEnter(to.meta, userStore.role, userStore.permissions)) {
         next('/403')
         return
     }
 
     next()
 })
+
+// ========== 页面预取 ==========
+/**
+ * 登录后趁浏览器空闲，把当前账号能进的页面代码提前加载好。
+ *
+ * 路由都是懒加载：第一次切到某个页面要先加载它的代码（开发模式下 Vite 还要现场编译），
+ * 会明显顿一下，之后再切就不卡了。提前加载过的页面，第一次切换也一样顺。
+ * 只取登录后布局下的页面（不含登录页、数据大屏），逐个加载，不和当前页面抢资源。
+ */
+export function prefetchRoutes() {
+    const { role, permissions } = useUserStore()
+    const loaders: Array<() => Promise<unknown>> = []
+    const collect = (records: RouteRecordRaw[], inherited: RouteMeta) => {
+        for (const record of records) {
+            // 子路由继承父路由的 meta，和守卫里看到的 to.meta 一致
+            const meta = { ...inherited, ...record.meta }
+            if (!canEnter(meta, role, permissions)) continue
+            // 路由组件都写成 () => import(...)：调用一次就加载，之后切页时直接命中模块缓存
+            if (typeof record.component === 'function') loaders.push(record.component as () => Promise<unknown>)
+            if (record.children) collect(record.children, meta)
+        }
+    }
+    collect(routes.find((r) => r.path === '/')?.children ?? [], {})
+
+    const run = async () => {
+        for (const load of loaders) {
+            // 预取失败不提示，切到该页时照常加载
+            await load().catch(() => undefined)
+        }
+    }
+    if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 3000 })
+    else setTimeout(run, 1500)
+}
 
 export default router
