@@ -64,6 +64,12 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 用微信开发者工具「导入项目」，目录选上面的产物目录（不是源码根目录）。AppID 填在 `src/manifest.json` 的 `mp-weixin.appid`，没有的话可以先用测试号。
 
+> **开发者工具里看到的代码挤成一行、没有换行？** 那是编译产物，不是源码。
+>
+> - `dist/build/mp-weixin`（生产构建）会把 JS 和样式压缩成一行、缩短变量名，好让主包不超过微信的 2 MB 上限。这是正常的，不要关掉压缩，上传发布也用这份。
+> - 想在开发者工具里看到换行的代码，导入 `dist/dev/mp-weixin`（开发模式不压缩）。页面模板 `.wxml` 在两种模式下都会编成一行。
+> - 读代码、改代码在 `src/` 里，格式和 Web 端源码一样。用 VS Code 或 HBuilderX 打开本仓库根目录即可；`npm run dev:mp-weixin` 开着时，改完保存会自动重新编译，开发者工具跟着刷新。
+
 ### 连接后端
 
 1. 按 Web 端 README 启动后端（`springboot/`，端口 9091），数据库导入 Web 端仓库的 `sql/xm_educational_manager-full.sql`（库名 `xm_educational_manager`）。
