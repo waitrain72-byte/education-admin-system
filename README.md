@@ -360,6 +360,8 @@ npm run build:mp-weixin   # 生产构建，产物在 dist/build/mp-weixin
 
 模拟器里立即能看到登录页。**后端要先启动**（Web 端部署的第 3/4 步任选一种方式，保持 9091 在运行）。
 
+> 开发者工具编辑器里的代码挤成一行、没有换行，是因为打开的是**编译产物**：`dist/build/mp-weixin`（生产构建）会把代码压缩成一行，这是正常的，上传发布就用它。想看换行的代码就导入 `dist/dev/mp-weixin`（开发模式不压缩，页面模板 `.wxml` 仍是一行）；读代码、改代码请用 VS Code 打开 `BISHE-mobile` 根目录，改 `src/` 里的文件，格式和 Web 端源码一样。
+
 ### 第 5 步：真机预览（手机上看）
 
 1. 工具栏点**"预览"**按钮，生成二维码，用手机微信扫码；
@@ -467,6 +469,9 @@ BCrypt 无法反推原密码。用管理员账号在【教务后台 → 人员�
 
 **10. Docker 部署到服务器后，页面能打开但登录失败（403 / `Invalid CORS request`）**
 后端只放行 `CORS_ALLOWED_ORIGINS` 里的地址，默认只有 `http://localhost:8080`。把 `docker-compose.yml` 里的这一项改成浏览器地址栏里的地址（如 `http://服务器IP:8080`），再执行 `docker compose up -d`，见 Web 端部署「[修改配置](#修改配置改-docker-composeyml)」。
+
+**11. 微信开发者工具里的小程序代码挤成一行，没有换行**
+开发者工具打开的是编译产物，生产构建 `dist/build/mp-weixin` 本来就是压缩过的，不是代码坏了。看换行的代码导入 `dist/dev/mp-weixin`，改代码改 `src/` 里的源码，见 App 端部署「第 4 步」。
 
 ## 维护约定（两端必读）
 
