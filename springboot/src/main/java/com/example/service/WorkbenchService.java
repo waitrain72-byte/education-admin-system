@@ -230,7 +230,7 @@ public class WorkbenchService {
     }
 
     private Map<String, Object> adminPart(LocalDateTime now) {
-        Map<String, Object> stats = dashboardService.stats();
+        Map<String, Object> stats = dashboardService.kpis();
         Map<String, Object> kpis = new LinkedHashMap<>();
         for (String key : new String[]{"studentCount", "teacherCount", "courseCount", "choiceCount",
                 "pendingApply", "ungradedHomework", "loginToday"}) {
@@ -338,6 +338,12 @@ public class WorkbenchService {
      * 出勤率（百分比，一位小数）：迟到、早退算出勤，缺勤不算；请假不计入分母。没有考勤记录时返回 null。
      */
     static Double attendanceRate(List<Map<String, Object>> statusCounts) {
+        long[] counts = attendanceCounts(statusCounts);
+        return percent(counts[0], counts[1]);
+    }
+
+    /** 出勤率的分子分母 [出勤次数, 计入的考勤次数]，口径同 {@link #attendanceRate}（数据大屏也用这一个） */
+    static long[] attendanceCounts(List<Map<String, Object>> statusCounts) {
         long total = 0;
         long absent = 0;
         long leave = 0;
@@ -353,10 +359,15 @@ public class WorkbenchService {
             }
         }
         long counted = total - leave;
-        if (counted <= 0) {
+        return new long[]{counted - absent, counted};
+    }
+
+    /** 百分比，保留一位小数；分母不大于 0 时返回 null */
+    static Double percent(long part, long whole) {
+        if (whole <= 0) {
             return null;
         }
-        return Math.round((counted - absent) * 1000.0 / counted) / 10.0;
+        return Math.round(part * 1000.0 / whole) / 10.0;
     }
 
     /** 未来（含此刻）的考试，按考试时间由近到远；没填考试时间的不算 */
@@ -428,7 +439,8 @@ public class WorkbenchService {
         }
     }
 
-    private static Map<Integer, Long> countMap(List<Map<String, Object>> rows) {
+    /** 把 {courseId, total} 行转成 课程 id → 数量（数据大屏也用） */
+    static Map<Integer, Long> countMap(List<Map<String, Object>> rows) {
         Map<Integer, Long> map = new HashMap<>();
         for (Map<String, Object> row : rows) {
             Object id = row.get("courseId");

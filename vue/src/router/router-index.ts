@@ -168,7 +168,8 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/dashboard',
         name: 'Dashboard',
-        meta: { permission: 'dashboard:view' },
+        // 管理员看全校、教师看本人任课；学生即使被授了权限码也进不来（后端同样拒绝）
+        meta: { permission: 'dashboard:view', roles: ['ADMIN', 'TEACHER'] },
         component: () => import('@/views/Dashboard.vue'),
     },
     { path: '/403', name: 'Forbidden', component: () => import('@/views/manager/403.vue') },

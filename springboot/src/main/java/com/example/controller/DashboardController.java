@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 
 /**
- * 数据大屏聚合统计接口（一次性返回大屏所需的全部指标）。
- * 统计与缓存逻辑见 {@link DashboardService}。
+ * 数据大屏聚合统计接口（一次性返回大屏所需的全部数据）。
+ * 需要 dashboard:view 权限；管理员看全校、教师只看本人任课，学生一律拒绝。统计与缓存逻辑见 {@link DashboardService}。
  */
 @RestController
 @RequestMapping("/dashboard")
@@ -23,6 +23,6 @@ public class DashboardController {
 
     @GetMapping("/stats")
     public Result stats() {
-        return Result.success(dashboardService.stats());
+        return Result.success(dashboardService.screen());
     }
 }

@@ -103,7 +103,8 @@ const pages = computed(() => {
       list.push({ title: t(link.label), to: link.path })
     }
   }
-  if (hasPermission('dashboard:view')) {
+  // 数据大屏只给管理员和教师（学生即使被授了权限码也打不开）
+  if (role !== 'STUDENT' && hasPermission('dashboard:view')) {
     list.push({ title: t('pages.dashboard.entry'), to: '/dashboard' })
   }
   return list

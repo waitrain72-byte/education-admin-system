@@ -36,7 +36,12 @@
         <section class="panel">
           <div class="panel__head">
             <span class="panel__title">{{ $t('workbench.teachingCourses') }}</span>
-            <router-link to="/courses" class="panel__more">{{ $t('workbench.allCourses') }} ›</router-link>
+            <span class="panel__links">
+              <router-link v-if="hasPermission('dashboard:view')" to="/dashboard" class="panel__more">
+                {{ $t('pages.dashboard.entry') }} ›
+              </router-link>
+              <router-link to="/courses" class="panel__more">{{ $t('workbench.allCourses') }} ›</router-link>
+            </span>
           </div>
           <div class="panel__body">
             <div v-if="activeCourses.length" class="course-grid">
@@ -92,7 +97,7 @@ import { useHomeText } from './useHomeText'
 const props = defineProps<{ data: Record<string, any> }>()
 
 const router = useRouter()
-const { user } = useUser()
+const { user, hasPermission } = useUser()
 const { greeting, semesterLine } = useHomeText(() => props.data.semester)
 
 const activeCourses = computed(() => (props.data.courses || []).filter((c: any) => c.status !== '已结课'))
@@ -108,6 +113,11 @@ const gradingLink = (courseId: number) => `/course/${courseId}/assignments`
 .next-enter {
   justify-self: start;
   margin-top: 8px;
+}
+
+.panel__links {
+  display: flex;
+  gap: 16px;
 }
 
 .todos {

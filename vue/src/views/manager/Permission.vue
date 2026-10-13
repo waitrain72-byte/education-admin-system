@@ -136,7 +136,7 @@ const MODULE_ORDER: string[] = [
   'log', 'permission', 'config', 'file',
 ]
 
-/** 各角色的系统默认权限码（与 sql/rbac_permission.sql 的授权矩阵保持一致），用于"恢复默认" */
+/** 各角色的系统默认权限码（与种子 sql/xm_educational_manager-full.sql 里的授权保持一致），用于"恢复默认" */
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   ADMIN: [
     'dashboard:view',
@@ -181,7 +181,6 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
     'file:upload',
   ],
   STUDENT: [
-    'dashboard:view',
     'course:view',
     'choice:view', 'choice:manage',
     'score:view',
@@ -199,6 +198,16 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
 }
 
+/**
+ * 对某个角色无论怎么勾都不生效的模块：数据大屏只给管理员和教师看（后端按身份拒绝学生），
+ * 学生这一项锁定为不勾，免得看起来授权了、实际打不开。
+ */
+const LOCKED_MODULES: Record<string, string[]> = {
+  STUDENT: ['dashboard'],
+}
+const isLocked = (codeOrModule: string) =>
+  (LOCKED_MODULES[activeRole.value] || []).some((m) => codeOrModule === m || codeOrModule.startsWith(`${m}:`))
+
 const moduleLabel = (module: string) => {
   // 中文环境用映射标题；英文回退为大写模块名
   if (isZh.value && MODULE_LABELS[module]) return MODULE_LABELS[module]
@@ -214,14 +223,14 @@ const treeData = computed<TreeNode[]>(() => {
       map[p.module] = {
         id: p.module,
         label: moduleLabel(p.module),
-        disabled,
+        disabled: disabled || isLocked(p.module),
         children: [],
       }
     }
     map[p.module].children!.push({
       id: p.code,
       label: isZh.value ? `${p.name}` : `${p.name} (${p.code})`,
-      disabled,
+      disabled: disabled || isLocked(p.code),
     })
   }
   // 按业务顺序重排一级模块；不在清单内的模块追加到末尾，避免新模块丢失
@@ -254,7 +263,7 @@ const load = async () => {
 /** 把当前角色的权限码回显到树（仅勾选叶子节点，父节点联动显示全选/半选） */
 const restoreChecked = () => {
   const role = roles.value.find((r) => r.code === activeRole.value)
-  const codes = role ? role.permissions.filter((c) => c.includes(':')) : []
+  const codes = role ? role.permissions.filter((c) => c.includes(':') && !isLocked(c)) : []
   treeRef.value?.setCheckedKeys(codes)
 }
 
@@ -281,7 +290,7 @@ const save = async () => {
   try {
     // 只取叶子权限码（node-key 中含 ":"），父节点(模块)仅作分组不入库
     const checkedKeys = (treeRef.value?.getCheckedKeys() || []) as string[]
-    const permissionCodes = checkedKeys.filter((k) => k.includes(':'))
+    const permissionCodes = checkedKeys.filter((k) => k.includes(':') && !isLocked(k))
     await request.put('/permission/updateRolePermissions', {
       roleCode: activeRole.value,
       permissionCodes,
