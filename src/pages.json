@@ -81,6 +81,7 @@
     }
   ],
   "preloadRule": {
+    "pages/home/home": { "network": "all", "packages": ["pages-course"] },
     "pages/courses/courses": { "network": "all", "packages": ["pages-course"] },
     "pages/schedule/schedule": { "network": "all", "packages": ["pages-admin"] }
   },

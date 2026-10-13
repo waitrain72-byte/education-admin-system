@@ -148,7 +148,7 @@ src/
 tests/                      # Vitest 单元测试
 ```
 
-`pages-course` 在进入「课程」tab 时预下载，`pages-admin` 在进入第三个 tab 时预下载。
+`pages-course` 在进入首页或「课程」tab 时预下载（首页的下一节课、今天的课、作业都直接进课程空间），`pages-admin` 在进入第三个 tab 时预下载。
 
 ## 实现要点
 
