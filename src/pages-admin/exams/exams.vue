@@ -70,7 +70,7 @@
             name="clock"
             :size="26"
           />
-          {{ e.examTime || '—' }}
+          {{ e.examTime || '—' }} · {{ e.courseId ? e.courseName || '—' : $t('pages.examplan.schoolWide') }}
         </view>
         <view
           v-if="e.content"
@@ -112,6 +112,25 @@
           maxlength="100"
         />
       </view>
+      <!-- 所属课程：第一项「全校」= 不挂课程；选了课程只给这门课的师生看 -->
+      <view class="xm-form-item">
+        <view class="xm-form-label">{{ $t('pages.examplan.course') }}</view>
+        <picker
+          mode="selector"
+          :range="courseRange"
+          :value="courseIndex"
+          @change="onCoursePicked"
+        >
+          <view class="xm-select">
+            <text>{{ courseLabel }}</text>
+            <xm-icon
+              name="chevron-down"
+              :size="28"
+            />
+          </view>
+        </picker>
+        <view class="course-hint">{{ $t('pages.examplan.coursePlaceholder') }}</view>
+      </view>
       <view class="xm-form-item">
         <view class="xm-form-label required">{{ $t('pages.examplan.examTime') }}</view>
         <xm-datetime
@@ -141,9 +160,9 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
-import { examplanApi } from '@/api'
+import { courseApi, examplanApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
 import { countdownTag, isCompleteExamTime } from '@/utils/examCountdown'
@@ -164,13 +183,41 @@ const examsSkeleton = useSkeleton(() => !exams.loaded.value && exams.loading.val
 const formOpen = ref(false)
 const editing = ref(null)
 const saving = ref(false)
-const form = reactive({ name: '', content: '', examTime: '' })
+const form = reactive({ name: '', content: '', examTime: '', courseId: null })
+
+// 所属课程的选项：第 0 项是「全校」；同名课程（不同老师开的班）后面带上任课教师
+const courses = ref([])
+const courseRange = computed(() => [
+  t('pages.examplan.schoolWide'),
+  ...courses.value.map((c) => (c.teacherName ? `${c.name}（${c.teacherName}）` : c.name)),
+])
+const courseIndex = computed(() =>
+  form.courseId == null ? 0 : courses.value.findIndex((c) => c.id === form.courseId) + 1,
+)
+// 课程列表没取到时，编辑旧考试仍显示它原来的课程名，不会被误显示成「全校」
+const courseLabel = computed(() => {
+  if (form.courseId == null) return courseRange.value[0]
+  if (courseIndex.value > 0) return courseRange.value[courseIndex.value]
+  return (editing.value && editing.value.courseName) || '—'
+})
+const onCoursePicked = (e) => {
+  const i = Number(e.detail.value)
+  form.courseId = i > 0 ? courses.value[i - 1].id : null
+}
+const loadCourses = async () => {
+  try {
+    courses.value = (await courseApi.selectAll(undefined, SILENT)) || []
+  } catch {
+    // 取不到课程时仍可发布全校考试
+  }
+}
 
 const openForm = (exam) => {
   editing.value = exam
   form.name = (exam && exam.name) || ''
   form.content = (exam && exam.content) || ''
   form.examTime = (exam && exam.examTime) || ''
+  form.courseId = exam && exam.courseId != null ? exam.courseId : null
   formOpen.value = true
 }
 
@@ -191,7 +238,13 @@ const save = async () => {
     uni.showToast({ title: t('pages.examplan.ruleContentRequired'), icon: 'none' })
     return
   }
-  const body = { name: form.name.trim(), content: form.content.trim(), examTime: form.examTime }
+  // courseId 为 null 也要传：后端按它把考试改回全校考试
+  const body = {
+    name: form.name.trim(),
+    content: form.content.trim(),
+    examTime: form.examTime,
+    courseId: form.courseId,
+  }
   saving.value = true
   try {
     if (editing.value) await examplanApi.update({ ...body, id: editing.value.id })
@@ -222,6 +275,7 @@ onShow(() => {
   if (!ensureRole(['ADMIN'])) return
   uni.setNavigationBarTitle({ title: t('menu.examplan') })
   if (!exams.loaded.value) exams.reload()
+  if (!courses.value.length) loadCourses()
 })
 
 onPullDownRefresh(async () => {
@@ -278,5 +332,12 @@ onReachBottom(() => exams.loadNext())
 
 .content {
   min-height: 200rpx;
+}
+
+.course-hint {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--xm-text-3);
 }
 </style>

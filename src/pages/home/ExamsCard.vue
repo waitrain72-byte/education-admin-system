@@ -22,7 +22,9 @@
         </view>
         <view class="exam-info">
           <view class="exam-name">{{ e.name }}</view>
-          <view class="exam-time xm-num">{{ e.examTime || '—' }}</view>
+          <view class="exam-time xm-num">
+            {{ e.examTime || '—' }}<text v-if="e.courseName"> · {{ e.courseName }}</text>
+          </view>
         </view>
         <text
           v-if="tagOf(e)"
