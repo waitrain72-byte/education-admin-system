@@ -84,7 +84,8 @@ Web 端按「**课程空间**」组织：顶部导航只有「首页 / 课程 / 
 | 文件上传安全              | 扩展名白名单（图片/常见文档/压缩包）+ 20MB 大小上限，拒绝可执行等危险文件；Excel 批量导入限 .xlsx/.xls                                                                                                                                        |
 | 通用 CRUD 框架            | `useCrud` + `CrudTable`/`CrudPage` + 后端 `CrudController/CrudService/CrudMapper`，教务后台的记录与日志页共用一套样板；带删除保护的实体批量删除逐条检查、整体回滚                                                                         |
 | 性能优化                  | 请求级用户缓存（单个写请求原先要查 3~4 遍同一行账号，收敛为 1 次）；成绩分段/考勤占比统计下推数据库 `GROUP BY`；学业预警按角色过滤下推 SQL；数据大屏按查看人缓存 30s、课程推荐 60s 进程内缓存；Element Plus 按需引入（JS 深导入 + CSS 按需，首屏样式 355→216 KB） |
-| 单元测试与规范            | 前端 Vitest 75 个用例（课表与课程空间纯函数、中英文词条一致性、Pinia store、useCrud、主题色派生、考试倒计时、数据大屏）；后端 JUnit 5 + Mockito 233 个用例（选课规则、签到、作业、成绩册与学分记账、请假、删除保护、学业预警与协同过滤、数据大屏的可见范围、启动迁移等）；vue-tsc + ESLint + Prettier |
+| 加载骨架屏                | 数据回来之前按每个页面自己的版式画出占位块（标题、按钮、表头照常显示），一道浅光扫过整页；0.2 秒内加载完的不显示骨架，显示了至少停 0.5 秒，不会一闪而过；表格的占位按真实表头的列宽生成；深色模式换暗色占位，系统开了「减少动态效果」时不扫光；小程序同一套（页面取数据不再弹全屏转圈，只有提交、保存这类操作才转圈） |
+| 单元测试与规范            | 前端 Vitest 81 个用例（课表与课程空间纯函数、中英文词条一致性、Pinia store、useCrud、主题色派生、考试倒计时、数据大屏、骨架屏显示时机）；后端 JUnit 5 + Mockito 233 个用例（选课规则、签到、作业、成绩册与学分记账、请假、删除保护、学业预警与协同过滤、数据大屏的可见范围、启动迁移等）；vue-tsc + ESLint + Prettier |
 | Docker 化部署             | 三容器编排（MySQL 自动导库 + healthcheck、后端、前端 nginx 反代 `/api`）                                                                                                                                                                      |
 
 **内置账号**（初始密码均为 `123456`，数据库存 BCrypt 哈希，登录后可修改）：
@@ -306,7 +307,7 @@ npm run dev
 
 #### 5. 改代码怎么看效果
 
-前端改 `.vue`/`.ts` 文件保存后浏览器自动热更新；后端改 Java 文件需重启 `mvn spring-boot:run`。改完前端执行 `npm run lint`（格式检查）、`npx vue-tsc --noEmit`（类型检查）和 `npm run test`（75 个单元测试）；后端执行 `mvn test`（233 个单元测试）。
+前端改 `.vue`/`.ts` 文件保存后浏览器自动热更新；后端改 Java 文件需重启 `mvn spring-boot:run`。改完前端执行 `npm run lint`（格式检查）、`npx vue-tsc --noEmit`（类型检查）和 `npm run test`（81 个单元测试）；后端执行 `mvn test`（233 个单元测试）。
 
 ### Web 端打包发布
 
@@ -490,6 +491,7 @@ BCrypt 无法反推原密码。用管理员账号在【教务后台 → 人员�
 | 系统名称    | Web：`vue/src/locales/zh-CN.ts` / `en-US.ts` 的 `layout.title`（顶栏）、`login.systemName`（登录 / 注册页）、`pages.dashboard.adminTitle`（数据大屏标题），浏览器标签页标题在 `vue/index.html`；小程序：`BISHE-mobile/src/locales/zh-CN.js` / `en-US.js` 的 `login.systemName`（登录页）与 `layout.title`（转发标题），以及 `src/manifest.json` 的 `name`（微信里显示的小程序名称以公众平台登记的为准） |
 | Logo / 配色 | Logo 是 SVG 组件 `vue/src/layout/BrandMark.vue`（顶栏与登录页共用），浏览器标签图标是 `vue/public/favicon.svg` / `favicon.ico`，小程序是 `BISHE-mobile/src/components/xm-brand-mark/`；主题变量 Web `vue/src/assets/css/theme.css`、小程序 `BISHE-mobile/src/styles/theme.scss`。**主题色不用改代码**——Web 端登录后点顶栏的彩色圆点、小程序在「我的」页即可换，按账号保存、两端同步；要调预设色板改 `vue/src/composables/useThemeColor.ts` 与 `BISHE-mobile/src/utils/themeColor.js` 的 `PRESET_COLORS` |
 | 页面切换动画 | `vue/src/assets/css/layout.css` 的 `.page-fade-*`（离场 0.06s + 进场 0.18s，系统开了「减少动态效果」时自动关闭）；想完全关掉就把两条 `transition` 改成 `none` |
+| 加载骨架屏  | 占位块颜色在 `vue/src/assets/css/theme.css` 的 `--xm-sk-*`（深浅色各一套）；扫光速度在 `layout.css` 的 `.sk`（`sk-sweep` 2.2s 一轮）；多久之后才显示、至少停多久在 `vue/src/composables/useSkeleton.ts`（0.2s / 0.5s，改延迟时 `layout.css` 的 `.sk-region` 一起改）；小程序对应 `BISHE-mobile/src/styles/theme.scss` 的 `.sk` 与 `src/composables/useSkeleton.js`，两端一起改 |
 | 学期与教学周 | 不用改代码：【教务后台 → 学期设置】里改学期名称、开学日期、教学周数（存 `sys_config` 表）                                    |
 | 大屏样式    | `vue/src/views/Dashboard.vue`（1920×1080 等比缩放）                                                                           |
 | 演示数据    | `sql/` 下备份脚本可按需修改                                                                                                   |

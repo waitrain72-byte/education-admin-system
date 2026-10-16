@@ -29,7 +29,7 @@
           :aria-selected="filter === f.key"
           @click="filter = f.key"
         >
-          {{ $t(f.label) }}<span class="chip__count num">{{ counts[f.key] }}</span>
+          {{ $t(f.label) }}<span v-if="!skeleton" class="chip__count num">{{ counts[f.key] }}</span>
         </button>
       </div>
       <el-input
@@ -41,9 +41,9 @@
       />
     </div>
 
-    <div v-if="loading && !courses.length" class="course-grid">
-      <el-skeleton v-for="i in 6" :key="i" animated class="panel panel--pad" :rows="3" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="course-grid">
+      <CourseCardSkeleton v-for="i in 8" :key="i" :index="i" />
+    </SkeletonRegion>
     <div v-else-if="shown.length" class="course-grid">
       <CourseCard v-for="c in shown" :key="c.id" :course="c" :to="`/course/${c.id}`">
         <template v-if="role !== 'STUDENT'" #foot>
@@ -66,6 +66,9 @@ import { Search } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUser } from '@/components/useUser'
 import CourseCard from '@/components/CourseCard.vue'
+import CourseCardSkeleton from '@/components/skeleton/CourseCardSkeleton.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 
 defineOptions({ name: 'CoursesPage' })
 
@@ -76,6 +79,7 @@ const roleKey = computed(() => String(role.value || 'STUDENT').toLowerCase())
 
 const courses = ref<any[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const keyword = ref('')
 const filter = ref<'all' | 'active' | 'upcoming' | 'finished'>('all')
 

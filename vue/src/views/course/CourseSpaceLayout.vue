@@ -1,8 +1,27 @@
 <template>
   <div class="space">
-    <div v-if="!overview && loading" class="panel panel--pad">
-      <el-skeleton animated :rows="4" />
-    </div>
+    <!-- 骨架：课程色页头（标签、课名、教师与时间）+ 分页栏 + 下面一块内容 -->
+    <SkeletonRegion v-if="skeleton" class="space-sk">
+      <header class="space-head">
+        <div class="space-head__band space-sk__band">
+          <SkBlock class="space-sk__bg" tone="cover" w="100%" h="100%" />
+          <SkBlock class="space-sk__line space-sk__back" tone="on-cover" :w="52" :h="13" />
+          <div class="space-head__tags">
+            <SkBlock v-for="w in [38, 46, 50]" :key="w" tone="on-cover" shape="pill" :w="w" :h="20" />
+          </div>
+          <SkBlock class="space-sk__name" tone="on-cover" :w="220" :h="26" />
+          <div class="space-head__meta">
+            <SkBlock v-for="w in [48, 150, 40, 64]" :key="w" class="space-sk__line" tone="on-cover" :w="w" />
+          </div>
+        </div>
+        <div class="space-tabs">
+          <span v-for="i in 7" :key="i" class="space-tabs__item"><SkBlock :w="i === 1 ? 32 : 28" class="space-sk__line" /></span>
+        </div>
+      </header>
+      <section class="panel panel--pad">
+        <SkeletonList :rows="4" />
+      </section>
+    </SkeletonRegion>
     <el-result v-else-if="!overview" icon="warning" :title="$t('space.notFound')">
       <template #extra>
         <el-button type="primary" @click="router.push('/courses')">{{ $t('space.backToCourses') }}</el-button>
@@ -58,6 +77,10 @@ import request from '@/utils/request'
 import { courseColor } from '@/utils/courseColor'
 import { segmentShortName } from '@/utils/schedule'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -111,6 +134,9 @@ watch([relation, () => route.name], ([rel, name]) => {
 })
 
 watch(courseId, load, { immediate: true })
+
+// 放在首次加载之后创建：这时 loading 已经为真，第一次渲染就是骨架。换课时页面上还有上一门课，不再出骨架
+const skeleton = useSkeleton(() => !overview.value && loading.value)
 </script>
 
 <style scoped>
@@ -241,6 +267,40 @@ watch(courseId, load, { immediate: true })
   height: 3px;
   border-radius: 3px 3px 0 0;
   background: var(--cc);
+}
+
+/* ---------- 骨架：页头的课程色换成占位底色，内容位置与真实页头一致 ---------- */
+.space-sk {
+  display: grid;
+  gap: 20px;
+}
+
+.space-sk__band {
+  position: relative;
+  background: none;
+}
+
+.space-sk__band > :not(.space-sk__bg) {
+  position: relative;
+}
+
+.space-sk__bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+/* 占位块高度取字号，上下补回行高差，换成内容时页头不跳 */
+.space-sk__line {
+  margin: 3px 0;
+}
+
+.space-sk__back {
+  margin-bottom: 9px;
+}
+
+.space-sk__name {
+  margin: 4px 0;
 }
 
 @media (max-width: 640px) {

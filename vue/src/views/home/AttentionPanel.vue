@@ -4,7 +4,9 @@
       <span class="panel__title">{{ $t('workbench.attention.title') }}</span>
     </div>
     <div class="panel__body">
-      <el-skeleton v-if="loading" animated :rows="2" />
+      <SkeletonRegion v-if="skeleton">
+        <SkeletonList :rows="2" lead="avatar" trail="button" />
+      </SkeletonRegion>
       <template v-else-if="students.length">
         <p class="att-hint">{{ $t('workbench.attention.hint') }}</p>
         <ul class="att">
@@ -36,6 +38,9 @@ import { computed, onMounted, ref } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/element-plus'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 /** 老师首页：自己课上学业风险不是「正常」的学生（原来在旧版「学业预警」页里），可以直接发提醒 */
@@ -43,6 +48,7 @@ const LIMIT = 5
 
 const students = ref<Record<string, any>[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value)
 const expanded = ref(false)
 const sending = ref<number | null>(null)
 const sent = ref<number[]>([])

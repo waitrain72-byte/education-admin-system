@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppearanceSettings: typeof import('./src/components/AppearanceSettings.vue')['default']
     CourseCard: typeof import('./src/components/CourseCard.vue')['default']
+    CourseCardSkeleton: typeof import('./src/components/skeleton/CourseCardSkeleton.vue')['default']
     CrudPage: typeof import('./src/components/CrudPage.vue')['default']
     CrudTable: typeof import('./src/components/CrudTable.vue')['default']
     ElAlert: typeof import('element-plus/es/components/alert/index')['ElAlert']
@@ -56,6 +57,10 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SchemaForm: typeof import('./src/components/SchemaForm.vue')['default']
+    SkBlock: typeof import('./src/components/skeleton/SkBlock.vue')['default']
+    SkeletonList: typeof import('./src/components/skeleton/SkeletonList.vue')['default']
+    SkeletonRegion: typeof import('./src/components/skeleton/SkeletonRegion.vue')['default']
+    TableSkeleton: typeof import('./src/components/skeleton/TableSkeleton.vue')['default']
     UserAvatar: typeof import('./src/components/UserAvatar.vue')['default']
   }
   export interface ComponentCustomProperties {

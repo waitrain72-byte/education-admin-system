@@ -1,9 +1,6 @@
 <template>
   <div>
-    <div v-if="!data && loading" class="home-skeleton" aria-busy="true">
-      <el-skeleton animated :rows="3" class="panel panel--pad" />
-      <el-skeleton animated :rows="6" class="panel panel--pad" />
-    </div>
+    <HomeSkeleton v-if="skeleton" />
     <el-result v-else-if="!data && failed" icon="warning" :title="$t('workbench.loadFailed')">
       <template #extra>
         <el-button type="primary" @click="load">{{ $t('workbench.retry') }}</el-button>
@@ -22,15 +19,18 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import request from '@/utils/request'
 import { syncServerClock } from '@/composables/useServerClock'
 import { onSocketMessage } from '@/composables/useNoticeSocket'
+import { useSkeleton } from '@/composables/useSkeleton'
 import StudentHome from './StudentHome.vue'
 import TeacherHome from './TeacherHome.vue'
 import AdminHome from './AdminHome.vue'
+import HomeSkeleton from './HomeSkeleton.vue'
 
 defineOptions({ name: 'HomePage' })
 
 const data = ref<Record<string, any> | null>(null)
 const loading = ref(false)
 const failed = ref(false)
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 /** 首页数据一次取齐（/workbench/summary 按角色返回不同内容），并用返回的服务器时间校准时钟 */
 const load = async () => {
@@ -70,10 +70,3 @@ onBeforeUnmount(() => {
   if (refreshTimer) clearTimeout(refreshTimer)
 })
 </script>
-
-<style scoped>
-.home-skeleton {
-  display: grid;
-  gap: 20px;
-}
-</style>

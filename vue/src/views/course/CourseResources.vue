@@ -20,9 +20,9 @@
     </section>
 
     <section class="panel">
-      <div v-if="!list.length && loading" class="panel__body">
-        <el-skeleton animated :rows="4" />
-      </div>
+      <SkeletonRegion v-if="skeleton" class="panel__body">
+        <SkeletonList :rows="4" trail="text" />
+      </SkeletonRegion>
       <div v-else-if="!list.length" class="rs-empty">
         <div class="rs-empty__title">{{ $t('space.resources.empty') }}</div>
         <p v-if="canTeach" class="rs-empty__hint">{{ $t('space.resources.emptyTeacher') }}</p>
@@ -50,6 +50,9 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { UploadFile, UploadRawFile } from 'element-plus'
 import FileChip from '@/components/FileChip.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
@@ -82,6 +85,9 @@ const load = async () => {
 
 watch(courseId, load, { immediate: true })
 useCourseEvents(() => courseId.value, ['resources'], load)
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !list.value.length && loading.value)
 
 const beforeUpload = (file: UploadRawFile) => {
   if (file.size > MAX_UPLOAD_BYTES) {

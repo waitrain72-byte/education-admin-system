@@ -21,9 +21,45 @@
       </span>
     </div>
 
-    <div v-if="loading && !current" class="panel panel--pad">
-      <el-skeleton animated :rows="6" />
-    </div>
+    <!-- 骨架：周视图画成课表格子（几格有课块），月视图画成月历格子 -->
+    <SkeletonRegion v-if="skeleton">
+      <div v-if="view === 'week'" class="sched-sk-scroll">
+        <div class="sched-sk sched-sk--week" aria-hidden="true">
+          <span></span>
+          <span v-for="d in 7" :key="'h' + d" class="sched-sk__head">
+            <SkBlock :w="28" :h="11" />
+            <SkBlock :w="44" :h="15" />
+          </span>
+          <template v-for="p in 5" :key="'p' + p">
+            <span class="sched-sk__time">
+              <SkBlock :w="36" :h="12" />
+              <SkBlock :w="30" :h="10" />
+            </span>
+            <span v-for="d in 7" :key="d" class="sched-sk__cell">
+              <SkBlock v-if="SKELETON_BUSY.has(`${p}-${d}`)" w="100%" h="100%" />
+            </span>
+          </template>
+        </div>
+      </div>
+      <div v-else class="sched-month">
+        <div class="sched-month__main">
+          <div v-if="isStudent" class="sched-select">{{ $t('leave.requestHint') }}</div>
+          <div class="sched-sk sched-sk--month" aria-hidden="true">
+            <span v-for="d in 7" :key="'h' + d" class="sched-sk__mhead"><SkBlock :w="24" :h="12" /></span>
+            <span v-for="i in 35" :key="i" class="sched-sk__day">
+              <SkBlock :w="18" :h="14" />
+              <SkBlock v-if="i % 5 === 2" w="80%" :h="16" />
+            </span>
+          </div>
+        </div>
+        <aside v-if="isStudent" class="panel sched-leaves">
+          <div class="panel__head">
+            <span class="panel__title">{{ $t('leave.mine') }}</span>
+          </div>
+          <div class="panel__body"><SkeletonList :rows="2" trail="pill" /></div>
+        </aside>
+      </div>
+    </SkeletonRegion>
 
     <template v-else-if="view === 'week' && weekData">
       <WeekTimetable :data="weekData" :show-teacher="isStudent" />
@@ -126,7 +162,14 @@ import { courseColor } from '@/utils/courseColor'
 import { syncServerClock } from '@/composables/useServerClock'
 import { onSocketMessage } from '@/composables/useNoticeSocket'
 import { currentLocale } from '@/composables/useLocale'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
+
+/** 周视图骨架里画课块的格子（第几大节-星期几），看起来像一张排了课的课表 */
+const SKELETON_BUSY = new Set(['1-1', '1-3', '2-2', '2-4', '3-2', '3-5', '4-4'])
 
 defineOptions({ name: 'SchedulePage' })
 
@@ -163,6 +206,17 @@ const periodLabel = computed(() => {
   return ''
 })
 
+// 学生自己的请假记录（月历右侧）。要写在 load 前面：load 在下面的 watch 里立即执行，月历和它同时取
+const myLeaves = ref<Record<string, any>[]>([])
+const loadMyLeaves = async () => {
+  try {
+    const list = (await request.get<Record<string, any>[]>('/apply/selectAll')) || []
+    myLeaves.value = list.sort((a, b) => String(b.time).localeCompare(String(a.time)) || b.id - a.id)
+  } catch {
+    myLeaves.value = []
+  }
+}
+
 const load = async () => {
   loading.value = true
   try {
@@ -171,10 +225,13 @@ const load = async () => {
       weekData.value = data
       anchor.value = data.monday
     } else {
-      const data = await request.get<Record<string, any>>('/schedule/month', { params: month.value ? { month: month.value } : undefined })
+      // 月历与「我的请假」一起取、一起显示：先显示月历再补请假，中间会闪一下「还没有请假」
+      const [data] = await Promise.all([
+        request.get<Record<string, any>>('/schedule/month', { params: month.value ? { month: month.value } : undefined }),
+        isStudent.value ? loadMyLeaves() : null,
+      ])
       monthData.value = data
       month.value = data.month
-      if (isStudent.value) await loadMyLeaves()
     }
     syncUrl()
   } catch {
@@ -215,6 +272,9 @@ watch(
   { immediate: true },
 )
 
+// 放在首次加载之后创建，第一次渲染就是骨架；翻周、翻月时上一页还在，不出骨架
+const skeleton = useSkeleton(() => loading.value && !current.value)
+
 // 老师布置、删除作业时后端会推课程事件：日程里的作业截止跟着刷新
 let refreshTimer: ReturnType<typeof setTimeout> | null = null
 const offSocket = onSocketMessage((message) => {
@@ -234,7 +294,6 @@ const selection = reactive<{ from: string | null; to: string | null }>({ from: n
 /** 已经点了开始日期、等着点结束日期 */
 const picking = ref(false)
 const leaveOpen = ref(false)
-const myLeaves = ref<Record<string, any>[]>([])
 
 const selectedDays = computed(() => (selection.from && selection.to ? daysBetween(selection.from, selection.to) + 1 : 0))
 
@@ -268,15 +327,6 @@ const clearSelection = () => {
   selection.from = null
   selection.to = null
   picking.value = false
-}
-
-const loadMyLeaves = async () => {
-  try {
-    const list = (await request.get<Record<string, any>[]>('/apply/selectAll')) || []
-    myLeaves.value = list.sort((a, b) => String(b.time).localeCompare(String(a.time)) || b.id - a.id)
-  } catch {
-    myLeaves.value = []
-  }
 }
 
 const onSubmitted = async () => {
@@ -340,6 +390,73 @@ watch(current, (data) => {
 .sched-note {
   font-size: 13px;
   color: var(--xm-text-secondary);
+}
+
+/* ---------- 骨架：尺寸与 WeekTimetable / MonthCalendar 的格子一致 ---------- */
+.sched-sk-scroll {
+  overflow-x: auto;
+}
+
+.sched-sk {
+  display: grid;
+  border: 1px solid var(--xm-border);
+  border-radius: var(--xm-radius-lg);
+  background: var(--xm-bg-card);
+  overflow: hidden;
+}
+
+.sched-sk--week {
+  grid-template-columns: 72px repeat(7, minmax(104px, 1fr));
+  min-width: 800px;
+}
+
+.sched-sk__head {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: 74px;
+  padding: 10px 8px 8px;
+  border-left: 1px solid var(--xm-border);
+}
+
+.sched-sk__time {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--xm-border);
+}
+
+.sched-sk__cell {
+  display: grid;
+  min-height: 84px;
+  padding: 5px;
+  border-top: 1px solid var(--xm-border);
+  border-left: 1px solid var(--xm-border);
+}
+
+.sched-sk--month {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sched-sk__mhead {
+  padding: 8px 10px;
+}
+
+.sched-sk__day {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 108px;
+  padding: 8px 6px 6px;
+  border-top: 1px solid var(--xm-border);
+  border-left: 1px solid var(--xm-border);
+}
+
+/* 每行第一格不画左边线（前 7 个子元素是星期表头） */
+.sched-sk__day:nth-child(7n + 8) {
+  border-left: 0;
 }
 
 .sched-month {

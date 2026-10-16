@@ -61,7 +61,7 @@
     </div>
 
     <section class="panel">
-      <el-table :key="tab" v-loading="loading" :data="rows" row-key="id" class="pa-table" :empty-text="$t('admin.people.empty')">
+      <el-table :key="tab" v-loading="loading && !skeleton" :data="skeleton ? [] : rows" row-key="id" class="pa-table">
         <el-table-column :label="$t('admin.people.name')" min-width="140">
           <template #default="{ row }">
             <div class="pa-who">
@@ -128,6 +128,11 @@
             <el-button link type="danger" :disabled="isSelf(row)" @click="remove(row)">{{ $t('admin.people.delete') }}</el-button>
           </template>
         </el-table-column>
+        <!-- 第一次加载、切换页签：表头照常显示，表身画占位行（第一列带头像）；翻页、搜索时已有数据，照旧转圈 -->
+        <template #empty>
+          <TableSkeleton v-if="skeleton" avatar :row-height="56" />
+          <template v-else>{{ $t('admin.people.empty') }}</template>
+        </template>
       </el-table>
 
       <div v-if="total > pageSize" class="pa-pager">
@@ -193,6 +198,8 @@ import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { useUser } from '@/components/useUser'
 import { useDownload } from '@/composables/useDownload'
+import { useSkeleton } from '@/composables/useSkeleton'
+import TableSkeleton from '@/components/skeleton/TableSkeleton.vue'
 import { apiMessage, t } from '@/i18n'
 
 defineOptions({ name: 'PeopleAdmin' })
@@ -216,6 +223,7 @@ const total = ref(0)
 const pageNum = ref(1)
 const pageSize = 10
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !rows.value.length)
 
 const roleName = computed(() => t(`admin.people.roleName.${tab.value}`))
 const isSelf = (row: Record<string, any>) => tab.value === 'admins' && row.id === user.value.id && user.value.role === 'ADMIN'

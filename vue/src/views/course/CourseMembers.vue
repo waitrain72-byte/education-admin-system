@@ -1,8 +1,32 @@
 <template>
   <div class="mb">
-    <div v-if="!data && loading" class="panel panel--pad">
-      <el-skeleton animated :rows="5" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="mb">
+      <section class="panel mb-teacher">
+        <SkBlock :w="44" :h="44" shape="circle" />
+        <div class="sk-stack">
+          <span class="mb-teacher__label">{{ $t('space.members.teacher') }}</span>
+          <SkBlock :w="96" :h="16" />
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel__head mb-head">
+          <span class="panel__title">{{ $t('space.members.students') }}</span>
+          <SkBlock class="mb-search" :h="32" />
+        </div>
+        <div class="panel__body">
+          <SkeletonList v-if="teaching" :rows="6" lead="avatar" :avatar="28" trail="text" />
+          <div v-else class="mb-grid" aria-hidden="true">
+            <div v-for="i in 9" :key="i" class="mb-card">
+              <SkBlock :w="36" :h="36" shape="circle" />
+              <span class="sk-stack">
+                <SkBlock :w="i % 2 ? 42 : 56" />
+                <SkBlock :w="64" :h="11" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </SkeletonRegion>
 
     <template v-else-if="data">
       <section v-if="data.teacher" class="panel mb-teacher">
@@ -78,8 +102,12 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import request from '@/utils/request'
 import { matchesPerson } from '@/utils/courseSpace'
+import { useSkeleton } from '@/composables/useSkeleton'
 
 const props = defineProps<{ overview: Record<string, any> }>()
 
@@ -106,6 +134,9 @@ const load = async () => {
 }
 
 watch(courseId, load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const byRate = (a: Record<string, any>, b: Record<string, any>) => (a.attendanceRate ?? -1) - (b.attendanceRate ?? -1)
 const rateTone = (rate: number) => (rate >= 90 ? 'is-ok' : rate >= 75 ? 'is-warn' : 'is-bad')

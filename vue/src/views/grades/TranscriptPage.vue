@@ -7,10 +7,15 @@
       </div>
     </div>
 
-    <el-skeleton v-if="loading && !data" animated :rows="6" />
-
-    <template v-else-if="data">
-      <div class="tp-kpis">
+    <template v-if="data || skeleton">
+      <!-- 骨架：四个指标的名称照常显示，数字是占位；下面的表格表头照常显示，表身是占位行 -->
+      <div v-if="skeleton" class="tp-kpis sk-region" aria-hidden="true">
+        <div v-for="key in ['credits', 'gpa', 'average', 'results']" :key="key" class="tp-kpi">
+          <span class="tp-kpi__label">{{ $t('transcript.' + key) }}</span>
+          <SkBlock :w="key === 'results' ? 96 : 52" :h="key === 'results' ? 22 : 28" />
+        </div>
+      </div>
+      <div v-else class="tp-kpis">
         <div class="tp-kpi">
           <span class="tp-kpi__label">{{ $t('transcript.credits') }}</span>
           <b class="tp-kpi__value num">{{ summary.credits }}</b>
@@ -36,7 +41,7 @@
       </div>
 
       <section class="panel">
-        <el-table :data="rows" row-key="courseId" class="tp-table" :empty-text="$t('transcript.empty')">
+        <el-table :data="skeleton ? [] : rows" row-key="courseId" class="tp-table">
           <el-table-column :label="$t('transcript.course')" min-width="190" fixed="left">
             <template #default="{ row }">
               <div class="tp-course">
@@ -72,6 +77,10 @@
               <span v-else class="pill pill--bad">{{ $t('transcript.fail') }}</span>
             </template>
           </el-table-column>
+          <template #empty>
+            <TableSkeleton v-if="skeleton" :row-height="58" />
+            <template v-else>{{ $t('transcript.empty') }}</template>
+          </template>
         </el-table>
       </section>
 
@@ -84,6 +93,9 @@
 import { computed, onMounted, ref } from 'vue'
 import request from '@/utils/request'
 import { courseColor } from '@/utils/courseColor'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import TableSkeleton from '@/components/skeleton/TableSkeleton.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 
 defineOptions({ name: 'TranscriptPage' })
 
@@ -97,6 +109,7 @@ const PARTS = [
 
 const data = ref<Record<string, any> | null>(null)
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !data.value)
 
 const summary = computed(() => data.value?.summary || {})
 const rows = computed<Record<string, any>[]>(() => data.value?.rows || [])

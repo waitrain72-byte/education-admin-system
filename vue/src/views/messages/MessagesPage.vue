@@ -26,8 +26,11 @@
           <el-button :disabled="!messageStore.unread" @click="readAll">{{ $t('messageCenter.readAll') }}</el-button>
         </div>
 
-        <section v-loading="mine.loading" class="panel">
-          <ul v-if="mine.list.length" class="msg-list">
+        <section v-loading="mine.loading && !mineSkeleton" class="panel">
+          <SkeletonRegion v-if="mineSkeleton" class="panel__body">
+            <SkeletonList :rows="5" lead="pill" trail="text" />
+          </SkeletonRegion>
+          <ul v-else-if="mine.list.length" class="msg-list">
             <li v-for="m in mine.list" :key="m.id" class="msg-item" :class="{ 'is-unread': !m.isRead }">
               <button type="button" class="msg-item__main" @click="openMessage(m)">
                 <span class="pill" :class="typePill(m.type)">{{ typeLabel(m.type) }}</span>
@@ -77,8 +80,11 @@
           <el-button v-if="canManageNotice" type="primary" @click="compose()">{{ $t('messageCenter.compose') }}</el-button>
         </div>
 
-        <section v-loading="notices.loading" class="panel">
-          <ul v-if="notices.list.length" class="notice-list">
+        <section v-loading="notices.loading && !noticesSkeleton" class="panel">
+          <SkeletonRegion v-if="noticesSkeleton" class="panel__body">
+            <SkeletonList :rows="5" trail="text" />
+          </SkeletonRegion>
+          <ul v-else-if="notices.list.length" class="notice-list">
             <li v-for="n in notices.list" :key="n.id" class="notice-item">
               <button type="button" class="notice-item__main" @click="showNotice(n)">
                 <span class="notice-item__title">{{ n.title }}</span>
@@ -140,6 +146,9 @@ import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import request, { type PageResult } from '@/utils/request'
 import { useUser } from '@/components/useUser'
 import { useMessageStore } from '@/stores/messages'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
 
 defineOptions({ name: 'MessagesPage' })
@@ -155,6 +164,8 @@ const canManageNotice = computed(() => hasPermission('notice:manage'))
 // ========== 我的消息 ==========
 const unreadOnly = ref(false)
 const mine = reactive({ list: [] as any[], total: 0, pageNum: 1, pageSize: 10, loading: false })
+// 列表还空着时才出骨架；翻页、切「未读」时已有内容，照旧在面板上转圈
+const mineSkeleton = useSkeleton(() => mine.loading && !mine.list.length)
 
 const loadMine = async (pageNum = 1) => {
   mine.loading = true
@@ -223,6 +234,7 @@ const removeMessage = async (m: any) => {
 // ========== 通知公告 ==========
 const noticeKeyword = ref('')
 const notices = reactive({ list: [] as any[], total: 0, pageNum: 1, pageSize: 10, loading: false })
+const noticesSkeleton = useSkeleton(() => notices.loading && !notices.list.length)
 let noticesLoaded = false
 
 const loadNotices = async (pageNum = 1) => {

@@ -1,6 +1,23 @@
 <template>
   <div class="ad">
-    <el-skeleton v-if="!data && loading" animated :rows="6" />
+    <SkeletonRegion v-if="skeleton" class="ad">
+      <header class="ad-head">
+        <SkBlock :w="132" :h="22" />
+        <SkBlock :w="64" :h="13" />
+      </header>
+      <section class="ad-section">
+        <h3 class="ad-section__title">{{ $t('space.assignments.requirement') }}</h3>
+        <span class="sk-stack">
+          <SkBlock w="96%" />
+          <SkBlock w="88%" />
+          <SkBlock w="54%" />
+        </span>
+      </section>
+      <section class="ad-section">
+        <SkBlock :w="96" :h="16" />
+        <SkeletonList :rows="3" :lead="canTeach ? 'avatar' : 'none'" />
+      </section>
+    </SkeletonRegion>
 
     <template v-else-if="data">
       <header class="ad-head">
@@ -145,9 +162,13 @@ import { computed, ref, watch } from 'vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import FileChip from '@/components/FileChip.vue'
 import FileUploadButton, { type UploadedFile } from '@/components/FileUploadButton.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/element-plus'
 import { ASSIGNMENT_STATUSES } from '@/utils/courseSpace'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const props = defineProps<{
@@ -194,6 +215,9 @@ const load = async () => {
 }
 
 watch(() => [props.courseId, props.assignmentId], load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 defineExpose({ reload: load })
 

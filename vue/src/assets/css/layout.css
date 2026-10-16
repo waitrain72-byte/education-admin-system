@@ -173,6 +173,95 @@
     color: var(--xm-text-secondary);
 }
 
+/* ---------- 骨架屏：数据回来之前按页面版式画的占位块 ----------
+   所有占位块共用同一道光：渐变按视口定位（background-attachment: fixed），光带从视口左边外扫到右边外，
+   整页看起来是一道光扫过，而不是每块各闪各的。不支持 fixed 背景的浏览器（iOS Safari）退化成每块各扫各的。 */
+.sk {
+    display: block;
+    flex-shrink: 0;
+    max-width: 100%;
+    border-radius: var(--xm-radius-sm);
+    background-color: var(--xm-sk-base);
+    background-image: linear-gradient(100deg, transparent 45%, var(--xm-sk-shine) 50%, transparent 55%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 300vw 100vh;
+    animation: sk-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.sk--brand {
+    background-color: var(--xm-sk-brand);
+}
+
+.sk--cover {
+    background-color: var(--xm-sk-cover);
+}
+
+.sk--on-cover {
+    background-color: var(--xm-sk-on-cover);
+}
+
+.sk--pill {
+    border-radius: 999px;
+}
+
+.sk--circle {
+    border-radius: 50%;
+}
+
+/* 几行占位竖着排 */
+.sk-stack {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* 光扫完停一会儿再扫下一遍 */
+@keyframes sk-sweep {
+    0% {
+        background-position: -180vw 0;
+    }
+
+    65%,
+    100% {
+        background-position: -20vw 0;
+    }
+}
+
+/* 骨架区域先隐身 0.2 秒再淡入：0.2 秒内就加载完的页面看不到骨架，不会闪一下
+   （这个时长与 composables/useSkeleton.ts 的 SKELETON_DELAY 一致，改一处要两处一起改） */
+.sk-region {
+    animation: sk-reveal 0.15s ease-out 0.2s both;
+}
+
+@keyframes sk-reveal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 只给读屏软件看的文字（如骨架里的「正在加载」） */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* 系统开了「减少动态效果」：不扫光，只留静止的占位块 */
+@media (prefers-reduced-motion: reduce) {
+    .sk {
+        animation: none;
+        background-image: none;
+    }
+}
+
 /* ---------- 切页动画：离场极短，进场轻微上移 ---------- */
 .page-fade-leave-active {
     transition: opacity 0.06s linear;

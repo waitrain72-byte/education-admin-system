@@ -1,10 +1,12 @@
 <template>
   <div class="table">
-    <!-- 首次加载且无数据时显示骨架屏，替代全屏转圈 -->
-    <div v-if="loading && !data.length" class="table-skeleton">
-      <el-skeleton v-for="r in 4" :key="r" :rows="2" animated style="margin-bottom: 24px" />
-    </div>
-    <el-table v-else v-loading="loading && !!data.length" :data="data" stripe @selection-change="$emit('selection-change', $event)">
+    <!-- 首次加载且无数据：表头照常显示，表身画占位行；翻页等已有数据的刷新才在表格上转圈 -->
+    <el-table
+      v-loading="loading && !skeleton"
+      :data="skeleton ? [] : data"
+      stripe
+      @selection-change="$emit('selection-change', $event)"
+    >
       <el-table-column v-if="selectable" type="selection" width="55" align="center" />
       <!-- 主键 id 列统一渲染为"当前页行号"（跨页连续），避免显示全局自增的大数值 -->
       <el-table-column
@@ -30,10 +32,12 @@
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty :image-size="88" :description="$t('common.empty')" />
+        <TableSkeleton v-if="skeleton" />
+        <el-empty v-else :image-size="88" :description="$t('common.empty')" />
       </template>
     </el-table>
-    <div class="pagination">
+    <!-- 骨架期间总数还不知道，不显示「共 0 条」 -->
+    <div v-if="!skeleton" class="pagination">
       <el-pagination
           background
           :current-page="pageNum"
@@ -48,6 +52,9 @@
 </template>
 
 <script setup lang="ts">
+import { useSkeleton } from '@/composables/useSkeleton'
+import TableSkeleton from './skeleton/TableSkeleton.vue'
+
 export interface CrudColumn {
   prop?: string
   label: string
@@ -75,6 +82,8 @@ const props = withDefaults(defineProps<{
     actionsWidth: 180,
 })
 
+const skeleton = useSkeleton(() => props.loading && !props.data.length)
+
 /** 计算当前页行号：第 n 页的第 index 行 → (pageNum-1)*pageSize + index + 1（跨页连续） */
 const indexMethod = (index: number) => {
     const pageNum = props.pageNum || 1
@@ -87,9 +96,3 @@ defineEmits<{
   (e: 'page-change', pageNum: number): void
 }>()
 </script>
-
-<style scoped>
-.table-skeleton {
-    padding: 8px 0;
-}
-</style>

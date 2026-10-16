@@ -9,9 +9,17 @@
     </div>
 
     <div class="org-body">
-      <section v-loading="loading" class="panel org-tree">
+      <section v-loading="loading && !skeleton" class="panel org-tree">
+        <!-- 第一次加载：按「学院 › 专业 › 班级」三级缩进画几行占位；增删后刷新时已有数据，照旧转圈 -->
+        <SkeletonRegion v-if="skeleton">
+          <div v-for="(level, i) in SKELETON_LEVELS" :key="i" class="org-sk" :style="{ paddingLeft: 24 + level * 18 + 'px' }">
+            <SkBlock :w="30" :h="18" />
+            <SkBlock :w="[96, 120, 72, 64][i % 4]" />
+            <SkBlock class="org-sk__count" :w="18" :h="12" />
+          </div>
+        </SkeletonRegion>
         <el-tree
-          v-if="tree.length"
+          v-else-if="tree.length"
           ref="treeRef"
           :data="tree"
           node-key="key"
@@ -99,7 +107,15 @@
                 {{ $t('admin.org.viewInPeople', { n: classStudentsTotal }) }} ›
               </router-link>
             </div>
-            <el-skeleton v-if="classStudentsLoading" animated :rows="3" />
+            <SkeletonRegion v-if="classStudentsSkeleton">
+              <ul class="org-students" aria-hidden="true">
+                <li v-for="i in 6" :key="i" class="org-student">
+                  <SkBlock :w="28" :h="28" shape="circle" />
+                  <SkBlock :w="i % 2 ? 40 : 52" />
+                  <SkBlock class="org-sk__count" :w="64" :h="12" />
+                </li>
+              </ul>
+            </SkeletonRegion>
             <ul v-else-if="classStudents.length" class="org-students">
               <li v-for="s in classStudents" :key="s.id" class="org-student">
                 <UserAvatar :name="s.name" :avatar="s.avatar" :size="28" />
@@ -110,6 +126,11 @@
             <div v-else class="empty-note">{{ $t('admin.org.noStudents') }}</div>
           </div>
         </template>
+        <SkeletonRegion v-else-if="skeleton" class="org-sk-detail">
+          <SkBlock :w="180" :h="22" />
+          <SkBlock :w="260" :h="13" />
+          <SkeletonList :rows="3" />
+        </SkeletonRegion>
         <div v-else class="empty-note org-detail__hint">{{ $t('admin.org.selectHint') }}</div>
       </section>
     </div>
@@ -146,7 +167,14 @@ import type { FormInstance, FormRules } from 'element-plus'
 import request, { type PageResult } from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
+
+/** 组织树骨架每行的缩进级别：学院 0、专业 1、班级 2 */
+const SKELETON_LEVELS = [0, 1, 2, 2, 1, 2, 0, 1, 2]
 
 defineOptions({ name: 'OrgAdmin' })
 
@@ -171,6 +199,7 @@ const API: Record<OrgType, string> = { college: '/college', speciality: '/specia
 
 const raw = ref<Record<string, any>[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !raw.value.length)
 const treeRef = ref()
 const selectedKey = ref('')
 const teachers = ref<Record<string, any>[]>([])
@@ -265,6 +294,7 @@ onMounted(async () => {
 const classStudents = ref<Record<string, any>[]>([])
 const classStudentsTotal = ref(0)
 const classStudentsLoading = ref(false)
+const classStudentsSkeleton = useSkeleton(() => classStudentsLoading.value)
 
 watch(
   () => (selected.value?.type === 'class' ? selected.value.id : null),
@@ -390,6 +420,24 @@ const remove = async (node: OrgNode) => {
 .org-tree {
   padding: 10px 6px;
   min-height: 120px;
+}
+
+/* 组织树占位行：与 el-tree 节点同高（34px），缩进由行内样式给 */
+.org-sk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding-right: 14px;
+}
+
+.org-sk__count {
+  margin-left: auto;
+}
+
+.org-sk-detail {
+  display: grid;
+  gap: 14px;
 }
 
 .org-tree :deep(.el-tree) {

@@ -1,8 +1,53 @@
 <template>
   <div class="ev">
-    <div v-if="!data && loading" class="panel panel--pad">
-      <el-skeleton animated :rows="5" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="ev">
+      <!-- 学生：五个维度打分 -->
+      <section v-if="!canTeach" class="panel">
+        <div class="panel__head"><SkBlock :w="72" :h="15" /></div>
+        <div class="panel__body">
+          <ul class="dims">
+            <li v-for="key in DIMENSIONS" :key="key" class="dims__row">
+              <span class="dims__name">{{ $t('space.evaluation.dimensions.' + key) }}</span>
+              <SkBlock :w="124" :h="18" />
+            </li>
+          </ul>
+        </div>
+      </section>
+      <!-- 老师：总评、五维均分、文字评价 -->
+      <template v-else>
+        <div class="ev-top">
+          <section class="panel ev-overall">
+            <SkBlock :w="48" :h="12" />
+            <SkBlock :w="72" :h="36" />
+            <SkBlock :w="124" :h="18" />
+            <SkBlock :w="96" :h="12" />
+            <span class="sk-stack ev-sk__stars">
+              <SkBlock v-for="i in 5" :key="i" w="100%" :h="8" shape="pill" />
+            </span>
+          </section>
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__title">{{ $t('space.evaluation.summary') }}</span>
+            </div>
+            <div class="panel__body">
+              <ul class="bars">
+                <li v-for="key in DIMENSIONS" :key="key" class="bars__row">
+                  <span class="bars__name">{{ $t('space.evaluation.dimensions.' + key) }}</span>
+                  <SkBlock w="100%" :h="8" shape="pill" />
+                  <SkBlock :w="32" />
+                </li>
+              </ul>
+            </div>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__title">{{ $t('space.evaluation.comments') }}</span>
+          </div>
+          <div class="panel__body"><SkeletonList :rows="3" /></div>
+        </section>
+      </template>
+    </SkeletonRegion>
 
     <!-- ==================== 学生 ==================== -->
     <template v-else-if="data && !canTeach">
@@ -123,6 +168,10 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const DIMENSIONS = ['attitude', 'contentScore', 'method', 'effect', 'support'] as const
@@ -159,6 +208,9 @@ const load = async () => {
 }
 
 watch(courseId, load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const starPercent = (star: number) => {
   const count = Number(data.value?.stars?.[star - 1]) || 0
@@ -289,6 +341,13 @@ const submit = async () => {
   gap: 4px;
   width: 100%;
   margin-top: 10px;
+}
+
+/* 骨架里星级分布的五条，位置同 .stars */
+.ev-sk__stars {
+  width: 100%;
+  margin-top: 10px;
+  gap: 10px;
 }
 
 .stars__row {

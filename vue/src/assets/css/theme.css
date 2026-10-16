@@ -70,6 +70,14 @@ html:root {
     --xm-info: #2565a8;
     --xm-info-soft: #e0ebf7;
 
+    /* 骨架屏（数据回来之前的占位块）：底色是绿灰，扫过去的光偏白；
+       brand 用在品牌浅底上（首页页头），cover 是课程卡片封面位置，on-cover 是封面上的标签与文字占位 */
+    --xm-sk-base: #e3eae6;
+    --xm-sk-shine: rgba(255, 255, 255, 0.88);
+    --xm-sk-brand: #d2e5de;
+    --xm-sk-cover: #dbe4df;
+    --xm-sk-on-cover: rgba(255, 255, 255, 0.62);
+
     /* Element Plus 品牌色与圆角覆盖（按钮/链接/菜单/表格高亮自动跟随） */
     --el-color-primary: #0f7b63;
     --el-color-primary-light-3: #57a392;
@@ -118,6 +126,13 @@ html.dark:root {
     --xm-bad-soft: #3b1b18;
     --xm-info: #76aef3;
     --xm-info-soft: #16273a;
+
+    /* 深色下光太亮会刺眼：底色暗一档，光只带一点绿 */
+    --xm-sk-base: #1e2824;
+    --xm-sk-shine: rgba(150, 225, 195, 0.1);
+    --xm-sk-brand: #22382f;
+    --xm-sk-cover: #1b2420;
+    --xm-sk-on-cover: rgba(255, 255, 255, 0.07);
 
     /* 深色下派生层级向深色表面（#141b18）混色而不是纯黑，否则 light-9 比卡片还黑，像个洞 */
     --el-color-primary: #3fb08f;

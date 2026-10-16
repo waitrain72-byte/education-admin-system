@@ -24,6 +24,7 @@ export default {
         backHome: 'Back to Home',
         page: 'Page',
         empty: 'No data',
+        loading: 'Loading',
     },
 
     menu: {

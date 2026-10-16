@@ -20,11 +20,12 @@
         :aria-selected="mobileColumn === col.key"
         @click="mobileColumn = col.key"
       >
-        {{ $t(`admin.leaves.columns.${col.key}`) }}<span class="chip__count num">{{ col.items.length }}</span>
+        {{ $t(`admin.leaves.columns.${col.key}`) }}<span v-if="!skeleton" class="chip__count num">{{ col.items.length }}</span>
       </button>
     </div>
 
-    <div v-loading="loading" class="lb-board">
+    <!-- 第一次加载每列画几张占位卡片；审批后刷新时已有数据，照旧在看板上转圈 -->
+    <div v-loading="loading && !skeleton" class="lb-board" :aria-busy="skeleton">
       <section
         v-for="col in columns"
         :key="col.key"
@@ -34,9 +35,20 @@
         <header class="lb-col__head">
           <span class="lb-col__dot"></span>
           <span class="lb-col__title">{{ $t(`admin.leaves.columns.${col.key}`) }}</span>
-          <span class="lb-col__count num">{{ col.items.length }}</span>
+          <span v-if="!skeleton" class="lb-col__count num">{{ col.items.length }}</span>
         </header>
-        <ul v-if="col.items.length" class="lb-list">
+        <ul v-if="skeleton" class="lb-list sk-region" aria-hidden="true">
+          <li v-for="i in col.key === 'pending' ? 3 : 2" :key="i" class="lb-card">
+            <span class="lb-card__who">
+              <SkBlock :w="28" :h="28" shape="circle" />
+              <SkBlock :w="i % 2 ? 42 : 56" />
+              <SkBlock class="lb-sk__days" :w="32" :h="12" />
+            </span>
+            <SkBlock :w="120" :h="12" />
+            <SkBlock :w="i === 2 ? '64%' : '86%'" :h="12" />
+          </li>
+        </ul>
+        <ul v-else-if="col.items.length" class="lb-list">
           <li v-for="a in col.items" :key="a.id">
             <button type="button" class="lb-card" @click="openReview(a)">
               <span class="lb-card__who">
@@ -77,7 +89,9 @@
 
         <div class="lr__affected">
           <div class="lr__label">{{ $t('admin.leaves.affected', { n: affected.length }) }}</div>
-          <el-skeleton v-if="affectedLoading" animated :rows="2" />
+          <SkeletonRegion v-if="affectedSkeleton">
+            <SkeletonList :rows="2" lead="bar" :lines="1" :gap="10" />
+          </SkeletonRegion>
           <p v-else-if="!affected.length" class="lr__empty">{{ $t('admin.leaves.affectedEmpty') }}</p>
           <ul v-else class="lr__list">
             <li v-for="c in affected" :key="c.date + c.courseId" class="lr__item">
@@ -116,6 +130,10 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import { courseColor } from '@/utils/courseColor'
 import { addDays, formatDay } from '@/utils/schedule'
 import { currentLocale } from '@/composables/useLocale'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
 
 defineOptions({ name: 'LeaveBoard' })
@@ -132,6 +150,7 @@ const statusKey = (status: string | null | undefined): ColumnKey =>
 
 const applies = ref<Record<string, any>[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !applies.value.length)
 const keyword = ref('')
 const mobileColumn = ref<ColumnKey>('pending')
 
@@ -189,6 +208,7 @@ const current = ref<Record<string, any> | null>(null)
 const note = ref('')
 const affected = ref<Record<string, any>[]>([])
 const affectedLoading = ref(false)
+const affectedSkeleton = useSkeleton(() => affectedLoading.value)
 const saving = ref('')
 
 const openReview = async (apply: Record<string, any>) => {
@@ -341,6 +361,15 @@ const decide = async (status: string) => {
   flex-shrink: 0;
   font-size: 12px;
   color: var(--xm-text-secondary);
+}
+
+/* 占位卡片：天数靠右，不能点 */
+.lb-sk__days {
+  margin-left: auto;
+}
+
+.lb-list.sk-region .lb-card {
+  cursor: default;
 }
 
 .lb-card__range {

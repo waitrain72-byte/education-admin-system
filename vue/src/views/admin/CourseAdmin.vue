@@ -20,7 +20,7 @@
           :aria-selected="status === f.value"
           @click="status = f.value"
         >
-          {{ $t(f.label) }}<span class="chip__count num">{{ countOf(f.value) }}</span>
+          {{ $t(f.label) }}<span v-if="!skeleton" class="chip__count num">{{ countOf(f.value) }}</span>
         </button>
       </div>
       <el-select v-model="teacherId" clearable filterable :placeholder="$t('admin.courses.allTeachers')" class="ca-filters__teacher">
@@ -30,7 +30,7 @@
     </div>
 
     <section class="panel">
-      <el-table v-loading="loading" :data="shown" row-key="id" class="ca-table" :empty-text="$t('admin.courses.empty')">
+      <el-table v-loading="loading && !skeleton" :data="skeleton ? [] : shown" row-key="id" class="ca-table">
         <el-table-column :label="$t('admin.courses.name')" min-width="180">
           <template #default="{ row }">
             <div class="ca-name">
@@ -75,6 +75,11 @@
             <el-button link type="danger" @click="remove(row)">{{ $t('admin.courses.delete') }}</el-button>
           </template>
         </el-table-column>
+        <!-- 第一次加载：表头照常显示，表身画占位行；改状态、开课后刷新时已有数据，照旧转圈 -->
+        <template #empty>
+          <TableSkeleton v-if="skeleton" :row-height="58" />
+          <template v-else>{{ $t('admin.courses.empty') }}</template>
+        </template>
       </el-table>
     </section>
 
@@ -90,6 +95,8 @@ import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { courseColor } from '@/utils/courseColor'
 import { segmentShortName } from '@/utils/schedule'
+import { useSkeleton } from '@/composables/useSkeleton'
+import TableSkeleton from '@/components/skeleton/TableSkeleton.vue'
 import { t } from '@/i18n'
 
 defineOptions({ name: 'CourseAdmin' })
@@ -111,6 +118,7 @@ const courses = ref<Record<string, any>[]>([])
 const counts = ref<Record<number, number>>({})
 const teachers = ref<Record<string, any>[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const status = ref(route.query.filter === UNSCHEDULED ? UNSCHEDULED : '')
 const teacherId = ref<number | undefined>()
 const keyword = ref('')

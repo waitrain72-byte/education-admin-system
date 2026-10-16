@@ -20,22 +20,21 @@
           <dt>{{ $t('login.account') }}</dt>
           <dd>{{ user.username }}</dd>
         </div>
+        <!-- 学院 / 专业 / 班级要另查一次：查到之前是占位块，不先显示「—」 -->
         <template v-if="user.role === 'STUDENT'">
-          <div>
-            <dt>{{ $t('pages.student.college') }}</dt>
-            <dd>{{ detail.collegeName || '—' }}</dd>
-          </div>
-          <div>
-            <dt>{{ $t('pages.student.speciality') }}</dt>
-            <dd>{{ detail.specialityName || '—' }}</dd>
-          </div>
-          <div>
-            <dt>{{ $t('pages.student.classes') }}</dt>
-            <dd>{{ detail.className || '—' }}</dd>
+          <div v-for="key in ['college', 'speciality', 'classes']" :key="key">
+            <dt>{{ $t('pages.student.' + key) }}</dt>
+            <dd>
+              <span v-if="detailSkeleton" class="sk-region"><SkBlock :w="key === 'college' ? 140 : 96" /></span>
+              <template v-else>{{ detail[ORG_FIELD[key]] || '—' }}</template>
+            </dd>
           </div>
           <div>
             <dt>{{ $t('profile.credits') }}</dt>
-            <dd class="num">{{ detail.score ?? user.score ?? 0 }}</dd>
+            <dd class="num">
+              <span v-if="detailSkeleton" class="sk-region"><SkBlock :w="28" /></span>
+              <template v-else>{{ detail.score ?? user.score ?? 0 }}</template>
+            </dd>
           </div>
         </template>
         <div v-if="user.role === 'TEACHER'">
@@ -101,6 +100,8 @@ import request from '@/utils/request'
 import { useUser } from '@/components/useUser'
 import UserAvatar from '@/components/UserAvatar.vue'
 import AppearanceSettings from '@/components/AppearanceSettings.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 defineOptions({ name: 'ProfilePage' })
@@ -123,13 +124,20 @@ const roleBase = computed(() => '/' + String(user.value.role || '').toLowerCase(
 
 // ========== 学生的学院 / 专业 / 班级（selectById 不带关联名称，按 id 查一行列表数据） ==========
 const detail = ref<Record<string, any>>({})
+const detailLoading = ref(false)
+const detailSkeleton = useSkeleton(() => detailLoading.value)
+/** 三个组织字段在列表数据里的字段名 */
+const ORG_FIELD: Record<string, string> = { college: 'collegeName', speciality: 'specialityName', classes: 'className' }
 onMounted(async () => {
   if (user.value.role !== 'STUDENT') return
+  detailLoading.value = true
   try {
     const rows = await request.get<any[]>('/student/selectAll', { params: { id: user.value.id } })
     detail.value = rows?.[0] || {}
   } catch {
-    // 拉不到就只显示占位
+    // 拉不到就只显示「—」
+  } finally {
+    detailLoading.value = false
   }
 })
 

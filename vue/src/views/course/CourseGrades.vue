@@ -1,8 +1,53 @@
 <template>
   <div class="gb">
-    <div v-if="loading && !book && !mine" class="panel panel--pad">
-      <el-skeleton animated :rows="6" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="gb">
+      <!-- 老师：权重与统计两块 + 成绩册 -->
+      <template v-if="canTeach">
+        <div class="gb-top">
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__title">{{ $t('space.grades.weights') }}</span>
+              <SkBlock :w="72" :h="12" />
+            </div>
+            <div class="panel__body">
+              <div class="weights">
+                <div v-for="key in WEIGHT_KEYS" :key="key" class="weights__item">
+                  <span class="weights__label">{{ $t('space.weights.' + key) }}</span>
+                  <SkBlock :w="96" :h="24" />
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="panel gb-stats">
+            <div class="gb-stats__grid">
+              <span v-for="i in 4" :key="i" class="sk-stack">
+                <SkBlock :w="48" :h="12" />
+                <SkBlock :w="i === 3 ? 64 : 44" :h="22" />
+              </span>
+            </div>
+            <div class="dist">
+              <SkBlock v-for="(h, i) in [30, 54, 80, 62, 24]" :key="i" w="100%" :h="h" />
+            </div>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="gb-toolbar">
+            <SkBlock :w="200" :h="32" />
+            <SkBlock class="gb-sk__actions" :w="160" :h="32" />
+          </div>
+          <div class="panel__body"><SkeletonList :rows="6" lead="avatar" trail="text" /></div>
+        </section>
+      </template>
+      <!-- 学生：我的总评 + 各项 -->
+      <section v-else class="panel my-grade">
+        <SkBlock :w="56" :h="12" />
+        <SkBlock :w="88" :h="44" />
+        <SkBlock :w="140" :h="22" />
+        <div class="my-parts">
+          <SkBlock v-for="i in 4" :key="i" w="100%" :h="58" />
+        </div>
+      </section>
+    </SkeletonRegion>
 
     <!-- ==================== 老师 / 管理员：成绩册 ==================== -->
     <template v-else-if="canTeach && book">
@@ -209,10 +254,14 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { matchesPerson, previewTotal, weightsValid } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 type WeightKey = 'attendance' | 'homework' | 'ordinary' | 'exam'
@@ -283,6 +332,9 @@ const load = async () => {
 }
 
 watch([courseId, canTeach], load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => loading.value && !book.value && !mine.value)
 
 // 学生端：老师发布 / 批改后后端会推消息，作业变动时也顺手刷新一下
 useCourseEvents(() => courseId.value, ['assignments', 'attendance'], () => {
@@ -578,7 +630,8 @@ const myValue = (key: WeightKey) => {
   color: var(--xm-warn);
 }
 
-.gb-toolbar__actions {
+.gb-toolbar__actions,
+.gb-sk__actions {
   display: flex;
   gap: 8px;
   margin-left: auto;

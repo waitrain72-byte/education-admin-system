@@ -14,7 +14,9 @@
 
       <div class="ld__affected">
         <div class="ld__label">{{ $t('leave.affected', { n: affected.length }) }}</div>
-        <el-skeleton v-if="loading" animated :rows="2" />
+        <SkeletonRegion v-if="skeleton">
+          <SkeletonList :rows="2" lead="bar" :lines="1" :gap="10" />
+        </SkeletonRegion>
         <p v-else-if="!affected.length" class="ld__empty">{{ $t('leave.affectedEmpty') }}</p>
         <ul v-else class="ld__list">
           <li v-for="c in affected" :key="c.date + c.courseId" class="ld__item">
@@ -54,6 +56,9 @@ import { ElMessage } from '@/utils/element-plus'
 import { courseColor } from '@/utils/courseColor'
 import { daysBetween, formatDay } from '@/utils/schedule'
 import { currentLocale } from '@/composables/useLocale'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
 
 /** 请假申请：先列出这几天要上的课，再填理由提交（审核由教务处在后台完成） */
@@ -98,6 +103,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在打开时的加载之后创建：弹窗一打开就在加载，第一次渲染就是骨架
+const skeleton = useSkeleton(() => loading.value)
 
 const submit = async () => {
   const valid = await formRef.value?.validate().catch(() => false)

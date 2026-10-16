@@ -4,9 +4,21 @@
       <el-button type="primary" @click="openCreate">{{ $t('space.assignments.create') }}</el-button>
     </div>
 
-    <div v-if="!data && loading" class="panel panel--pad">
-      <el-skeleton animated :rows="4" />
-    </div>
+    <SkeletonRegion v-if="skeleton">
+      <ul class="as-list" aria-hidden="true">
+        <li v-for="i in 4" :key="i" class="as-item panel">
+          <span class="as-item__main">
+            <SkBlock :w="['46%', '60%', '38%', '52%'][i - 1]" :h="15" />
+            <SkBlock :w="['32%', '26%', '36%', '28%'][i - 1]" :h="12" />
+          </span>
+          <span v-if="canTeach" class="as-item__progress">
+            <SkBlock :w="120" :h="12" />
+            <SkBlock w="100%" :h="6" shape="pill" />
+          </span>
+          <SkBlock v-else :w="56" :h="22" />
+        </li>
+      </ul>
+    </SkeletonRegion>
 
     <template v-else-if="data">
       <div v-if="!data.assignments.length" class="panel empty-block">
@@ -92,6 +104,9 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FileChip from '@/components/FileChip.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import AssignmentDetail from './AssignmentDetail.vue'
 import AssignmentForm from './AssignmentForm.vue'
 import request from '@/utils/request'
@@ -166,6 +181,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const onDetailChanged = () => {
   load()

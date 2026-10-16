@@ -5,7 +5,7 @@
         <h1 class="page-title">{{ $t('square.title') }}</h1>
         <p class="page-sub">{{ canEnroll ? $t('square.sub.student') : $t('square.sub.other') }}</p>
       </div>
-      <span class="square__count num">{{ $t('square.count', { n: courses.length }) }}</span>
+      <span v-if="!skeleton" class="square__count num">{{ $t('square.count', { n: courses.length }) }}</span>
     </div>
 
     <div class="square-filters">
@@ -75,9 +75,9 @@
       </div>
     </section>
 
-    <div v-if="loading && !courses.length" class="square-grid">
-      <el-skeleton v-for="i in 6" :key="i" animated class="panel panel--pad" :rows="4" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="square-grid">
+      <SquareCardSkeleton v-for="i in 6" :key="i" :index="i" />
+    </SkeletonRegion>
     <div v-else-if="courses.length" class="square-grid">
       <SquareCard
         v-for="c in courses"
@@ -97,6 +97,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import SquareCard from './SquareCard.vue'
+import SquareCardSkeleton from './SquareCardSkeleton.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+import { useSkeleton } from '@/composables/useSkeleton'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { WEEKDAYS } from '@/utils/schedule'
@@ -109,6 +112,7 @@ const recommendations = ref<Record<string, any>[]>([])
 const types = ref<string[]>([])
 const canEnroll = ref(false)
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const busyId = ref<number | null>(null)
 
 const keyword = ref('')

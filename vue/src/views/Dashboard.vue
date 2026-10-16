@@ -14,14 +14,20 @@
           </div>
           <div class="hd__titles">
             <h1 class="hd__title">{{ isTeacher ? $t('pages.dashboard.teacherTitle') : $t('pages.dashboard.adminTitle') }}</h1>
-            <p class="hd__sub">{{ subtitle }}</p>
+            <p class="hd__sub">
+              <span v-if="skeleton && isTeacher" class="sk-region"><SkBlock :w="320" :h="16" /></span>
+              <template v-else>{{ subtitle }}</template>
+            </p>
           </div>
         </div>
         <div class="hd__term">
           <div class="hd__term-line">
-            <span>{{ semester.name }}</span>
-            <b class="num">{{ weekText }}</b>
-            <span v-if="semester.weeks" class="muted">{{ $t('pages.dashboard.weeks', { n: semester.weeks }) }}</span>
+            <span v-if="skeleton" class="sk-region"><SkBlock :w="300" :h="20" /></span>
+            <template v-else>
+              <span>{{ semester.name }}</span>
+              <b class="num">{{ weekText }}</b>
+              <span v-if="semester.weeks" class="muted">{{ $t('pages.dashboard.weeks', { n: semester.weeks }) }}</span>
+            </template>
           </div>
           <div class="hd__progress"><span :style="{ width: termProgress + '%' }"></span></div>
         </div>
@@ -39,8 +45,76 @@
 
       <p v-if="loadError" class="load-error" role="status">{{ $t('pages.dashboard.loadFailed') }}</p>
 
+      <!-- 骨架：第一次取数据时，面板标题照常显示，指标、表格、图表、名单位置画占位（不先露出「暂无」） -->
+      <template v-if="skeleton">
+        <section class="kpis sk-region" aria-busy="true">
+          <span class="sr-only">{{ $t('common.loading') }}</span>
+          <div v-for="i in 5" :key="i" class="kpi" aria-hidden="true">
+            <SkBlock :w="110" :h="18" />
+            <SkBlock :w="i % 2 ? 120 : 96" :h="44" />
+            <SkBlock :w="170" :h="16" />
+          </div>
+        </section>
+        <main class="grid sk-region" aria-hidden="true">
+          <div class="col">
+            <section class="panel">
+              <div class="panel__head">
+                <h2>{{ isTeacher ? $t('pages.dashboard.today.teacherTitle') : $t('pages.dashboard.today.title') }}</h2>
+                <SkBlock :w="220" :h="16" />
+              </div>
+              <SkeletonList :rows="isTeacher ? 3 : 5" :lead="isTeacher ? 'date' : 'none'" :lines="isTeacher ? 2 : 1" trail="text" />
+            </section>
+            <section class="panel panel--grow">
+              <div class="panel__head">
+                <h2>{{ isTeacher ? $t('pages.dashboard.week.teacherTitle') : $t('pages.dashboard.week.title') }}</h2>
+              </div>
+              <SkBlock class="dash-sk__fill" w="100%" h="auto" />
+            </section>
+          </div>
+          <div class="col">
+            <section class="panel">
+              <div class="panel__head">
+                <h2>{{ isTeacher ? $t('pages.dashboard.trend.teacherTitle') : $t('pages.dashboard.trend.title') }}</h2>
+              </div>
+              <SkBlock w="100%" :h="300" />
+            </section>
+            <section class="panel panel--grow">
+              <div class="panel__head">
+                <h2>{{ isTeacher ? $t('pages.dashboard.myCourses.title') : $t('pages.dashboard.ranking.title') }}</h2>
+              </div>
+              <SkeletonList :rows="5" :lines="isTeacher ? 2 : 1" trail="text" />
+            </section>
+          </div>
+          <div class="col">
+            <section class="panel">
+              <div class="panel__head">
+                <h2>{{ isTeacher ? $t('pages.dashboard.warnings.teacherTitle') : $t('pages.dashboard.warnings.title') }}</h2>
+              </div>
+              <SkBlock w="100%" :h="14" shape="pill" />
+              <SkeletonList class="dash-sk__gap" :rows="3" :lines="1" trail="text" />
+            </section>
+            <section class="panel panel--grow">
+              <div class="panel__head">
+                <h2 v-if="isTeacher">{{ $t('pages.dashboard.evaluation.title') }}</h2>
+                <SkBlock v-else :w="200" :h="24" />
+              </div>
+              <SkeletonList :rows="isTeacher ? 5 : 3" :lead="isTeacher ? 'none' : 'date'" :lines="isTeacher ? 1 : 2" :trail="isTeacher ? 'text' : 'none'" />
+            </section>
+          </div>
+        </main>
+        <footer class="ft sk-region" aria-hidden="true">
+          <div class="ft__strip">
+            <SkBlock :w="96" :h="28" shape="pill" />
+            <SkBlock :w="420" :h="18" />
+          </div>
+          <div class="ft__todos">
+            <SkBlock v-for="i in 3" :key="i" :w="130" :h="30" shape="pill" />
+          </div>
+        </footer>
+      </template>
+
       <!-- 指标：都用比例或进度，人多人少都看得出好坏 -->
-      <section class="kpis">
+      <section v-if="!skeleton" class="kpis">
         <div v-for="k in kpis" :key="k.key" class="kpi" :class="{ 'kpi--warn': k.warn }">
           <span class="kpi__label">{{ k.label }}</span>
           <span class="kpi__value">
@@ -52,7 +126,7 @@
         </div>
       </section>
 
-      <main class="grid">
+      <main v-if="!skeleton" class="grid">
         <!-- 左：今天与本周 -->
         <div class="col">
           <section v-if="!isTeacher" class="panel">
@@ -304,7 +378,7 @@
       </main>
 
       <!-- 底栏：全校通知（教师为近期考试）+ 待办 -->
-      <footer class="ft">
+      <footer v-if="!skeleton" class="ft">
         <div class="ft__strip">
           <template v-if="!isTeacher">
             <span class="ft__badge">{{ $t('pages.dashboard.notices.title') }}</span>
@@ -347,8 +421,12 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
 import request from '@/utils/request'
 import { t } from '@/i18n'
+import { useUser } from '@/components/useUser'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
 import { currentLocale } from '@/composables/useLocale'
 import { syncServerClock, useServerClock } from '@/composables/useServerClock'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { addDays, formatDay, toMinutes, weekdayIndex } from '@/utils/schedule'
 import { deadlineState, heatLevel, latestWeek, maskName, nameList } from '@/utils/dashboard'
 
@@ -365,8 +443,11 @@ const WARN = '#e4ad52'
 
 const router = useRouter()
 const clock = useServerClock()
+const { user } = useUser()
 const data = ref<Record<string, any> | null>(null)
 const loadError = ref(false)
+// 第一次取数据时出骨架；之后每分钟刷新保留上一次的数据，不再出骨架
+const skeleton = useSkeleton(() => !data.value && !loadError.value)
 
 // ========== 投屏模式：投到公共屏幕时隐藏学生姓名，选择记在本机 ==========
 const readProjection = () => {
@@ -399,7 +480,8 @@ const goBack = () => {
 }
 
 // ========== 公共 ==========
-const isTeacher = computed(() => data.value?.role === 'TEACHER')
+// 数据回来之前按登录身份判断，骨架就是教师版或管理员版，不会先闪一下管理员版
+const isTeacher = computed(() => (data.value?.role ?? user.value.role) === 'TEACHER')
 const semester = computed<Record<string, any>>(() => data.value?.semester || {})
 const locale = computed(() => currentLocale())
 const separator = computed(() => (locale.value === 'zh-CN' ? '、' : ', '))
@@ -738,6 +820,10 @@ const load = async () => {
 }
 
 watch([weekly, locale], () => nextTick(renderTrend))
+// 数据到了但骨架还在停留时图表容器不在页面上，骨架撤掉后补画一次
+watch(skeleton, (show) => {
+  if (!show) nextTick(renderTrend)
+})
 
 onMounted(() => {
   fit()
@@ -781,6 +867,9 @@ onBeforeUnmount(() => {
   --warn-line: #5a4318;
   --bad: #f26b5f;
   --bad-soft: #3b1b18;
+  /* 大屏固定深色：骨架占位也用深色（不随系统浅色走） */
+  --xm-sk-base: #1d2622;
+  --xm-sk-shine: rgba(150, 225, 195, 0.1);
 
   position: absolute;
   left: 50%;
@@ -1449,6 +1538,16 @@ h2 {
 .trend {
   width: 100%;
   height: 300px;
+}
+
+/* 骨架：排课热力格那一块撑满面板，预警条下面留点距离 */
+.dash-sk__fill {
+  flex: 1;
+  min-height: 200px;
+}
+
+.dash-sk__gap {
+  margin-top: 14px;
 }
 
 .bars {

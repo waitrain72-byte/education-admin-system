@@ -20,35 +20,52 @@
           :aria-selected="typeFilter === f"
           @click="typeFilter = f"
         >
-          {{ f ? typeLabel(f) : $t('admin.rooms.all') }}<span class="chip__count num">{{ countOf(f) }}</span>
+          {{ f ? typeLabel(f) : $t('admin.rooms.all') }}<span v-if="!skeleton" class="chip__count num">{{ countOf(f) }}</span>
         </button>
       </div>
       <el-input v-model="keyword" clearable :placeholder="$t('admin.rooms.search')" class="ra-filters__search" />
     </div>
 
     <div class="ra-body">
-      <section v-loading="loading" class="ra-list" :aria-label="$t('admin.rooms.title')">
-        <button
-          v-for="r in shown"
-          :key="r.id"
-          type="button"
-          class="ra-room"
-          :class="{ 'is-on': selectedId === r.id }"
-          :aria-pressed="selectedId === r.id"
-          @click="selectedId = r.id"
-        >
-          <span class="ra-room__top">
-            <span class="ra-room__code num">{{ r.code }}</span>
-            <span class="pill" :class="TYPE_PILL[r.type] || 'pill--info'">{{ typeLabel(r.type) }}</span>
-          </span>
-          <span class="ra-room__name">{{ r.name }}</span>
-          <span class="ra-room__meta">
-            <span class="num">{{ $t('admin.rooms.seatsUnit', { n: r.num ?? 0 }) }}</span>
-            <span class="num">{{ $t('admin.rooms.used', { n: bookedOf(r.code).length }) }}</span>
-          </span>
-          <span class="ra-room__bar"><span :style="{ width: usage(r.code) + '%' }"></span></span>
-        </button>
-        <div v-if="!loading && !shown.length" class="empty-note">{{ $t('admin.rooms.empty') }}</div>
+      <section v-loading="loading && !skeleton" class="ra-list" :aria-label="$t('admin.rooms.title')" :aria-busy="skeleton">
+        <!-- 第一次加载画几张教室占位卡；增删后刷新时已有数据，照旧转圈 -->
+        <template v-if="skeleton">
+          <div v-for="i in 6" :key="i" class="ra-room sk-region" aria-hidden="true">
+            <span class="ra-room__top">
+              <SkBlock :w="40" :h="16" />
+              <SkBlock :w="44" :h="20" />
+            </span>
+            <SkBlock :w="i % 2 ? 96 : 120" />
+            <span class="ra-room__meta">
+              <SkBlock :w="44" :h="12" />
+              <SkBlock :w="56" :h="12" />
+            </span>
+            <SkBlock w="100%" :h="4" shape="pill" />
+          </div>
+        </template>
+        <template v-else>
+          <button
+            v-for="r in shown"
+            :key="r.id"
+            type="button"
+            class="ra-room"
+            :class="{ 'is-on': selectedId === r.id }"
+            :aria-pressed="selectedId === r.id"
+            @click="selectedId = r.id"
+          >
+            <span class="ra-room__top">
+              <span class="ra-room__code num">{{ r.code }}</span>
+              <span class="pill" :class="TYPE_PILL[r.type] || 'pill--info'">{{ typeLabel(r.type) }}</span>
+            </span>
+            <span class="ra-room__name">{{ r.name }}</span>
+            <span class="ra-room__meta">
+              <span class="num">{{ $t('admin.rooms.seatsUnit', { n: r.num ?? 0 }) }}</span>
+              <span class="num">{{ $t('admin.rooms.used', { n: bookedOf(r.code).length }) }}</span>
+            </span>
+            <span class="ra-room__bar"><span :style="{ width: usage(r.code) + '%' }"></span></span>
+          </button>
+          <div v-if="!loading && !shown.length" class="empty-note">{{ $t('admin.rooms.empty') }}</div>
+        </template>
       </section>
 
       <section class="panel ra-detail">
@@ -96,6 +113,26 @@
           </div>
           <p class="ra-legend">{{ $t('admin.rooms.legend') }}</p>
         </template>
+        <!-- 详情骨架：标题两行占位；每周占用表的星期、节次照常显示，格子里零星几个课块占位 -->
+        <SkeletonRegion v-else-if="skeleton" class="ra-sk-detail">
+          <span class="sk-stack">
+            <SkBlock :w="140" :h="22" />
+            <SkBlock :w="200" :h="13" />
+          </span>
+          <div class="ra-week-title">{{ $t('admin.rooms.occupancy') }}</div>
+          <div class="ra-week-scroll">
+            <div class="ra-week" aria-hidden="true">
+              <div class="ra-week__corner"></div>
+              <div v-for="(w, wi) in WEEKDAYS" :key="w" class="ra-week__day">{{ weekdayLabel(wi) }}</div>
+              <template v-for="(s, si) in SEGMENTS" :key="s">
+                <div class="ra-week__seg">{{ segmentShortName(s) }}</div>
+                <div v-for="(w, wi) in WEEKDAYS" :key="w + s" class="ra-week__cell">
+                  <SkBlock v-if="(si * 3 + wi) % 5 === 1" w="100%" :h="40" />
+                </div>
+              </template>
+            </div>
+          </div>
+        </SkeletonRegion>
         <div v-else class="empty-note ra-detail__hint">{{ $t('admin.rooms.selectHint') }}</div>
       </section>
     </div>
@@ -148,6 +185,9 @@ import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { courseColor } from '@/utils/courseColor'
 import { SEGMENTS, WEEKDAYS, addDays, formatDay, segmentShortName } from '@/utils/schedule'
 import { currentLocale } from '@/composables/useLocale'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
 
 defineOptions({ name: 'RoomsAdmin' })
@@ -170,6 +210,7 @@ const weekdayLabel = (i: number) => formatDay(addDays('2024-01-01', i), currentL
 const rooms = ref<Record<string, any>[]>([])
 const courses = ref<Record<string, any>[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !rooms.value.length)
 const typeFilter = ref('')
 const keyword = ref('')
 const selectedId = ref<number | null>(null)
@@ -394,6 +435,12 @@ const remove = async (room: Record<string, any>) => {
   display: grid;
   gap: 14px;
   padding: 20px;
+  min-width: 0;
+}
+
+.ra-sk-detail {
+  display: grid;
+  gap: 14px;
   min-width: 0;
 }
 

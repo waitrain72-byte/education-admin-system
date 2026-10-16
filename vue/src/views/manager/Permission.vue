@@ -8,44 +8,58 @@
         </div>
       </template>
 
-      <!-- 角色切换 -->
-      <el-tabs v-model="activeRole" type="card" @tab-change="onRoleChange">
-        <el-tab-pane
-            v-for="role in roles"
-            :key="role.code"
-            :name="role.code"
-            :label="role.name"
-        >
-          <template #label>
-            <span>{{ role.name }}</span>
-            <el-tag v-if="role.code === 'ADMIN'" size="small" type="warning" style="margin-left: 6px">
-              {{ $t('pages.permission.adminTag') }}
-            </el-tag>
-          </template>
-        </el-tab-pane>
-      </el-tabs>
+      <!-- 骨架：角色页签 + 两级权限树（模块 › 权限点，前面是勾选框） -->
+      <SkeletonRegion v-if="skeleton" class="perm-sk">
+        <div class="perm-sk__tabs">
+          <SkBlock v-for="w in [56, 52, 64]" :key="w" :w="w" :h="30" />
+        </div>
+        <div v-for="(level, i) in SKELETON_LEVELS" :key="i" class="perm-sk__row" :style="{ paddingLeft: 8 + level * 18 + 'px' }">
+          <SkBlock :w="14" :h="14" />
+          <SkBlock :w="level ? [72, 96, 60][i % 3] : 88" />
+        </div>
+      </SkeletonRegion>
 
-      <el-alert
-          v-if="activeRole === 'ADMIN'"
-          :title="$t('pages.permission.adminHint')"
-          type="warning"
-          :closable="false"
-          show-icon
-          style="margin: 12px 0"
-      />
+      <!-- 加载时只是藏起来不卸载：加载完要通过 treeRef 恢复勾选 -->
+      <div v-show="!skeleton">
+        <!-- 角色切换 -->
+        <el-tabs v-model="activeRole" type="card" @tab-change="onRoleChange">
+          <el-tab-pane
+              v-for="role in roles"
+              :key="role.code"
+              :name="role.code"
+              :label="role.name"
+          >
+            <template #label>
+              <span>{{ role.name }}</span>
+              <el-tag v-if="role.code === 'ADMIN'" size="small" type="warning" style="margin-left: 6px">
+                {{ $t('pages.permission.adminTag') }}
+              </el-tag>
+            </template>
+          </el-tab-pane>
+        </el-tabs>
 
-      <!-- 树形权限分配：模块 -> 权限点，父子联动 -->
-      <el-tree
-          ref="treeRef"
-          v-loading="loading"
-          :data="treeData"
-          :props="{ label: 'label', children: 'children' }"
-          node-key="id"
-          show-checkbox
-          default-expand-all
-          :expand-on-click-node="false"
-          class="perm-tree"
-      />
+        <el-alert
+            v-if="activeRole === 'ADMIN'"
+            :title="$t('pages.permission.adminHint')"
+            type="warning"
+            :closable="false"
+            show-icon
+            style="margin: 12px 0"
+        />
+
+        <!-- 树形权限分配：模块 -> 权限点，父子联动 -->
+        <el-tree
+            ref="treeRef"
+            v-loading="loading && !skeleton"
+            :data="treeData"
+            :props="{ label: 'label', children: 'children' }"
+            node-key="id"
+            show-checkbox
+            default-expand-all
+            :expand-on-click-node="false"
+            class="perm-tree"
+        />
+      </div>
 
       <div class="perm-footer">
         <el-button type="primary" :disabled="activeRole === 'ADMIN'" :loading="saving" @click="save">
@@ -65,6 +79,12 @@ import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { t } from '@/i18n'
 import { currentLocale } from '@/composables/useLocale'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
+
+/** 权限树骨架每行的层级：0 是模块，1 是模块下的权限点 */
+const SKELETON_LEVELS = [0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1]
 
 interface Permission {
   id: number
@@ -95,6 +115,7 @@ const permissions = ref<Permission[]>([])
 const activeRole = ref<string>('')
 const saving = ref(false)
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !permissions.value.length)
 const treeRef = ref<any>()
 const isZh = computed(() => currentLocale() === 'zh-CN')
 
@@ -325,6 +346,18 @@ onMounted(load)
   font-size: 13px;
 }
 .perm-tree :deep(.el-tree-node__content) {
+  height: 30px;
+}
+/* 骨架：页签一排，下面每行与树节点同高（30px） */
+.perm-sk__tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.perm-sk__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   height: 30px;
 }
 .perm-footer {

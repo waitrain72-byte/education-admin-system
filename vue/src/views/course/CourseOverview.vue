@@ -48,7 +48,9 @@
           </el-button>
         </div>
         <div class="panel__body">
-          <el-skeleton v-if="postsLoading && !posts.length" animated :rows="3" />
+          <SkeletonRegion v-if="postsSkeleton">
+            <SkeletonList :rows="3" />
+          </SkeletonRegion>
           <div v-else-if="!posts.length" class="empty-note">{{ $t('space.overview.postsEmpty') }}</div>
           <ol v-else class="posts">
             <li
@@ -249,10 +251,13 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { segmentShortName } from '@/utils/schedule'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 interface Post {
@@ -425,6 +430,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const postsSkeleton = useSkeleton(() => postsLoading.value && !posts.value.length)
 
 useCourseEvents(() => courseId.value, ['posts'], loadPosts)
 

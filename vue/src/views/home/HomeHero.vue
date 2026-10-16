@@ -1,8 +1,8 @@
 <template>
   <section class="hero">
     <div class="hero__main">
-      <p class="hero__eyebrow">{{ eyebrow }}</p>
-      <h1 class="hero__title">{{ title }}</h1>
+      <p class="hero__eyebrow"><slot name="eyebrow">{{ eyebrow }}</slot></p>
+      <h1 class="hero__title"><slot name="title">{{ title }}</slot></h1>
       <div v-if="$slots.default" class="hero__stats">
         <slot />
       </div>
@@ -14,7 +14,8 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ title: string; eyebrow: string }>()
+/** eyebrow / title 也可以用同名插槽替换（首页骨架在这两处放占位块） */
+defineProps<{ title?: string; eyebrow?: string }>()
 </script>
 
 <style scoped>

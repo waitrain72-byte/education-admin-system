@@ -2,7 +2,7 @@
     <div>
         <el-card shadow="never">
             <el-alert type="info" :closable="false" :title="$t('pages.warning.desc')" style="margin-bottom: 16px" />
-            <el-table v-loading="loading" :data="list" stripe>
+            <el-table v-loading="loading && !skeleton" :data="skeleton ? [] : list" stripe>
                 <el-table-column prop="studentName" :label="$t('pages.warning.student')" min-width="100" />
                 <el-table-column
                     prop="courseCount"
@@ -43,6 +43,11 @@
                         }}</el-button>
                     </template>
                 </el-table-column>
+                <!-- 第一次加载：表头照常显示，表身画占位行 -->
+                <template #empty>
+                    <TableSkeleton v-if="skeleton" />
+                    <template v-else>{{ $t('common.empty') }}</template>
+                </template>
             </el-table>
         </el-card>
     </div>
@@ -56,10 +61,13 @@ import { ElMessage } from '@/utils/element-plus'
 import request from '@/utils/request'
 import { t } from '@/i18n'
 import { useUserStore } from '@/stores/user'
+import { useSkeleton } from '@/composables/useSkeleton'
+import TableSkeleton from '@/components/skeleton/TableSkeleton.vue'
 
 const userStore = useUserStore()
 const list = ref<any[]>([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !list.value.length)
 
 const load = () => {
     loading.value = true

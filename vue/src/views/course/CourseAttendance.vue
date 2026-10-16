@@ -1,8 +1,61 @@
 <template>
   <div class="att">
-    <div v-if="!panel && loading" class="panel panel--pad">
-      <el-skeleton animated :rows="5" />
-    </div>
+    <SkeletonRegion v-if="skeleton" class="att">
+      <template v-if="canTeach">
+        <div class="att-top">
+          <section class="panel session">
+            <SkBlock :w="120" :h="18" />
+            <SkBlock w="80%" :h="13" />
+            <SkBlock :w="220" :h="24" />
+            <SkBlock :w="120" :h="40" />
+          </section>
+          <section class="panel">
+            <div class="panel__head">
+              <span class="panel__title">{{ $t('space.attendance.history') }}</span>
+            </div>
+            <div class="panel__body"><SkeletonList :rows="3" :lines="1" trail="text" /></div>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__title">{{ $t('space.attendance.roster') }}</span>
+          </div>
+          <div class="panel__body">
+            <div class="roster-summary"><SkBlock v-for="i in 6" :key="i" :w="54" :h="22" /></div>
+            <ul class="roster" aria-hidden="true">
+              <li v-for="i in 8" :key="i" class="roster__item">
+                <SkBlock :w="36" :h="36" shape="circle" />
+                <span class="sk-stack roster__who">
+                  <SkBlock :w="i % 2 ? 42 : 56" />
+                  <SkBlock :w="76" :h="11" />
+                </span>
+                <SkBlock :w="52" :h="22" />
+              </li>
+            </ul>
+          </div>
+        </section>
+      </template>
+      <template v-else>
+        <section class="panel checkin">
+          <SkBlock :w="150" :h="20" />
+          <SkBlock :w="230" :h="13" />
+        </section>
+        <section class="panel">
+          <div class="panel__head">
+            <span class="panel__title">{{ $t('space.attendance.student.myRecords') }}</span>
+          </div>
+          <div class="panel__body">
+            <div class="roster-summary"><SkBlock v-for="i in 5" :key="i" :w="54" :h="22" /></div>
+            <ul class="records" aria-hidden="true">
+              <li v-for="i in 6" :key="i" class="records__item">
+                <SkBlock :w="96" :h="13" />
+                <SkBlock :w="40" :h="22" />
+              </li>
+            </ul>
+          </div>
+        </section>
+      </template>
+    </SkeletonRegion>
 
     <!-- ==================== 老师 / 管理员 ==================== -->
     <template v-else-if="panel && canTeach">
@@ -215,10 +268,14 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import UserAvatar from '@/components/UserAvatar.vue'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonList from '@/components/skeleton/SkeletonList.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from '@/utils/element-plus'
 import { ATTENDANCE_STATUSES, attendanceMeta, attendanceRateOf, formatCountdown, wallMs } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const props = defineProps<{ overview: Record<string, any> }>()
@@ -290,6 +347,9 @@ watch(courseId, () => {
   date.value = ''
   loadPanel()
 }, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架；换日期、收到签到事件时已有数据，不再出骨架
+const skeleton = useSkeleton(() => !panel.value && loading.value)
 
 useCourseEvents(() => courseId.value, ['attendance'], loadPanel)
 

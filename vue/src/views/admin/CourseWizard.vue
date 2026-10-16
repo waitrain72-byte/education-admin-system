@@ -59,7 +59,15 @@
         </div>
         <div class="cw-label">{{ $t('admin.wizard.room') }}</div>
         <p class="cw-hint">{{ $t('admin.wizard.roomHint') }}</p>
-        <el-skeleton v-if="roomsLoading" animated :rows="2" />
+        <SkeletonRegion v-if="roomsSkeleton">
+          <div class="cw-rooms" aria-hidden="true">
+            <div v-for="i in 6" :key="i" class="cw-room cw-room--sk">
+              <SkBlock :w="40" :h="15" />
+              <SkBlock :w="i % 2 ? 72 : 88" :h="12" />
+              <SkBlock :w="44" :h="11" />
+            </div>
+          </div>
+        </SkeletonRegion>
         <p v-else-if="form.week && form.segment && !rooms.length" class="cw-warn">{{ $t('admin.wizard.noRoom') }}</p>
         <div v-else class="cw-rooms" role="radiogroup" :aria-label="$t('admin.wizard.room')">
           <button
@@ -120,6 +128,9 @@ import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/element-plus'
 import { SEGMENTS, WEEKDAYS, segmentShortName } from '@/utils/schedule'
+import { useSkeleton } from '@/composables/useSkeleton'
+import SkBlock from '@/components/skeleton/SkBlock.vue'
+import SkeletonRegion from '@/components/skeleton/SkeletonRegion.vue'
 import { t } from '@/i18n'
 
 /**
@@ -141,6 +152,7 @@ const saving = ref(false)
 const unscheduled = ref(false)
 const rooms = ref<Record<string, any>[]>([])
 const roomsLoading = ref(false)
+const roomsSkeleton = useSkeleton(() => roomsLoading.value)
 
 const blank = () => ({
   name: '',
@@ -318,6 +330,12 @@ const save = async () => {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+/* 占位卡：字之间留点空，不能点 */
+.cw-room--sk {
+  gap: 6px;
+  cursor: default;
 }
 
 .cw-room:hover {

@@ -25,6 +25,7 @@ export default {
         backHome: '返回首页',
         page: '页面',
         empty: '暂无信息',
+        loading: '正在加载',
     },
 
     // 路由 meta.name 的菜单/面包屑文案（单一数据源）
