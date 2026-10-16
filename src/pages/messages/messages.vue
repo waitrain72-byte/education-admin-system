@@ -52,8 +52,19 @@
         </button>
       </view>
 
+      <!-- 第一次加载：消息行的骨架（类型标签与标题、内容、时间）；翻页、切「未读」时已有内容，照旧在底部转圈 -->
       <view
-        v-if="mine.list.value.length"
+        v-if="mineSkeleton"
+        class="xm-card list sk-region"
+      >
+        <xm-skeleton-list
+          :rows="4"
+          lead="tag"
+          divided
+        />
+      </view>
+      <view
+        v-else-if="mine.list.value.length"
         class="xm-card list"
       >
         <view
@@ -116,7 +127,31 @@
         </view>
       </view>
       <view
-        v-if="notices.list.value.length"
+        v-if="noticesSkeleton"
+        class="xm-list sk-region"
+      >
+        <view
+          v-for="i in 3"
+          :key="i"
+          class="xm-card notice"
+        >
+          <view
+            class="sk sk-h"
+            :style="{ width: ['52%', '66%', '44%'][i - 1] }"
+          />
+          <view class="sk sk-s sk-notice-line" />
+          <view
+            class="sk sk-s sk-notice-line"
+            style="width: 70%"
+          />
+          <view
+            class="sk sk-s sk-notice-line"
+            style="width: 30%"
+          />
+        </view>
+      </view>
+      <view
+        v-else-if="notices.list.value.length"
         class="xm-list"
       >
         <view
@@ -239,6 +274,7 @@ import { ensureLoggedIn } from '@/utils/authGuard'
 import { openLink, takeTabQuery } from '@/utils/link'
 import { usePager } from '@/composables/usePager'
 import { usePermission } from '@/composables/usePermission'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -254,6 +290,8 @@ const noop = () => {}
 // ========== 我的消息 ==========
 const unreadOnly = ref(false)
 const mine = usePager((page) => messageApi.page({ ...page, unreadOnly: unreadOnly.value }, SILENT))
+// 只在还没加载过时出骨架；之后切「未读」、下拉刷新时列表还在，不再出骨架
+const mineSkeleton = useSkeleton(() => !mine.loaded.value && mine.loading.value)
 
 const setUnreadOnly = (value) => {
   if (unreadOnly.value === value) return
@@ -324,6 +362,7 @@ const notices = usePager((page) => {
   if (noticeKeyword.value.trim()) params.title = noticeKeyword.value.trim()
   return noticeApi.selectPage(params, SILENT)
 })
+const noticesSkeleton = useSkeleton(() => !notices.loaded.value && notices.loading.value)
 
 const detail = ref(null)
 const showNotice = (n) => {
@@ -551,6 +590,11 @@ onReachBottom(() => (tab.value === 'mine' ? mine.loadNext() : notices.loadNext()
   margin-top: 12rpx;
   font-size: 22rpx;
   color: var(--xm-text-3);
+}
+
+/* 骨架：通知卡里内容两行、时间一行的间距 */
+.sk-notice-line {
+  margin-top: 14rpx;
 }
 
 .detail-title {

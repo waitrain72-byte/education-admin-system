@@ -15,8 +15,35 @@
       />
     </view>
 
+    <!-- 第一次加载：每场考试一张卡（名称与倒计时标签、考试时间、说明） -->
+    <view
+      v-if="examsSkeleton"
+      class="xm-list sk-region"
+    >
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card exam"
+      >
+        <view class="exam-head">
+          <view
+            class="sk sk-h"
+            :style="{ width: ['50%', '64%', '42%'][i - 1] }"
+          />
+          <view class="sk sk-tag sk-exam-tag" />
+        </view>
+        <view
+          class="sk sk-s sk-exam-line"
+          style="width: 36%"
+        />
+        <view
+          class="sk sk-s sk-exam-line"
+          style="width: 78%"
+        />
+      </view>
+    </view>
     <xm-empty
-      v-if="exams.loaded.value && !exams.loading.value && !exams.list.value.length"
+      v-else-if="exams.loaded.value && !exams.loading.value && !exams.list.value.length"
       icon="calendar"
     />
     <view
@@ -121,6 +148,7 @@ import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
 import { countdownTag, isCompleteExamTime } from '@/utils/examCountdown'
 import { usePager } from '@/composables/usePager'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -130,6 +158,8 @@ const exams = usePager((page) => {
   if (keyword.value.trim()) params.name = keyword.value.trim()
   return examplanApi.selectPage(params, SILENT)
 })
+// 只在还没加载过时出骨架；搜索、翻页时列表还在，照旧在底部转圈
+const examsSkeleton = useSkeleton(() => !exams.loaded.value && exams.loading.value)
 
 const formOpen = ref(false)
 const editing = ref(null)
@@ -235,6 +265,15 @@ onReachBottom(() => exams.loadNext())
   font-size: 24rpx;
   line-height: 1.6;
   color: var(--xm-text-2);
+}
+
+/* 骨架：倒计时标签靠右，时间与说明两行 */
+.sk-exam-tag {
+  margin-left: auto;
+}
+
+.sk-exam-line {
+  margin-top: 18rpx;
 }
 
 .content {

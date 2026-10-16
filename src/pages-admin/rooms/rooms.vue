@@ -17,12 +17,33 @@
       />
     </view>
 
+    <!-- 骨架：每间教室一张卡（编号与类型、名称、座位与占用、占用率条） -->
     <view
-      v-if="loading && !rooms.length"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view
+        v-for="i in 4"
+        :key="i"
+        class="xm-card room"
+      >
+        <view class="room-top">
+          <view
+            class="sk sk-h"
+            style="width: 22%"
+          />
+          <view class="sk sk-tag" />
+        </view>
+        <view
+          class="sk sk-room-line"
+          :style="{ width: i % 2 ? '40%' : '52%' }"
+        />
+        <view
+          class="sk sk-s sk-room-line"
+          style="width: 46%"
+        />
+        <view class="sk sk-room-bar" />
+      </view>
     </view>
     <xm-empty
       v-else-if="!shown.length"
@@ -239,6 +260,7 @@ import { courseColor } from '@/utils/courseColor'
 import { SEGMENTS, WEEKDAYS } from '@/utils/schedule'
 import { weekLabel } from '@/utils/courseText'
 import { confirm } from '@/utils/confirm'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 /** 数据库里按中文存的类型与状态；显示时翻译 */
@@ -256,6 +278,7 @@ const statusLabel = (status) => (STATUS_KEY[status] ? t(`admin.rooms.statuses.${
 const rooms = ref([])
 const courses = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !rooms.value.length)
 const typeFilter = ref('')
 const keyword = ref('')
 const selected = ref(null)
@@ -265,7 +288,8 @@ const typeOptions = computed(() =>
   ['', ...TYPES].map((type) => ({
     value: type,
     label: type ? typeLabel(type) : t('admin.rooms.all'),
-    count: type ? rooms.value.filter((r) => r.type === type).length : rooms.value.length,
+    // 骨架期间不显示数量（免得一排「0」）
+    count: skeleton.value ? null : type ? rooms.value.filter((r) => r.type === type).length : rooms.value.length,
   })),
 )
 
@@ -448,6 +472,17 @@ onPullDownRefresh(async () => {
   border-radius: 999rpx;
   background: var(--xm-bg-sunken);
   overflow: hidden;
+}
+
+/* 骨架：名称、座位两行与占用率条同位置 */
+.sk-room-line {
+  margin-top: 14rpx;
+}
+
+.sk-room-bar {
+  height: 8rpx;
+  margin-top: 16rpx;
+  border-radius: 999rpx;
 }
 
 .room-bar-fill {

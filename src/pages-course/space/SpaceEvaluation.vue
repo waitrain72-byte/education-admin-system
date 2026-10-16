@@ -3,11 +3,70 @@
        学生在结课后从五个方面打分、留言（只能评一次）；老师 / 管理员看匿名汇总 -->
   <view>
     <view
-      v-if="!data && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
+      <!-- 学生：五个维度的打分；老师：总评 + 五维均分 + 学生留言（维度名照常显示） -->
+      <view
+        v-if="!canTeach"
+        class="xm-card"
+      >
+        <view class="xm-section-head">
+          <view
+            class="sk sk-h"
+            style="width: 30%"
+          />
+        </view>
+        <view
+          v-for="key in DIMENSIONS"
+          :key="key"
+          class="dim"
+        >
+          <text class="dim-name">{{ $t('space.evaluation.dimensions.' + key) }}</text>
+          <view class="sk sk-h sk-stars" />
+        </view>
+      </view>
+      <template v-else>
+        <view class="xm-card overall">
+          <view class="overall-main sk-overall">
+            <view
+              class="sk sk-s"
+              style="width: 70%"
+            />
+            <view class="sk sk-num sk-overall-value" />
+            <view class="sk sk-s" />
+          </view>
+          <view class="stars sk-stars-list">
+            <view
+              v-for="i in 5"
+              :key="i"
+              class="sk sk-s"
+            />
+          </view>
+        </view>
+        <view class="xm-card">
+          <view class="xm-section-head">
+            <text class="xm-section-title">{{ $t('space.evaluation.summary') }}</text>
+          </view>
+          <view
+            v-for="key in DIMENSIONS"
+            :key="key"
+            class="bar"
+          >
+            <text class="bar-name">{{ $t('space.evaluation.dimensions.' + key) }}</text>
+            <view class="sk sk-s sk-bar-track" />
+          </view>
+        </view>
+        <view class="xm-card">
+          <view class="xm-section-head">
+            <text class="xm-section-title">{{ $t('space.evaluation.comments') }}</text>
+          </view>
+          <xm-skeleton-list
+            :rows="3"
+            divided
+          />
+        </view>
+      </template>
     </view>
 
     <!-- ==================== 学生 ==================== -->
@@ -188,6 +247,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { evaluationApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { confirm } from '@/utils/confirm'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const DIMENSIONS = ['attitude', 'contentScore', 'method', 'effect', 'support']
@@ -219,6 +279,9 @@ const load = async () => {
 }
 
 watch(() => props.courseId, load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const starPercent = (star) => {
   const count = Number(data.value && data.value.stars && data.value.stars[star - 1]) || 0
@@ -373,6 +436,34 @@ defineExpose({ reload: load })
   flex-shrink: 0;
   font-size: 26rpx;
   color: var(--xm-text);
+}
+
+/* ---------- 骨架 ---------- */
+.sk-stars {
+  width: 240rpx;
+}
+
+.sk-overall {
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  width: 180rpx;
+  flex-shrink: 0;
+}
+
+.sk-overall-value {
+  width: 110rpx;
+}
+
+.sk-stars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.sk-bar-track {
+  flex: 1;
 }
 
 .bar-value {

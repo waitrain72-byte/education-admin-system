@@ -8,7 +8,11 @@
          按关键字、类型、星期、状态筛选；学生还能看到「猜你想选」 -->
     <view class="head">
       <text class="head-sub">{{ canEnroll ? $t('square.sub.student') : $t('square.sub.other') }}</text>
-      <text class="head-count xm-num">{{ $t('square.count', { n: courses.length }) }}</text>
+      <text
+        v-if="!skeleton"
+        class="head-count xm-num"
+        >{{ $t('square.count', { n: courses.length }) }}</text
+      >
     </view>
 
     <view class="filters">
@@ -101,12 +105,16 @@
     </view>
 
     <view
-      v-if="loading && !courses.length"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="list-item"
+      >
+        <square-card-skeleton :index="i" />
+      </view>
     </view>
     <view
       v-else-if="courses.length"
@@ -144,14 +152,17 @@ import { ensureLoggedIn } from '@/utils/authGuard'
 import { WEEKDAYS } from '@/utils/schedule'
 import { courseTypeLabel, weekLabel } from '@/utils/courseText'
 import { confirm } from '@/utils/confirm'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 import SquareCard from './SquareCard.vue'
+import SquareCardSkeleton from './SquareCardSkeleton.vue'
 
 const courses = ref([])
 const recommendations = ref([])
 const types = ref([])
 const canEnroll = ref(false)
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const busyId = ref(null)
 
 const keyword = ref('')

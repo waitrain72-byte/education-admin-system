@@ -16,9 +16,15 @@
     <view class="affected">
       <view class="xm-form-label">{{ $t('leave.affected', { n: affected.length }) }}</view>
       <view
-        v-if="loading"
-        class="skeleton skeleton-line"
-      />
+        v-if="skeleton"
+        class="sk-region"
+      >
+        <xm-skeleton-list
+          :rows="2"
+          lead="bar"
+          :lines="1"
+        />
+      </view>
       <view
         v-else-if="!affected.length"
         class="affected-empty"
@@ -60,6 +66,7 @@ import { applyApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { courseColor } from '@/utils/courseColor'
 import { daysBetween, formatDay } from '@/utils/schedule'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { isZh, t } from '@/i18n'
 
 const props = defineProps({
@@ -73,6 +80,7 @@ const emit = defineEmits(['close', 'submitted'])
 const content = ref('')
 const affected = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value)
 const submitting = ref(false)
 
 const days = computed(() => (props.from && props.to ? daysBetween(props.from, props.to) + 1 : 0))

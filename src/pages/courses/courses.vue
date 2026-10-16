@@ -44,17 +44,15 @@
     </view>
 
     <view
-      v-if="loading && !courses.length"
-      class="xm-list"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
       <view
-        v-for="i in 3"
+        v-for="i in 4"
         :key="i"
-        class="xm-card"
+        class="list-item"
       >
-        <view class="skeleton skeleton-title" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line short" />
+        <xm-course-card-skeleton :index="i" />
       </view>
     </view>
     <view
@@ -114,6 +112,7 @@ import { SILENT } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { ensureLoggedIn } from '@/utils/authGuard'
 import { readUserCache, writeUserCache } from '@/utils/userCache'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const userStore = useUserStore()
@@ -122,18 +121,20 @@ const roleKey = computed(() => String(role.value || 'STUDENT').toLowerCase())
 
 const courses = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const keyword = ref('')
 const filter = ref('all')
 let cachedFor = ''
 
 const STATUS_OF = { active: '已开课', upcoming: '未开课', finished: '已结课' }
 
+// 骨架期间还不知道各状态有几门，不显示数量（免得一排「0」）
 const filterOptions = computed(() => [
-  { value: 'all', label: t('courses.filter.all'), count: courses.value.length },
+  { value: 'all', label: t('courses.filter.all'), count: skeleton.value ? null : courses.value.length },
   ...Object.keys(STATUS_OF).map((key) => ({
     value: key,
     label: t('courses.filter.' + key),
-    count: courses.value.filter((c) => c.status === STATUS_OF[key]).length,
+    count: skeleton.value ? null : courses.value.filter((c) => c.status === STATUS_OF[key]).length,
   })),
 ])
 

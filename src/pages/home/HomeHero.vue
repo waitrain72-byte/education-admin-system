@@ -1,8 +1,20 @@
 <template>
   <!-- 首页页头（与 Web 端 views/home/HomeHero.vue 同一设计）：品牌色浅底 + 课表格线，下方放「下一节课」或快捷入口 -->
   <view class="hero">
-    <view class="hero-eyebrow">{{ eyebrow }}</view>
-    <view class="hero-title">{{ title }}</view>
+    <view class="hero-eyebrow">
+      <slot
+        v-if="$slots.eyebrow"
+        name="eyebrow"
+      />
+      <template v-else>{{ eyebrow }}</template>
+    </view>
+    <view class="hero-title">
+      <slot
+        v-if="$slots.title"
+        name="title"
+      />
+      <template v-else>{{ title }}</template>
+    </view>
     <view
       v-if="$slots.default"
       class="hero-stats"
@@ -19,6 +31,7 @@
 </template>
 
 <script setup>
+/** eyebrow / title 也可以用同名插槽替换（首页骨架在这两处放占位块） */
 defineProps({
   eyebrow: { type: String, default: '' },
   title: { type: String, default: '' },

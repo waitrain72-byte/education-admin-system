@@ -3,11 +3,30 @@
        老师看学情（学号、班级、出勤率、作业提交）；学生看同学名单 -->
   <view>
     <view
-      v-if="!data && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <!-- 任课教师卡 + 学生名单（「任课教师」「学生」照常显示） -->
+      <view class="xm-card teacher">
+        <view class="sk sk-avatar-lg" />
+        <view class="teacher-info sk-stack">
+          <view class="teacher-label">{{ $t('space.members.teacher') }}</view>
+          <view
+            class="sk sk-h"
+            style="width: 36%"
+          />
+        </view>
+      </view>
+      <view class="xm-card">
+        <view class="xm-section-head">
+          <text class="xm-section-title">{{ $t('space.members.students') }}</text>
+        </view>
+        <xm-skeleton-list
+          :rows="5"
+          lead="avatar"
+          divided
+        />
+      </view>
     </view>
     <template v-else-if="data">
       <view
@@ -116,6 +135,7 @@ import { computed, ref, watch } from 'vue'
 import { courseApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { matchesPerson } from '@/utils/courseSpace'
+import { useSkeleton } from '@/composables/useSkeleton'
 
 const props = defineProps({
   overview: { type: Object, required: true },
@@ -143,6 +163,9 @@ const load = async () => {
 }
 
 watch(() => props.courseId, load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const rateTone = (rate) => (rate >= 90 ? 'is-ok' : rate >= 75 ? 'is-warn' : 'is-bad')
 

@@ -146,9 +146,14 @@
         </button>
       </view>
       <view
-        v-if="postsLoading && !posts.length"
-        class="skeleton skeleton-line"
-      />
+        v-if="postsSkeleton"
+        class="sk-region"
+      >
+        <xm-skeleton-list
+          :rows="2"
+          divided
+        />
+      </view>
       <view
         v-else-if="!posts.length"
         class="muted"
@@ -339,6 +344,7 @@ import { courseApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { courseStatusLabel, courseTypeLabel, segmentLabel, weekLabel } from '@/utils/courseText'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -501,6 +507,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const postsSkeleton = useSkeleton(() => postsLoading.value && !posts.value.length)
 
 useCourseEvents(() => props.courseId, ['posts'], loadPosts)
 

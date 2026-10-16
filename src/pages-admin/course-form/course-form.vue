@@ -18,9 +18,46 @@
       </view>
     </view>
 
+    <!-- 编辑已有课程时先查课程：查到之前是骨架（字段名照常显示），不弹全屏转圈 -->
+    <view
+      v-if="courseSkeleton"
+      class="xm-card sk-region"
+    >
+      <view
+        v-for="key in ['name', 'type']"
+        :key="key"
+        class="xm-form-item"
+      >
+        <view class="xm-form-label">{{ $t('admin.wizard.' + key) }}</view>
+        <view class="sk sk-field" />
+      </view>
+      <!-- 学分与人数上限并排，与真实表单一致 -->
+      <view class="sk-two">
+        <view
+          v-for="key in ['credit', 'capacity']"
+          :key="key"
+          class="xm-form-item"
+        >
+          <view class="xm-form-label">{{ $t('admin.wizard.' + key) }}</view>
+          <view class="sk sk-field" />
+        </view>
+      </view>
+      <view
+        v-for="key in ['teacher', 'intro']"
+        :key="key"
+        class="xm-form-item"
+      >
+        <view class="xm-form-label">{{ $t('admin.wizard.' + key) }}</view>
+        <view
+          class="sk sk-field"
+          :class="{ 'is-tall': key === 'intro' }"
+        />
+      </view>
+    </view>
+
     <!-- 第一步：基本信息 -->
     <view
-      v-show="step === 0"
+      v-show="step === 0 && !courseSkeleton"
       class="xm-card"
     >
       <view class="xm-form-item">
@@ -164,9 +201,28 @@
         <view class="xm-form-label">{{ $t('admin.wizard.room') }}</view>
         <view class="hint">{{ $t('admin.wizard.roomHint') }}</view>
         <view
-          v-if="roomsLoading"
-          class="skeleton skeleton-line"
-        />
+          v-if="roomsSkeleton"
+          class="rooms sk-region"
+        >
+          <view
+            v-for="i in 4"
+            :key="i"
+            class="room sk-room"
+          >
+            <view
+              class="sk sk-h"
+              style="width: 40%"
+            />
+            <view
+              class="sk sk-s"
+              :style="{ width: i % 2 ? '70%' : '56%' }"
+            />
+            <view
+              class="sk sk-s"
+              style="width: 36%"
+            />
+          </view>
+        </view>
         <view
           v-else-if="form.week && form.segment && !rooms.length"
           class="warn"
@@ -282,6 +338,7 @@ import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
 import { SEGMENTS, WEEKDAYS, parseSegmentTime } from '@/utils/schedule'
 import { courseStatusLabel, courseTypeLabel, segmentLabel, weekLabel } from '@/utils/courseText'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const STEPS = ['basic', 'schedule', 'confirm']
@@ -295,6 +352,9 @@ const unscheduled = ref(false)
 const teachers = ref([])
 const rooms = ref([])
 const roomsLoading = ref(false)
+const roomsSkeleton = useSkeleton(() => roomsLoading.value)
+const courseLoading = ref(false)
+const courseSkeleton = useSkeleton(() => courseLoading.value)
 
 const form = reactive({
   name: '',
@@ -428,10 +488,14 @@ const save = async () => {
 }
 
 const load = async () => {
+  courseLoading.value = !!editingId.value
   try {
-    teachers.value = (await teacherApi.selectAll(undefined, SILENT)) || []
-    if (!editingId.value) return
-    const c = await courseApi.selectById(editingId.value)
+    // 教师列表与要编辑的课程一起取
+    const [teacherList, c] = await Promise.all([
+      teacherApi.selectAll(undefined, SILENT),
+      editingId.value ? courseApi.selectById(editingId.value, SILENT) : null,
+    ])
+    teachers.value = teacherList || []
     if (!c) return
     Object.assign(form, {
       name: c.name || '',
@@ -448,6 +512,8 @@ const load = async () => {
     unscheduled.value = !c.week
   } catch {
     // 提示已由请求层统一弹出
+  } finally {
+    courseLoading.value = false
   }
 }
 
@@ -565,6 +631,22 @@ onShow(() => {
   gap: 14rpx;
 }
 
+/* 编辑时的骨架：与输入框（80rpx）、简介文本框同高 */
+.sk-field {
+  height: 80rpx;
+  border-radius: 16rpx;
+}
+
+.sk-field.is-tall {
+  height: 180rpx;
+}
+
+.sk-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+}
+
 .room {
   display: flex;
   flex-direction: column;
@@ -573,6 +655,11 @@ onShow(() => {
   border: 2rpx solid var(--xm-border);
   border-radius: 16rpx;
   background: var(--xm-bg-card);
+}
+
+/* 占位卡：三行字之间留点空 */
+.sk-room {
+  gap: 12rpx;
 }
 
 .room.on {

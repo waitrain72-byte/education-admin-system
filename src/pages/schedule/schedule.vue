@@ -56,14 +56,83 @@
         >
       </view>
 
+      <!-- 骨架：周视图画成课表格子（几格有课块）+ 本周安排；月视图画成月历格子（尺寸与 WeekGrid / MonthGrid 一致） -->
       <view
-        v-if="loading && !current"
-        class="xm-card"
+        v-if="skeleton"
+        class="sk-region"
       >
-        <view class="skeleton skeleton-title" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line short" />
+        <template v-if="view === 'week'">
+          <view class="sk-week">
+            <view class="sk-week-row">
+              <view class="sk-week-time" />
+              <view
+                v-for="d in 7"
+                :key="d"
+                class="sk-week-head"
+              >
+                <view class="sk sk-s sk-week-label" />
+                <view class="sk sk-week-label" />
+              </view>
+            </view>
+            <view
+              v-for="p in 5"
+              :key="p"
+              class="sk-week-row"
+            >
+              <view class="sk-week-time">
+                <view class="sk sk-week-seg" />
+              </view>
+              <view
+                v-for="d in 7"
+                :key="d"
+                class="sk-week-cell"
+              >
+                <view
+                  v-if="SKELETON_BUSY.includes(p + '-' + d)"
+                  class="sk sk-week-block"
+                />
+              </view>
+            </view>
+          </view>
+          <view class="xm-card events">
+            <view class="xm-section-head">
+              <text class="xm-section-title">{{ $t('schedule.events') }}</text>
+            </view>
+            <xm-skeleton-list
+              :rows="2"
+              lead="tag"
+              divided
+            />
+          </view>
+        </template>
+        <template v-else>
+          <view
+            v-if="isStudent"
+            class="select-bar"
+          >
+            <text class="select-text">{{ $t('leave.requestHint') }}</text>
+          </view>
+          <view class="sk-month">
+            <view
+              v-for="d in 7"
+              :key="'h' + d"
+              class="sk-month-head"
+            >
+              <view class="sk sk-s sk-month-label" />
+            </view>
+            <view
+              v-for="i in 35"
+              :key="i"
+              class="sk-month-day"
+            >
+              <view class="sk sk-month-num" />
+              <view
+                v-if="i % 5 === 2"
+                class="sk sk-s sk-month-dot"
+              />
+            </view>
+          </view>
+        </template>
       </view>
 
       <!-- ========== 周课表 ========== -->
@@ -257,6 +326,7 @@ import { takeTabQuery } from '@/utils/link'
 import { courseColor } from '@/utils/courseColor'
 import { addDays, addMonths, daysBetween, formatDay, formatMonth } from '@/utils/schedule'
 import { syncServerClock } from '@/composables/useServerClock'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { isZh, t } from '@/i18n'
 import ConsoleHome from './ConsoleHome.vue'
@@ -265,6 +335,8 @@ import MonthGrid from './MonthGrid.vue'
 import LeaveSheet from './LeaveSheet.vue'
 
 const PAGE_URL = '/pages/schedule/schedule'
+/** 周视图骨架里画课块的格子（第几大节-星期几），看起来像一张排了课的课表 */
+const SKELETON_BUSY = ['1-1', '1-3', '2-2', '2-4', '3-2', '3-5', '4-4']
 /** 一次最多请 30 天（与后端一致） */
 const MAX_LEAVE_DAYS = 30
 
@@ -282,6 +354,8 @@ const weekData = ref(null)
 const monthData = ref(null)
 const loading = ref(false)
 const current = computed(() => (view.value === 'week' ? weekData.value : monthData.value))
+// 翻周、翻月时上一页还在，不出骨架；第一次进来、第一次切到月历时才出
+const skeleton = useSkeleton(() => loading.value && !current.value)
 
 const dayText = (iso) => formatDay(iso, isZh(), true)
 
@@ -304,11 +378,14 @@ const load = async () => {
       anchor.value = data.monday
       syncServerClock(data.now)
     } else {
-      const data = await scheduleApi.month(month.value ? { month: month.value } : undefined, SILENT)
+      // 月历与「我的请假」一起取、一起显示：先显示月历再补请假，中间会闪一下「还没有请假」
+      const [data] = await Promise.all([
+        scheduleApi.month(month.value ? { month: month.value } : undefined, SILENT),
+        isStudent.value ? loadMyLeaves() : null,
+      ])
       monthData.value = data
       month.value = data.month
       syncServerClock(data.now)
-      if (isStudent.value) await loadMyLeaves()
     }
   } catch {
     // 提示已由请求层统一弹出
@@ -565,6 +642,106 @@ onPullDownRefresh(async () => {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* ---------- 骨架：尺寸与 WeekGrid / MonthGrid 的格子一致 ---------- */
+.sk-week,
+.sk-month {
+  border: 1rpx solid var(--xm-border);
+  border-radius: 24rpx;
+  background: var(--xm-bg-card);
+  overflow: hidden;
+}
+
+.sk-week-row {
+  display: flex;
+}
+
+.sk-week-row + .sk-week-row {
+  border-top: 1rpx solid var(--xm-border);
+}
+
+.sk-week-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  flex-shrink: 0;
+}
+
+.sk-week-seg {
+  width: 28rpx;
+}
+
+.sk-week-head,
+.sk-week-cell {
+  flex: 1;
+  min-width: 0;
+  border-left: 1rpx solid var(--xm-border);
+}
+
+.sk-week-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 0 20rpx;
+}
+
+.sk-week-label {
+  width: 60%;
+}
+
+.sk-week-cell {
+  display: flex;
+  min-height: 176rpx;
+  padding: 6rpx;
+  box-sizing: border-box;
+}
+
+.sk-week-block {
+  height: auto;
+  flex: 1;
+}
+
+.sk-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sk-month-head {
+  display: flex;
+  justify-content: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid var(--xm-border);
+}
+
+.sk-month-label {
+  width: 40%;
+}
+
+.sk-month-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  min-height: 104rpx;
+  padding: 14rpx 4rpx 8rpx;
+  border-right: 1rpx solid var(--xm-border);
+  border-bottom: 1rpx solid var(--xm-border);
+  box-sizing: border-box;
+}
+
+.sk-month-day:nth-child(7n) {
+  border-right: 0;
+}
+
+.sk-month-num {
+  width: 36rpx;
+}
+
+.sk-month-dot {
+  width: 60%;
 }
 
 .note {

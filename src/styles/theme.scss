@@ -42,6 +42,12 @@ page {
   --xm-mask: rgba(255, 255, 255, 0.72);
   /* 装饰色块（登录页背景课表等）的不透明度：深色底上要稍高才看得见 */
   --xm-deco-opacity: 0.16;
+  /* 骨架屏（与 Web 端同值）：底色绿灰、光偏白；brand 用在品牌浅底上，cover 是课程封面位置，on-cover 是封面上的字 */
+  --xm-sk-base: #e3eae6;
+  --xm-sk-shine: rgba(255, 255, 255, 0.88);
+  --xm-sk-brand: #d2e5de;
+  --xm-sk-cover: #dbe4df;
+  --xm-sk-on-cover: rgba(255, 255, 255, 0.62);
 }
 
 .theme-dark {
@@ -76,6 +82,11 @@ page {
   --xm-shadow-brand: 0 12rpx 28rpx -10rpx rgba(0, 0, 0, 0.5);
   --xm-mask: rgba(14, 19, 17, 0.78);
   --xm-deco-opacity: 0.22;
+  --xm-sk-base: #1e2824;
+  --xm-sk-shine: rgba(150, 225, 195, 0.1);
+  --xm-sk-brand: #22382f;
+  --xm-sk-cover: #1b2420;
+  --xm-sk-on-cover: rgba(255, 255, 255, 0.07);
 }
 
 /* 页面根容器：由每个页面的根 view 绑定 themeClass（全局混入） */
@@ -666,36 +677,140 @@ page {
   }
 }
 
-/* 骨架屏占位：浅灰底 + 微光扫过动画 */
-.skeleton {
-  background: linear-gradient(90deg, var(--xm-bg-sunken) 25%, var(--xm-bg-hover) 37%, var(--xm-bg-sunken) 63%);
-  background-size: 400% 100%;
-  animation: xm-skeleton 1.2s ease infinite;
+/* ================= 骨架屏（与 Web 端 layout.css 的 .sk 同一套） =================
+ * 数据回来之前按页面版式画的占位块。所有占位块共用一道光：渐变按视口定位（background-attachment: fixed），
+ * 整页看起来是一道光从左扫到右；iOS 不支持 fixed 背景，退化成每块各自扫，也不难看。
+ * 尺寸只用下面这些类（rpx 写在样式表里才会被大屏封顶插件处理），宽度可以在行内写百分比。 */
+.sk {
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 28rpx;
+  border-radius: 12rpx;
+  background-color: var(--xm-sk-base);
+  background-image: linear-gradient(100deg, transparent 45%, var(--xm-sk-shine) 50%, transparent 55%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: 300vw 100vh;
+  animation: xm-sk-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 高度：小字 / 正文（默认）/ 小标题 / 大标题 / 大数字 */
+.sk-s {
+  height: 22rpx;
+}
+
+.sk-h {
+  height: 34rpx;
+}
+
+.sk-xl {
+  height: 40rpx;
+}
+
+.sk-num {
+  height: 48rpx;
+}
+
+/* 固定形状：头像、标签、按钮、色条、日期块、勾选框 */
+.sk-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+}
+
+.sk-avatar-lg {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+}
+
+.sk-tag {
+  width: 88rpx;
+  height: 40rpx;
+  border-radius: 999rpx;
+}
+
+/* 与 .xm-btn-sm 同高同圆角 */
+.sk-btn {
+  width: 128rpx;
+  height: 56rpx;
   border-radius: 12rpx;
 }
 
-.skeleton-title {
-  height: 34rpx;
-  width: 30%;
-  margin-bottom: 26rpx;
+.sk-bar {
+  width: 8rpx;
+  height: 72rpx;
+  border-radius: 4rpx;
 }
 
-.skeleton-line {
-  height: 28rpx;
-  margin-bottom: 20rpx;
+.sk-date {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 18rpx;
 }
 
-.skeleton-line.short {
-  width: 40%;
-  margin-bottom: 0;
+.sk-check {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 8rpx;
 }
 
-@keyframes xm-skeleton {
+/* 放在什么底上：品牌浅底、课程封面、封面上的字 */
+.sk-on-brand {
+  background-color: var(--xm-sk-brand);
+}
+
+.sk-cover {
+  background-color: var(--xm-sk-cover);
+}
+
+.sk-on-cover {
+  background-color: var(--xm-sk-on-cover);
+}
+
+/* 几行占位竖着排 */
+.sk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 光扫完停一会儿再扫下一遍 */
+@keyframes xm-sk-sweep {
   0% {
-    background-position: 100% 0;
+    background-position: -180vw 0;
   }
 
+  65%,
   100% {
-    background-position: -100% 0;
+    background-position: -20vw 0;
+  }
+}
+
+/* 骨架区域先隐身 0.2 秒再淡入：0.2 秒内就加载完的页面看不到骨架，不会闪一下
+ * （与 composables/useSkeleton.js 的 SKELETON_DELAY 一致，改一处要两处一起改） */
+.sk-region {
+  animation: xm-sk-reveal 0.15s ease-out 0.2s both;
+}
+
+@keyframes xm-sk-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 系统开了「减少动态效果」（H5）：不扫光，只留静止的占位块 */
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    background-image: none;
   }
 }

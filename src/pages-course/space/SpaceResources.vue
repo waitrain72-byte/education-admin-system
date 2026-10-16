@@ -21,11 +21,14 @@
     </view>
 
     <view
-      v-if="!list.length && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-card sk-region"
     >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <xm-skeleton-list
+        :rows="3"
+        lead="tag"
+        divided
+      />
     </view>
     <xm-empty
       v-else-if="!list.length"
@@ -70,6 +73,7 @@ import { SILENT } from '@/utils/request'
 import { formatSize } from '@/utils/courseSpace'
 import { pickAttachments, uploadFile } from '@/utils/upload'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -101,6 +105,9 @@ const load = async () => {
 }
 
 watch(() => props.courseId, load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !list.value.length && loading.value)
 
 useCourseEvents(() => props.courseId, ['resources'], load)
 

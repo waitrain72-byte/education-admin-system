@@ -6,13 +6,51 @@
   >
     <!-- 作业详情（与 Web 端 views/course/AssignmentDetail.vue 一致）：
          学生看要求、提交 / 修改答案；老师看全班提交情况，逐个打分、写评语，批完自动跳到下一个 -->
+    <!-- 骨架：标题与截止时间、作业要求（标题照常显示）、下面一块提交情况 -->
     <view
-      v-if="!data && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view class="xm-card">
+        <view
+          class="sk sk-xl"
+          style="width: 64%"
+        />
+        <view class="meta">
+          <view class="sk sk-tag sk-meta-tag" />
+          <view
+            class="sk sk-s"
+            style="width: 24%"
+          />
+        </view>
+      </view>
+      <view class="xm-card">
+        <view class="xm-section-head">
+          <text class="xm-section-title">{{ $t('space.assignments.requirement') }}</text>
+        </view>
+        <view class="sk-stack">
+          <view
+            class="sk"
+            style="width: 96%"
+          />
+          <view
+            class="sk"
+            style="width: 88%"
+          />
+          <view
+            class="sk"
+            style="width: 54%"
+          />
+        </view>
+      </view>
+      <view class="xm-card">
+        <xm-skeleton-list
+          :rows="3"
+          lead="avatar"
+          trail="tag"
+          divided
+        />
+      </view>
     </view>
 
     <template v-else-if="data">
@@ -302,6 +340,7 @@ import { SILENT } from '@/utils/request'
 import { ensureLoggedIn } from '@/utils/authGuard'
 import { ASSIGNMENT_STATUSES } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 import AssignmentForm from '../space/AssignmentForm.vue'
@@ -312,6 +351,7 @@ const courseId = ref(0)
 const assignmentId = ref(0)
 const data = ref(null)
 const loading = ref(false)
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 const assignment = computed(() => (data.value && data.value.assignment) || {})
 const mine = computed(() => (data.value && data.value.mySubmission) || null)
@@ -491,6 +531,11 @@ onPullDownRefresh(async () => {
   margin-top: 14rpx;
   font-size: 24rpx;
   color: var(--xm-text-2);
+}
+
+/* 骨架：截止时间标签比普通标签宽 */
+.sk-meta-tag {
+  width: 260rpx;
 }
 
 .text {

@@ -17,12 +17,32 @@
       />
     </view>
 
+    <!-- 骨架：每名学生一张卡（头像、姓名与风险指数、等级标签；四项指标的名称照常显示） -->
     <view
-      v-if="loading && !list.length"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card student"
+      >
+        <xm-skeleton-list
+          :rows="1"
+          lead="avatar"
+          trail="tag"
+        />
+        <view class="metrics">
+          <view
+            v-for="key in ['courseCount', 'avg', 'failed', 'absentRate']"
+            :key="key"
+            class="metric"
+          >
+            <text class="metric-label">{{ $t('pages.warning.' + key) }}</text>
+            <view class="sk sk-h sk-metric" />
+          </view>
+        </view>
+      </view>
     </view>
     <xm-empty
       v-else-if="!shown.length"
@@ -100,6 +120,7 @@ import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { warningApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const LEVELS = ['高风险', '中风险', '低风险', '正常']
@@ -115,17 +136,19 @@ const levelLabel = (value) => {
 
 const list = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !list.value.length)
 const keyword = ref('')
 const level = ref('')
 const sending = ref(null)
 const sent = ref([])
 
+// 骨架期间不显示数量（免得一排「0」）
 const levelOptions = computed(() => [
-  { value: '', label: t('common.all'), count: list.value.length },
+  { value: '', label: t('common.all'), count: skeleton.value ? null : list.value.length },
   ...LEVELS.map((value) => ({
     value,
     label: levelLabel(value),
-    count: list.value.filter((s) => s.level === value).length,
+    count: skeleton.value ? null : list.value.filter((s) => s.level === value).length,
   })),
 ])
 
@@ -228,6 +251,12 @@ onPullDownRefresh(async () => {
   flex-direction: column;
   align-items: center;
   gap: 4rpx;
+}
+
+/* 骨架：指标数字的占位 */
+.sk-metric {
+  width: 56rpx;
+  margin-top: 6rpx;
 }
 
 .metric-label {

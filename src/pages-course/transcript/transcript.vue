@@ -8,13 +8,36 @@
          老师发布之后才出现，点一门课进它的成绩页 -->
     <view class="sub">{{ $t('transcript.sub') }}</view>
 
+    <!-- 骨架：四个指标的名称照常显示、数字是占位；下面每门课一张卡（课名、类型学分、总评与结果） -->
     <view
-      v-if="loading && !data"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view class="kpis">
+        <view
+          v-for="key in ['credits', 'gpa', 'average', 'results']"
+          :key="key"
+          class="kpi"
+        >
+          <text class="kpi-label">{{ $t('transcript.' + key) }}</text>
+          <view
+            class="sk"
+            :class="key === 'results' ? 'sk-tag' : 'sk-num'"
+            :style="{ width: key === 'results' ? '' : '40%' }"
+          />
+        </view>
+      </view>
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card course"
+      >
+        <xm-skeleton-list
+          :rows="1"
+          lead="bar"
+          trail="tag"
+        />
+      </view>
     </view>
 
     <template v-else-if="data">
@@ -138,6 +161,7 @@ import { SILENT } from '@/utils/request'
 import { ensureLoggedIn } from '@/utils/authGuard'
 import { courseColor } from '@/utils/courseColor'
 import { courseTypeLabel } from '@/utils/courseText'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 /** 四个分项：考勤、作业由记录折算，平时、期末由老师录入（权重在成绩册里设） */
@@ -150,6 +174,7 @@ const PARTS = [
 
 const data = ref(null)
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !data.value)
 
 const summary = computed(() => (data.value && data.value.summary) || {})
 const rows = computed(() => (data.value && data.value.rows) || [])

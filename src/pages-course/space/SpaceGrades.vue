@@ -3,12 +3,91 @@
        老师 / 管理员是成绩册（权重、统计、逐个录平时与期末、保存、发布 / 撤回）；学生看自己的成绩 -->
   <view>
     <view
-      v-if="loading && !book && !mine"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <!-- 老师：权重（四项名称照常显示）+ 统计与分布 + 学生行；学生：总评与各项 -->
+      <template v-if="canTeach">
+        <view class="xm-card">
+          <view class="xm-section-head">
+            <text class="xm-section-title">{{ $t('space.grades.weights') }}</text>
+          </view>
+          <view class="weights">
+            <view
+              v-for="key in WEIGHT_KEYS"
+              :key="key"
+              class="weight"
+            >
+              <text class="weight-label">{{ $t('space.weights.' + key) }}</text>
+              <view class="sk sk-btn sk-weight" />
+            </view>
+          </view>
+        </view>
+        <view class="xm-card">
+          <view class="stats">
+            <view
+              v-for="i in 4"
+              :key="i"
+              class="sk-stack"
+            >
+              <view
+                class="sk sk-s"
+                style="width: 50%"
+              />
+              <view
+                class="sk sk-num"
+                style="width: 40%"
+              />
+            </view>
+          </view>
+          <view class="sk-dist">
+            <view
+              v-for="(h, i) in ['30%', '56%', '86%', '64%', '24%']"
+              :key="i"
+              class="sk sk-dist-bar"
+              :style="{ height: h }"
+            />
+          </view>
+        </view>
+        <view
+          v-for="i in 3"
+          :key="i"
+          class="xm-card row"
+        >
+          <xm-skeleton-list
+            :rows="1"
+            trail="tag"
+          />
+          <view class="fields sk-fields">
+            <view
+              v-for="j in 4"
+              :key="j"
+              class="sk sk-btn sk-field"
+            />
+          </view>
+        </view>
+      </template>
+      <view
+        v-else
+        class="xm-card mine sk-mine"
+      >
+        <view
+          class="sk sk-s"
+          style="width: 24%"
+        />
+        <view class="sk sk-mine-total" />
+        <view
+          class="sk sk-tag"
+          style="width: 30%"
+        />
+        <view class="sk-mine-parts">
+          <view
+            v-for="i in 4"
+            :key="i"
+            class="sk sk-mine-part"
+          />
+        </view>
+      </view>
     </view>
 
     <!-- ==================== 老师 / 管理员：成绩册 ==================== -->
@@ -280,6 +359,7 @@ import { gradebookApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { matchesPerson, previewTotal, weightsValid } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -353,6 +433,9 @@ const load = async () => {
 }
 
 watch([() => props.courseId, canTeach], load, { immediate: true })
+
+// 放在首次加载之后创建，第一次渲染就是骨架
+const skeleton = useSkeleton(() => loading.value && !book.value && !mine.value)
 
 const setText = (row, field, e) => {
   row[field] = String(e.detail.value || '')
@@ -851,5 +934,57 @@ defineExpose({ reload })
   font-weight: bold;
   text-align: right;
   color: var(--xm-text);
+}
+
+/* ---------- 骨架：尺寸与权重输入框、分布柱、录分框、我的总评一致 ---------- */
+.sk-weight {
+  width: 110rpx;
+  height: 64rpx;
+  border-radius: 12rpx;
+}
+
+.sk-dist {
+  display: flex;
+  align-items: flex-end;
+  gap: 16rpx;
+  height: 140rpx;
+  margin-top: 24rpx;
+}
+
+.sk-dist-bar {
+  flex: 1;
+  width: auto;
+  border-radius: 8rpx 8rpx 0 0;
+}
+
+.sk-fields {
+  margin-top: 18rpx;
+}
+
+.sk-field {
+  width: 100%;
+  height: 64rpx;
+  border-radius: 12rpx;
+}
+
+.sk-mine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.sk-mine-total {
+  width: 160rpx;
+  height: 88rpx;
+}
+
+.sk-mine-parts {
+  align-self: stretch;
+  margin-top: 8rpx;
+}
+
+.sk-mine-part {
+  margin: 22rpx 0;
 }
 </style>

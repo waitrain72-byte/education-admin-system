@@ -33,10 +33,55 @@
       />
     </view>
 
-    <view class="count xm-num">{{ $t('common.totalCount', { n: people.total.value }) }}</view>
+    <view class="count xm-num">
+      <!-- 骨架期间总数还不知道，不显示「共 0 条」 -->
+      <view
+        v-if="peopleSkeleton"
+        class="sk-region"
+      >
+        <view class="sk sk-s sk-count" />
+      </view>
+      <template v-else>{{ $t('common.totalCount', { n: people.total.value }) }}</template>
+    </view>
 
+    <!-- 第一次加载：每人一张卡（头像、姓名与账号、组织或联系方式、三个按钮） -->
+    <view
+      v-if="peopleSkeleton"
+      class="xm-list sk-region"
+    >
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card person"
+      >
+        <view class="person-head">
+          <view class="sk sk-person-avatar" />
+          <view class="sk-stack">
+            <view
+              class="sk sk-h"
+              :style="{ width: i % 2 ? '24%' : '32%' }"
+            />
+            <view
+              class="sk sk-s"
+              style="width: 30%"
+            />
+          </view>
+        </view>
+        <view
+          class="sk sk-s sk-person-info"
+          :style="{ width: i === 2 ? '56%' : '72%' }"
+        />
+        <view class="xm-actions">
+          <view
+            v-for="j in 3"
+            :key="j"
+            class="sk sk-btn"
+          />
+        </view>
+      </view>
+    </view>
     <xm-empty
-      v-if="people.loaded.value && !people.loading.value && !people.list.value.length"
+      v-else-if="people.loaded.value && !people.loading.value && !people.list.value.length"
       icon="users"
       :text="$t('admin.people.empty')"
     />
@@ -216,6 +261,7 @@ import { SILENT } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { ensureRole } from '@/utils/authGuard'
 import { usePager } from '@/composables/usePager'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -244,6 +290,8 @@ const people = usePager((page) => {
   }
   return LIST[tab.value](params, SILENT)
 })
+// 只在还没加载过时出骨架；切页签、搜索、翻页时列表还在，照旧在底部转圈
+const peopleSkeleton = useSkeleton(() => !people.loaded.value && people.loading.value)
 
 const switchTab = (key) => {
   if (tab.value === key) return
@@ -447,6 +495,21 @@ onReachBottom(() => people.loadNext())
   font-size: 24rpx;
   line-height: 1.6;
   color: var(--xm-text-2);
+}
+
+/* ---------- 骨架：头像与 xm-user-avatar size=80 同大 ---------- */
+.sk-count {
+  width: 120rpx;
+}
+
+.sk-person-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+}
+
+.sk-person-info {
+  margin: 22rpx 0 6rpx;
 }
 
 .hint {

@@ -35,12 +35,36 @@
       </picker>
     </view>
 
+    <!-- 骨架：每门课一张卡（课程色点、课名与类型、状态标签、上课时间、选课人数条） -->
     <view
-      v-if="loading && !courses.length"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card course"
+      >
+        <view class="course-head">
+          <view class="sk sk-dot" />
+          <view class="sk-stack">
+            <view
+              class="sk sk-h"
+              :style="{ width: ['48%', '62%', '40%'][i - 1] }"
+            />
+            <view
+              class="sk sk-s"
+              style="width: 56%"
+            />
+          </view>
+          <view class="sk sk-tag" />
+        </view>
+        <view
+          class="sk sk-s sk-course-time"
+          style="width: 44%"
+        />
+        <view class="sk sk-course-bar" />
+      </view>
     </view>
     <xm-empty
       v-else-if="!shown.length"
@@ -146,6 +170,7 @@ import { ensureRole } from '@/utils/authGuard'
 import { courseColor } from '@/utils/courseColor'
 import { courseStatusLabel, courseStatusTag, courseTypeLabel, courseWhen } from '@/utils/courseText'
 import { confirm } from '@/utils/confirm'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const UNSCHEDULED = 'unscheduled'
@@ -155,6 +180,7 @@ const courses = ref([])
 const counts = ref({})
 const teachers = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !courses.value.length)
 const status = ref('')
 const teacherId = ref(0)
 const keyword = ref('')
@@ -170,7 +196,11 @@ const statusOptions = computed(() =>
     { value: '未开课', label: t('courses.filter.upcoming') },
     { value: '已结课', label: t('courses.filter.finished') },
     { value: UNSCHEDULED, label: t('courses.unscheduled') },
-  ].map((o) => ({ ...o, count: courses.value.filter((c) => matchesStatus(c, o.value)).length })),
+  ].map((o) => ({
+    ...o,
+    // 骨架期间还不知道各状态有几门，不显示数量（免得一排「0」）
+    count: skeleton.value ? null : courses.value.filter((c) => matchesStatus(c, o.value)).length,
+  })),
 )
 
 const teacherRange = computed(() => [t('admin.courses.allTeachers'), ...teachers.value.map((x) => x.name)])
@@ -385,5 +415,22 @@ onPullDownRefresh(async () => {
   flex-shrink: 0;
   font-size: 22rpx;
   color: var(--xm-text-2);
+}
+
+/* 骨架：与课程色点、上课时间、人数条同位置 */
+.sk-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+}
+
+.sk-course-time {
+  margin-top: 20rpx;
+}
+
+.sk-course-bar {
+  height: 10rpx;
+  margin-top: 20rpx;
+  border-radius: 999rpx;
 }
 </style>

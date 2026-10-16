@@ -15,11 +15,39 @@
     </button>
 
     <view
-      v-if="!data && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card item"
+      >
+        <view class="item-head">
+          <view
+            class="sk sk-h"
+            :style="{ width: ['58%', '70%', '46%'][i - 1] }"
+          />
+          <view
+            v-if="!canTeach"
+            class="sk sk-tag"
+          />
+        </view>
+        <view
+          class="sk sk-s sk-item-meta"
+          :style="{ width: ['52%', '44%', '60%'][i - 1] }"
+        />
+        <view
+          v-if="canTeach"
+          class="sk-item-progress"
+        >
+          <view
+            class="sk sk-s"
+            style="width: 50%"
+          />
+          <view class="sk sk-item-bar" />
+        </view>
+      </view>
     </view>
 
     <template v-else-if="data">
@@ -147,6 +175,7 @@ import { assignmentApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { ASSIGNMENT_STATUSES } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 import AssignmentForm from './AssignmentForm.vue'
 
@@ -195,6 +224,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在首次加载之后创建：这时 loading 已经为真，第一次渲染就是骨架
+const skeleton = useSkeleton(() => !data.value && loading.value)
 
 useCourseEvents(() => props.courseId, ['assignments'], load)
 
@@ -309,6 +341,27 @@ defineExpose({ reload: load })
   border-radius: 999rpx;
   background: var(--xm-bg-sunken);
   overflow: hidden;
+}
+
+/* 骨架：状态标签靠右，日期一行、进度一行与真实卡片位置一致 */
+.item-head .sk-tag {
+  margin-left: auto;
+}
+
+.sk-item-meta {
+  margin-top: 18rpx;
+}
+
+.sk-item-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+
+.sk-item-bar {
+  height: 10rpx;
+  border-radius: 999rpx;
 }
 
 .item-bar-graded {

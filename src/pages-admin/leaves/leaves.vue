@@ -18,12 +18,33 @@
       />
     </view>
 
+    <!-- 骨架：每条申请一张卡（头像、姓名、天数，请假日期，理由） -->
     <view
-      v-if="loading && !applies.length"
-      class="xm-card"
+      v-if="skeleton"
+      class="xm-list sk-region"
     >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view
+        v-for="i in 3"
+        :key="i"
+        class="xm-card leave"
+      >
+        <view class="leave-who">
+          <view class="sk sk-avatar sk-leave-avatar" />
+          <view
+            class="sk"
+            :style="{ width: i % 2 ? '18%' : '24%' }"
+          />
+          <view class="sk sk-s sk-leave-days" />
+        </view>
+        <view
+          class="sk sk-s sk-leave-line"
+          style="width: 46%"
+        />
+        <view
+          class="sk sk-s sk-leave-line"
+          :style="{ width: i === 2 ? '60%' : '82%' }"
+        />
+      </view>
     </view>
     <xm-empty
       v-else-if="!currentItems.length"
@@ -95,9 +116,15 @@
         <view class="affected">
           <view class="xm-form-label">{{ $t('admin.leaves.affected', { n: affected.length }) }}</view>
           <view
-            v-if="affectedLoading"
-            class="skeleton skeleton-line"
-          />
+            v-if="affectedSkeleton"
+            class="sk-region"
+          >
+            <xm-skeleton-list
+              :rows="2"
+              lead="bar"
+              :lines="1"
+            />
+          </view>
           <view
             v-else-if="!affected.length"
             class="muted"
@@ -162,6 +189,7 @@ import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
 import { courseColor } from '@/utils/courseColor'
 import { addDays, formatDay } from '@/utils/schedule'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { isZh, t } from '@/i18n'
 
 // 待审核以外的两种状态；其余（含历史上的空状态）都算待审核
@@ -172,6 +200,7 @@ const statusKey = (status) => (status === APPROVED ? 'approved' : status === REJ
 
 const applies = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !applies.value.length)
 const keyword = ref('')
 const column = ref('pending')
 const noop = () => {}
@@ -197,7 +226,8 @@ const columnOptions = computed(() =>
   columns.value.map((col) => ({
     value: col.key,
     label: t('admin.leaves.columns.' + col.key),
-    count: col.items.length,
+    // 骨架期间不显示数量（免得一排「0」）
+    count: skeleton.value ? null : col.items.length,
   })),
 )
 const currentItems = computed(() => (columns.value.find((col) => col.key === column.value) || {}).items || [])
@@ -225,6 +255,7 @@ const current = ref(null)
 const note = ref('')
 const affected = ref([])
 const affectedLoading = ref(false)
+const affectedSkeleton = useSkeleton(() => affectedLoading.value)
 const saving = ref('')
 
 const openReview = async (apply) => {
@@ -393,5 +424,20 @@ onPullDownRefresh(async () => {
 .affected-teacher {
   flex-shrink: 0;
   color: var(--xm-text-2);
+}
+
+/* 骨架：头像与 xm-user-avatar size=56 同大，天数靠右 */
+.sk-leave-avatar {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.sk-leave-days {
+  width: 72rpx;
+  margin-left: auto;
+}
+
+.sk-leave-line {
+  margin-top: 16rpx;
 }
 </style>

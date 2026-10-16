@@ -20,8 +20,15 @@
           <text class="xm-tag xm-tag-brand">{{ $t('shell.roles.' + user.role) }}</text>
           <text class="profile-account xm-num">{{ user.username }}</text>
         </view>
+        <!-- 学院 / 专业 / 班级要另查一次：第一次查到之前是占位块，不先空着再跳出来 -->
         <view
-          v-if="orgLine"
+          v-if="factsSkeleton"
+          class="profile-org sk-region"
+        >
+          <view class="sk sk-s sk-org" />
+        </view>
+        <view
+          v-else-if="orgLine"
           class="profile-org xm-ellipsis"
           >{{ orgLine }}</view
         >
@@ -42,14 +49,34 @@
         class="fact"
         @click="go('/pages-course/transcript/transcript')"
       >
-        <text class="fact-value xm-num">{{ detail.score == null ? user.score || 0 : detail.score }}</text>
+        <view
+          v-if="factsSkeleton"
+          class="sk-region"
+        >
+          <view class="sk sk-num sk-fact" />
+        </view>
+        <text
+          v-else
+          class="fact-value xm-num"
+          >{{ detail.score == null ? user.score || 0 : detail.score }}</text
+        >
         <text class="fact-label">{{ $t('profile.credits') }}</text>
       </view>
       <view
         class="fact"
         @click="go('/pages-course/transcript/transcript')"
       >
-        <text class="fact-value xm-num">{{ gpaText }}</text>
+        <view
+          v-if="factsSkeleton"
+          class="sk-region"
+        >
+          <view class="sk sk-num sk-fact" />
+        </view>
+        <text
+          v-else
+          class="fact-value xm-num"
+          >{{ gpaText }}</text
+        >
         <text class="fact-label">{{ $t('workbench.stats.gpa') }}</text>
       </view>
     </view>
@@ -170,6 +197,7 @@ import { t } from '@/i18n'
 import { changeLocale, isZhLocale } from '@/composables/useLocale'
 import { isDark, setThemeMode, themeMode } from '@/composables/useTheme'
 import { PRESET_COLORS, resetThemeColorOnLogout, setThemeColor, themeColor } from '@/composables/useThemeColor'
+import { useSkeleton } from '@/composables/useSkeleton'
 
 const THEME_MODES = [
   { value: 'light', label: 'layout.theme.light' },
@@ -206,21 +234,35 @@ const orgLine = computed(() =>
   [detail.value.collegeName, detail.value.specialityName, detail.value.className].filter(Boolean).join(' · '),
 )
 const gpaText = computed(() => (gpa.value == null ? '—' : gpa.value))
+const factsLoading = ref(false)
+const factsLoaded = ref(false)
+// 每次显示都会重新查；只有第一次（还没查到过）出骨架，之后先显示上一次的再静默更新
+const factsSkeleton = useSkeleton(() => factsLoading.value && !factsLoaded.value)
 
 const loadStudentFacts = async () => {
-  try {
+  factsLoading.value = true
+  // 组织信息与绩点一起查、一起显示
+  await Promise.all([
     // selectById 不带关联名称，按 id 查一行列表数据（与 Web 端个人中心同一做法）
-    const rows = await studentApi.selectAll({ id: userStore.user.id }, SILENT)
-    detail.value = (rows && rows[0]) || {}
-  } catch {
-    // 拉不到就只显示角色与账号
-  }
-  try {
-    const transcript = await scoreApi.transcript(SILENT)
-    gpa.value = transcript && transcript.summary ? transcript.summary.gpa : null
-  } catch {
-    // 绩点显示占位
-  }
+    studentApi
+      .selectAll({ id: userStore.user.id }, SILENT)
+      .then((rows) => {
+        detail.value = (rows && rows[0]) || {}
+      })
+      .catch(() => {
+        // 拉不到就只显示角色与账号
+      }),
+    scoreApi
+      .transcript(SILENT)
+      .then((transcript) => {
+        gpa.value = transcript && transcript.summary ? transcript.summary.gpa : null
+      })
+      .catch(() => {
+        // 绩点显示「—」
+      }),
+  ])
+  factsLoading.value = false
+  factsLoaded.value = true
 }
 
 // ========== 主题色 ==========
@@ -300,6 +342,17 @@ onShow(() => {
   margin-top: 8rpx;
   font-size: 24rpx;
   color: var(--xm-text-2);
+}
+
+/* 骨架：组织一行、学分与绩点的数字 */
+.sk-org {
+  width: 70%;
+  margin: 6rpx 0;
+}
+
+.sk-fact {
+  width: 90rpx;
+  margin: 4rpx 0;
 }
 
 .facts {

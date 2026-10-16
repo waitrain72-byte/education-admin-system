@@ -3,12 +3,52 @@
        老师发起 4 位签到码签到、看实时人数、按日期改考勤；学生输入签到码、看自己的考勤 -->
   <view>
     <view
-      v-if="!panel && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <!-- 老师：发起签到 + 考勤名单 + 历次考勤；学生：签到卡 + 我的考勤（标题照常显示，数据是占位） -->
+      <view class="xm-card sk-center">
+        <view
+          class="sk sk-h"
+          style="width: 36%"
+        />
+        <view
+          class="sk sk-s"
+          style="width: 64%"
+        />
+        <view
+          v-if="canTeach"
+          class="sk sk-btn sk-wide-btn"
+        />
+      </view>
+      <view class="xm-card">
+        <view class="xm-section-head">
+          <text class="xm-section-title">{{
+            canTeach ? $t('space.attendance.roster') : $t('space.attendance.student.myRecords')
+          }}</text>
+        </view>
+        <view class="summary sk-summary">
+          <view
+            v-for="i in 5"
+            :key="i"
+            class="sk sk-tag"
+          />
+        </view>
+        <xm-skeleton-list
+          v-if="canTeach"
+          :rows="5"
+          lead="avatar"
+          trail="tag"
+          divided
+        />
+        <xm-skeleton-list
+          v-else
+          :rows="4"
+          :lines="1"
+          trail="tag"
+          divided
+        />
+      </view>
     </view>
 
     <!-- ==================== 老师 / 管理员 ==================== -->
@@ -278,6 +318,7 @@ import { checkinApi } from '@/api'
 import { SILENT } from '@/utils/request'
 import { ATTENDANCE_STATUSES, attendanceMeta, attendanceRateOf, formatCountdown, wallMs } from '@/utils/courseSpace'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { confirm } from '@/utils/confirm'
 import { t } from '@/i18n'
 
@@ -348,6 +389,9 @@ watch(
   },
   { immediate: true },
 )
+
+// 放在首次加载之后创建，第一次渲染就是骨架；换日期、收到签到事件时已有数据，不再出骨架
+const skeleton = useSkeleton(() => !panel.value && loading.value)
 
 useCourseEvents(() => props.courseId, ['attendance'], loadPanel)
 
@@ -591,6 +635,26 @@ defineExpose({ reload: loadPanel })
   display: flex;
   flex-wrap: wrap;
   gap: 10rpx;
+}
+
+/* 骨架：签到卡居中三行，名单上方的状态标签与下面的行留出间距 */
+.sk-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18rpx;
+  padding-top: 40rpx;
+  padding-bottom: 40rpx;
+}
+
+.sk-wide-btn {
+  width: 60%;
+  height: 80rpx;
+  margin-top: 10rpx;
+}
+
+.sk-summary {
+  margin-bottom: 10rpx;
 }
 
 .hint {

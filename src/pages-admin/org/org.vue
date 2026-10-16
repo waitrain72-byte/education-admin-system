@@ -33,14 +33,6 @@
       </template>
     </scroll-view>
 
-    <view
-      v-if="loading && !raw.length"
-      class="xm-card"
-    >
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
-    </view>
-
     <!-- 当前节点详情（学院 / 专业 / 班级） -->
     <view
       v-if="current"
@@ -104,8 +96,30 @@
           {{ $t(CREATE_TITLE[childType]) }}
         </button>
       </view>
+      <!-- 骨架：第一次加载时的学院列表（每个学院一张卡：名称、人数与下设数） -->
+      <view
+        v-if="skeleton"
+        class="sk-region"
+      >
+        <view
+          v-for="i in 4"
+          :key="i"
+          class="xm-card child"
+        >
+          <view class="child-main sk-stack">
+            <view
+              class="sk sk-h"
+              :style="{ width: ['44%', '58%', '36%', '50%'][i - 1] }"
+            />
+            <view
+              class="sk sk-s"
+              style="width: 34%"
+            />
+          </view>
+        </view>
+      </view>
       <xm-empty
-        v-if="!loading && !children.length"
+        v-else-if="!loading && !children.length"
         icon="org"
         :text="current ? $t('admin.org.none') : $t('admin.org.empty')"
       />
@@ -149,9 +163,15 @@
         >
       </view>
       <view
-        v-if="classStudentsLoading"
-        class="skeleton skeleton-line"
-      />
+        v-if="classStudentsSkeleton"
+        class="sk-region"
+      >
+        <xm-skeleton-list
+          :rows="3"
+          lead="avatar"
+          divided
+        />
+      </view>
       <view
         v-else-if="!classStudents.length"
         class="muted"
@@ -252,6 +272,7 @@ import { classesApi, collegeApi, peopleApi, specialityApi, teacherApi } from '@/
 import { SILENT } from '@/utils/request'
 import { ensureRole } from '@/utils/authGuard'
 import { confirm } from '@/utils/confirm'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 /** 三级各自的通用接口 */
@@ -265,6 +286,7 @@ const CHILD_TYPE = { college: 'speciality', speciality: 'class' }
 
 const raw = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value && !raw.value.length)
 const teachers = ref([])
 /** 当前所在的层级：从学院到当前节点的 key 列表（空 = 学院列表） */
 const path = ref([])
@@ -360,6 +382,7 @@ const loadTeachers = async () => {
 const classStudents = ref([])
 const classStudentsTotal = ref(0)
 const classStudentsLoading = ref(false)
+const classStudentsSkeleton = useSkeleton(() => classStudentsLoading.value)
 
 watch(
   () => (current.value && current.value.type === 'class' ? current.value.id : null),

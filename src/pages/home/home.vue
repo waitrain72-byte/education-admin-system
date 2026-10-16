@@ -4,20 +4,8 @@
     :class="themeClass"
     :style="themeStyle"
   >
-    <!-- 没有缓存的首次加载：骨架屏占位 -->
-    <view v-if="!data && loading">
-      <view class="xm-card">
-        <view class="skeleton skeleton-title" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line short" />
-      </view>
-      <view class="xm-card">
-        <view class="skeleton skeleton-title" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line" />
-        <view class="skeleton skeleton-line short" />
-      </view>
-    </view>
+    <!-- 没有缓存的首次加载：按身份画出首页版式的骨架 -->
+    <home-skeleton v-if="skeleton" />
     <view
       v-else-if="!data && failed"
       class="failed"
@@ -59,10 +47,12 @@ import { ensureLoggedIn } from '@/utils/authGuard'
 import { readUserCache, writeUserCache } from '@/utils/userCache'
 import { syncServerClock } from '@/composables/useServerClock'
 import { usePermission } from '@/composables/usePermission'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 import StudentHome from './StudentHome.vue'
 import TeacherHome from './TeacherHome.vue'
 import AdminHome from './AdminHome.vue'
+import HomeSkeleton from './HomeSkeleton.vue'
 
 const userStore = useUserStore()
 const { pullPermissions } = usePermission()
@@ -71,6 +61,7 @@ const { pullPermissions } = usePermission()
 const data = ref(null)
 const loading = ref(false)
 const failed = ref(false)
+const skeleton = useSkeleton(() => !data.value && loading.value)
 const teacherRef = ref(null)
 let cachedFor = ''
 

@@ -6,13 +6,44 @@
   >
     <!-- 课程空间（与 Web 端 views/course/CourseSpaceLayout.vue 一致）：课程色页头 + 七个分区。
          没选这门课的学生（访客）只能看概览；各分区第一次打开时才加载，之后切换不重新加载（成绩册没保存的修改也不会丢） -->
+    <!-- 骨架：课程色页头（标签、课名、教师与时间）+ 分区栏 + 下面一块内容 -->
     <view
-      v-if="!overview && loading"
-      class="xm-card"
+      v-if="skeleton"
+      class="sk-region"
     >
-      <view class="skeleton skeleton-title" />
-      <view class="skeleton skeleton-line" />
-      <view class="skeleton skeleton-line short" />
+      <view class="sk sk-cover sk-head">
+        <view class="head-tags">
+          <view
+            v-for="i in 3"
+            :key="i"
+            class="sk sk-on-cover sk-tag"
+          />
+        </view>
+        <view
+          class="sk sk-xl sk-on-cover sk-head-name"
+          style="width: 50%"
+        />
+        <view class="head-meta">
+          <view
+            v-for="w in ['14%', '34%', '10%', '18%']"
+            :key="w"
+            class="sk sk-s sk-on-cover"
+            :style="{ width: w }"
+          />
+        </view>
+      </view>
+      <view class="tabs">
+        <view
+          v-for="i in 7"
+          :key="i"
+          class="tab"
+        >
+          <view class="sk sk-tab" />
+        </view>
+      </view>
+      <view class="xm-card">
+        <xm-skeleton-list :rows="4" />
+      </view>
     </view>
     <xm-empty
       v-else-if="!overview"
@@ -143,6 +174,7 @@ import { COURSE_SECTIONS } from '@/utils/link'
 import { courseColor } from '@/utils/courseColor'
 import { courseStatusLabel, courseTypeLabel, courseWhen } from '@/utils/courseText'
 import { useCourseEvents } from '@/composables/useCourseEvents'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 import SpaceOverview from './SpaceOverview.vue'
 import SpaceAttendance from './SpaceAttendance.vue'
@@ -155,6 +187,7 @@ import SpaceMembers from './SpaceMembers.vue'
 const courseId = ref(0)
 const overview = ref(null)
 const loading = ref(false)
+const skeleton = useSkeleton(() => !overview.value && loading.value)
 const tab = ref('overview')
 /** 进来时要打开的分区（tab=xxx）：等概览加载完、知道是不是课程成员后再切过去，访客不挂载成员才能看的分区 */
 let requestedTab = ''
@@ -330,8 +363,27 @@ onPullDownRefresh(async () => {
   background: var(--xm-danger);
 }
 
+/* 骨架页头：与 .head 同位置同内边距，课程色换成占位底色（整块也跟着扫光） */
+.sk-head {
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: -24rpx -24rpx 0;
+  padding: 28rpx 32rpx 32rpx;
+  border-radius: 0;
+}
+
+.sk-head-name {
+  margin: 26rpx 0 6rpx;
+}
+
+.sk-tab {
+  width: 56rpx;
+}
+
 @media (min-width: 720px) {
-  .head {
+  .head,
+  .sk-head {
     margin: -24rpx -24px 0;
     padding-left: 24px;
     padding-right: 24px;

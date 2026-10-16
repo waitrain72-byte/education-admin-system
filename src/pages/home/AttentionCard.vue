@@ -6,9 +6,15 @@
       <text class="xm-section-title">{{ $t('workbench.attention.title') }}</text>
     </view>
     <view
-      v-if="loading"
-      class="skeleton skeleton-line"
-    />
+      v-if="skeleton"
+      class="sk-region"
+    >
+      <xm-skeleton-list
+        :rows="2"
+        lead="avatar"
+        trail="btn"
+      />
+    </view>
     <template v-else-if="students.length">
       <view class="att-hint">{{ $t('workbench.attention.hint') }}</view>
       <view
@@ -60,12 +66,14 @@
 import { computed, ref } from 'vue'
 import { warningApi } from '@/api'
 import { SILENT } from '@/utils/request'
+import { useSkeleton } from '@/composables/useSkeleton'
 import { t } from '@/i18n'
 
 const LIMIT = 5
 
 const students = ref([])
 const loading = ref(false)
+const skeleton = useSkeleton(() => loading.value)
 const expanded = ref(false)
 const sending = ref(null)
 const sent = ref([])

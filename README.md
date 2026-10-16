@@ -47,6 +47,7 @@ Web 端按「课程空间」组织，顶部导航是「首页 / 课程 / 日程 
 - 消息中心：全部 / 未读筛选、一键已读、删除；点消息跳到对应页面（后端给的是 Web 端路由，由 `utils/link.js` 换算成小程序页面）
 - 实时推送：成绩发布、作业批改、请假审核、学业预警、课程公告到达时刷新未读角标；有人签到、交作业、发公告时，打开着的课程空间自动刷新
 - 外观：主题三档、8 个预设主题色（Web 端选的任意颜色在小程序也生效，标为「自定义」）、中文 / English；导航栏和 tabBar 跟着主题变
+- 加载骨架屏（与 Web 端同一套）：数据回来之前按每个页面自己的版式画出占位块，卡片标题、按钮照常显示，一道浅光扫过整页；0.2 秒内加载完的不显示骨架，显示了至少停 0.5 秒；深色模式换暗色占位
 
 ## 运行
 
@@ -100,7 +101,7 @@ npm run test:watch  # Vitest 监听模式
 
 提交时 husky + lint-staged 自动对暂存文件跑 `eslint --fix` 和 `prettier --write`。
 
-单元测试 21 个文件、182 个用例（`tests/setup.js` 提供全局 `uni` mock）：
+单元测试 22 个文件、188 个用例（`tests/setup.js` 提供全局 `uni` mock）：
 
 | 范围                                         | 用例 | 内容                                                                                                   |
 | -------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------ |
@@ -110,6 +111,7 @@ npm run test:watch  # Vitest 监听模式
 | `link` / `tabbar` / `share`                  | 21   | Web 路由换算成小程序页面；五个 tab 与管理员的「后台」；转发规则                                        |
 | `themeColor` / `useTheme` / `i18n`           | 27   | 主题色派生（与 Web 端同色同值）、原生导航色；系统深色读取；词条、插值、错误码本地化                    |
 | `authGuard` / `accountScope` / 其他          | 29   | 登录与角色拦截、按账号隔离的本地缓存、错误上报、新版本提示、rpx 大屏封顶、表单接力聚焦                 |
+| `useSkeleton`                                | 6    | 骨架屏显示时机：0.2 秒内加载完不露面、刚露面至少停 0.5 秒、等待中又开始加载不被旧计时器关掉            |
 
 ## 目录结构
 
@@ -122,13 +124,14 @@ src/
 +-- components/             # easycom 组件（目录名即标签名）
 |   +-- xm-auth-shell/      # 登录 / 注册页外框（品牌区 + 语言切换）
 |   +-- xm-course-card/     # 课程卡片（课程色条、上课时间、教室）
+|   +-- xm-skeleton-list/ xm-course-card-skeleton/   # 骨架屏：列表行 / 课程卡片的占位
 |   +-- xm-chips/ xm-search/ xm-empty/ xm-list-footer/ xm-loader/
 |   +-- xm-form-popup/      # 底部弹层表单（按钮固定在底部，保存中禁用）
 |   +-- xm-datetime/        # 日期 + 时间两个原生选择器拼成 yyyy-MM-dd HH:mm
 |   +-- xm-org-picker/      # 学院 / 专业 / 班级级联选择
 |   +-- xm-file-picker/ xm-file-chip/   # 选附件并上传（带进度）/ 附件查看
 |   +-- xm-rate/ xm-progress-ring/ xm-user-avatar/ xm-brand-mark/ xm-icon/
-+-- composables/            # useTheme / useThemeColor / useLocale / usePermission / usePager / useServerClock / useCourseEvents …
++-- composables/            # useTheme / useThemeColor / useLocale / usePermission / usePager / useServerClock / useCourseEvents / useSkeleton …
 +-- stores/                 # user.ts（登录态、accountKey「角色-id」）、message.ts（未读数与 tab 角标）
 +-- utils/
 |   +-- request.ts upload.ts websocket.ts loading.ts config.ts
@@ -153,6 +156,7 @@ tests/                      # Vitest 单元测试
 ## 实现要点
 
 - **请求层**：`code === '200'` 直接返回业务数据，其他情况统一提示（同一句 2 秒内不重复）并以 `ApiError` reject，页面只写成功分支；401 清空登录态回登录页；请求计数驱动统一加载动画 `xm-loader`
+- **加载骨架屏**：页面取数据的请求带 `SILENT`（不弹 `xm-loader` 蒙层），没有数据时显示照着版式画的骨架，由 `useSkeleton` 控制显示时机（0.2 秒内加载完不露面，露面后至少停 0.5 秒）；提交、保存、签到这类操作才用 `xm-loader`。占位块样式在 `theme.scss` 的 `.sk`：尺寸只用 `sk-*` 类（rpx 写在样式表里才会被大屏封顶），行内只写百分比宽度；所有占位块用 `background-attachment: fixed` 共用一道光，iOS 不支持时退化成每块各自扫光
 - **服务器时间**：首页与日程判断「正在上课」「下一节」都用后端返回的时间往前推（`useServerClock`），手机时区、时间不准都不影响；签到倒计时同理
 - **课程空间**：7 个分页首次打开时才加载，之后用 `v-show` 保留，切走再回来不丢成绩册里没保存的输入；成绩册有未保存的修改时返回会先确认；从消息点进来时指定的分页，要等确认了当前账号和这门课的关系才打开（和这门课无关的人不会被带进成绩册）
 - **实时推送**：`uni.connectSocket` + 心跳保活 + 半开连接检测 + 指数退避重连；token 拼在路径里（`/ws/notice/{token}`）；有标题的推送刷新未读数，不带标题的课程事件经 `uni.$emit('ws:course')` 通知课程空间（400ms 内合并成一次刷新）
