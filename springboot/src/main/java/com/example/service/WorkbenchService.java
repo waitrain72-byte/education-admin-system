@@ -175,7 +175,7 @@ public class WorkbenchService {
         Map<String, Object> part = new LinkedHashMap<>();
         part.put("courses", courses);
         part.put("todayCourses", todayCourses(courses, weekday));
-        part.put("exams", upcomingExams(now, 3));
+        part.put("exams", upcomingExams(now, studentId, null, 3));
         part.put("todos", pendingAssignments(studentId, now));
 
         Student student = studentMapper.selectById(studentId);
@@ -223,7 +223,7 @@ public class WorkbenchService {
         Map<String, Object> part = new LinkedHashMap<>();
         part.put("courses", courses);
         part.put("todayCourses", todayCourses(courses, weekday));
-        part.put("exams", upcomingExams(now, 3));
+        part.put("exams", upcomingExams(now, null, teacherId, 3));
         part.put("todos", todos);
         part.put("warningCount", warningCount());
         return part;
@@ -250,7 +250,7 @@ public class WorkbenchService {
         part.put("kpis", kpis);
         part.put("pendingApplies", pendingApplies);
         part.put("unscheduledCourses", workbenchMapper.unscheduledCourses());
-        part.put("exams", upcomingExams(now, 5));
+        part.put("exams", upcomingExams(now, null, null, 5));
         part.put("notices", notices);
         return part;
     }
@@ -370,14 +370,12 @@ public class WorkbenchService {
         return Math.round(part * 1000.0 / whole) / 10.0;
     }
 
-    /** 未来（含此刻）的考试，按考试时间由近到远；没填考试时间的不算 */
-    private List<Examplan> upcomingExams(LocalDateTime now, int limit) {
-        String nowText = now.format(MINUTE_FORMAT);
-        return examplanMapper.selectAll(new Examplan()).stream()
-                .filter(e -> StrUtil.isNotBlank(e.getExamTime()) && e.getExamTime().compareTo(nowText) >= 0)
-                .sorted(Comparator.comparing(Examplan::getExamTime))
-                .limit(limit)
-                .collect(Collectors.toList());
+    /**
+     * 未来（含此刻）的考试，按考试时间由近到远；没填考试时间的不算。
+     * 学生 / 教师只看全校考试和自己选的 / 教的课的考试（传对应 id），管理员两个都传 null 看全部。
+     */
+    private List<Examplan> upcomingExams(LocalDateTime now, Integer studentId, Integer teacherId, int limit) {
+        return examplanMapper.selectBetween(now.format(MINUTE_FORMAT), null, studentId, teacherId, limit);
     }
 
     /** 给课程卡片标上「正在签到」（有进行中、没过截止时间的签到） */

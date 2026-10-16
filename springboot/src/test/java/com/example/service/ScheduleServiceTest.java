@@ -110,13 +110,16 @@ class ScheduleServiceTest {
     }
 
     @Test
-    @DisplayName("周视图：周一到周日、标出今天、第几周；课表不含已结课的课")
+    @DisplayName("周视图：周一到周日、标出今天、第几周；课表不含已结课的课；考试按本周、本人可见范围查，带上所属课程")
     @SuppressWarnings("unchecked")
     void weekView() {
         CurrentUser.as("STUDENT", 1, "张三");
-        when(examplanMapper.selectAll(any())).thenReturn(Arrays.asList(
-                exam(5, "数据结构 期中测验", "2026-10-09 14:00"),
-                exam(6, "大学英语四级考试", "2026-12-12 09:00")));
+        Examplan midterm = exam(5, "数据结构 期中测验", "2026-10-09 14:00");
+        midterm.setCourseId(7);
+        midterm.setCourseName("数据结构");
+        // 本周一 0 点起、下周一 0 点前；学生 1 的范围（全校考试 + 自己选的课）
+        when(examplanMapper.selectBetween("2026-10-05", "2026-10-12", 1, null, null))
+                .thenReturn(Collections.singletonList(midterm));
         Map<String, Object> deadline = new HashMap<>();
         deadline.put("id", 3);
         deadline.put("courseId", 7);
@@ -145,6 +148,7 @@ class ScheduleServiceTest {
         assertEquals(2, events.size());
         assertEquals("exam", events.get(0).get("type"));
         assertEquals("14:00", events.get(0).get("time"));
+        assertEquals("数据结构", events.get(0).get("courseName"));
         assertEquals("deadline", events.get(1).get("type"));
         assertEquals(true, events.get(1).get("done"));
 
@@ -157,7 +161,7 @@ class ScheduleServiceTest {
     @SuppressWarnings("unchecked")
     void monthView() {
         CurrentUser.as("STUDENT", 1, "张三");
-        when(examplanMapper.selectAll(any())).thenReturn(Collections.emptyList());
+        when(examplanMapper.selectBetween("2026-09-28", "2026-11-02", 1, null, null)).thenReturn(Collections.emptyList());
         when(scheduleMapper.assignmentsBetween(anyList(), any(), any())).thenReturn(Collections.emptyList());
         when(scheduleMapper.submittedAssignmentIds(1)).thenReturn(Collections.emptyList());
         when(applyMapper.selectAll(any())).thenReturn(Collections.emptyList());

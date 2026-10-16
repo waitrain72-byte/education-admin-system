@@ -8,6 +8,7 @@ import com.example.exception.CustomException;
 import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
 import com.example.mapper.CrudMapper;
+import com.example.mapper.ExamplanMapper;
 import com.example.utils.TokenUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,8 @@ public class CourseService extends CrudService<Course> {
     private CourseMapper courseMapper;
     @Resource
     private ChoiceMapper choiceMapper;
+    @Resource
+    private ExamplanMapper examplanMapper;
 
     @Override
     protected CrudMapper<Course> getMapper() {
@@ -60,13 +63,18 @@ public class CourseService extends CrudService<Course> {
 
     /**
      * 删除课程：仅管理员；已经有学生选的课不能删（作业、考勤、成绩都挂在课程上，删了会成孤儿数据），
-     * 不再开的课把状态改成「已结课」即可
+     * 不再开的课把状态改成「已结课」即可。没人选的课可以删，挂在它下面的考试安排一起删掉
+     * （留着会变成没人看得到、管理员列表里又没有课程名的孤儿考试）。
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteById(Integer id) {
         requireAdmin();
         if (id != null && choiceMapper.countByCourseId(id) > 0) {
             throw new CustomException(ResultCodeEnum.COURSE_IN_USE_ERROR);
+        }
+        if (id != null) {
+            examplanMapper.deleteByCourseId(id);
         }
         super.deleteById(id);
     }

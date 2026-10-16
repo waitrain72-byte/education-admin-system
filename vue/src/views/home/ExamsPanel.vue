@@ -13,7 +13,9 @@
           </div>
           <div class="exams__info">
             <div class="exams__name">{{ e.name }}</div>
-            <div class="exams__meta num">{{ e.examTime }}</div>
+            <div class="exams__meta num">
+              {{ e.examTime }}<template v-if="e.courseName"> · {{ e.courseName }}</template>
+            </div>
           </div>
           <ExamCountdownTag :exam-time="e.examTime" />
         </li>

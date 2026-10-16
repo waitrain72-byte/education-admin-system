@@ -39,7 +39,6 @@ declare module 'vue' {
     ElRate: typeof import('element-plus/es/components/rate/index')['ElRate']
     ElResult: typeof import('element-plus/es/components/result/index')['ElResult']
     ElSelect: typeof import('element-plus/es/components/select/index')['ElSelect']
-    ElSkeleton: typeof import('element-plus/es/components/skeleton/index')['ElSkeleton']
     ElStep: typeof import('element-plus/es/components/steps/index')['ElStep']
     ElSteps: typeof import('element-plus/es/components/steps/index')['ElSteps']
     ElTable: typeof import('element-plus/es/components/table/index')['ElTable']

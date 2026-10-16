@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,8 +25,14 @@ import java.util.Set;
 @RequestMapping("/files")
 public class FileController {
 
-    // 文件上传存储路径
-    private static final String filePath = System.getProperty("user.dir") + "/files/";
+    /**
+     * 上传的文件按「内容 MD5 + 扩展名」命名，同一个名字的内容永远不变，浏览器可以放心长期缓存：
+     * 头像、作业附件换页时不用重复下载。private：只让用户自己的浏览器缓存，不进共享代理。
+     */
+    static final String CACHE_CONTROL = "private, max-age=31536000, immutable";
+
+    // 文件上传存储路径（非 final 仅为单元测试能换成临时目录）
+    private String filePath = System.getProperty("user.dir") + "/files/";
 
     /**
      * 上传扩展名白名单：业务只需要 图片（头像）+ 常见文档/压缩包（作业附件）。
@@ -78,26 +85,31 @@ public class FileController {
     }
 
     /**
-     * 获取文件
+     * 获取文件：边读边写（20MB 的附件不整份读进内存），带长期缓存头；文件不存在返回 404。
      */
     @GetMapping("/{flag}")
     public void avatarPath(@PathVariable String flag, HttpServletResponse response) {
+        File targetFile = getSafeFile(flag);
+        if (targetFile == null || !targetFile.isFile()) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
         try {
-            File targetFile = getSafeFile(flag);
-            if (targetFile != null && targetFile.exists()) {
-                // 必须按真实扩展名返回图片 MIME（image/png 等）：
-                // 微信真机的原生图片组件只渲染 image/*，收到 application/octet-stream 会拒绝显示（空白）；
-                // 开发者工具模拟器是 Chromium 内核会内容嗅探，所以模拟器正常、真机空白——不能以模拟器表现为准。
-                // 同时不能带 Content-Disposition: attachment（附件语义，真机同样不渲染）。
-                MediaType mediaType = MediaTypeFactory.getMediaType(flag).orElse(MediaType.APPLICATION_OCTET_STREAM);
-                byte[] bytes = FileUtil.readBytes(targetFile);
-                response.setContentType(mediaType.toString());
-                response.setContentLength(bytes.length);
-                response.getOutputStream().write(bytes);
-                response.getOutputStream().flush();
-            }
+            // 必须按真实扩展名返回图片 MIME（image/png 等）：
+            // 微信真机的原生图片组件只渲染 image/*，收到 application/octet-stream 会拒绝显示（空白）；
+            // 开发者工具模拟器是 Chromium 内核会内容嗅探，所以模拟器正常、真机空白——不能以模拟器表现为准。
+            // 同时不能带 Content-Disposition: attachment（附件语义，真机同样不渲染）。
+            MediaType mediaType = MediaTypeFactory.getMediaType(flag).orElse(MediaType.APPLICATION_OCTET_STREAM);
+            response.setContentType(mediaType.toString());
+            response.setContentLengthLong(targetFile.length());
+            response.setHeader("Cache-Control", CACHE_CONTROL);
+            // 按声明的类型处理，不让浏览器把上传的 txt / md 猜成网页执行
+            response.setHeader("X-Content-Type-Options", "nosniff");
+            Files.copy(targetFile.toPath(), response.getOutputStream());
+            response.flushBuffer();
         } catch (Exception e) {
-            System.out.println("文件下载失败");
+            // 多半是用户中途关了页面（连接已断），响应头已发出，这里只留痕
+            System.out.println("文件下载失败：" + flag);
         }
     }
 

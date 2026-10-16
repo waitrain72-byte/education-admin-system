@@ -141,13 +141,19 @@ public interface DashboardMapper {
 
     // ========== 数据大屏：考试与通知 ==========
 
-    /** 从 from 起（含）的考试，按时间先后，最多 limit 场 */
-    @Select("SELECT id, name, exam_time AS examTime FROM examplan WHERE exam_time >= #{from}"
-            + " ORDER BY exam_time, id LIMIT #{limit}")
-    List<Map<String, Object>> examsFrom(@Param("from") String from, @Param("limit") int limit);
+    /** 从 from 起（含）的考试，按时间先后，最多 limit 场；教师只算全校考试和自己教的课的考试 */
+    @Select("<script>SELECT e.id, e.name, e.exam_time AS examTime, c.name AS courseName"
+            + " FROM examplan e LEFT JOIN course c ON c.id = e.course_id WHERE e.exam_time &gt;= #{from}"
+            + "<if test='teacherId != null'> AND (e.course_id IS NULL"
+            + " OR e.course_id IN (SELECT co.id FROM course co WHERE co.teacher_id = #{teacherId}))</if>"
+            + " ORDER BY e.exam_time, e.id LIMIT #{limit}</script>")
+    List<Map<String, Object>> examsFrom(@Param("from") String from, @Param("limit") int limit,
+                                        @Param("teacherId") Integer teacherId);
 
-    @Select("SELECT COUNT(*) FROM examplan WHERE exam_time >= #{from}")
-    int countExamsFrom(String from);
+    @Select("<script>SELECT COUNT(*) FROM examplan e WHERE e.exam_time &gt;= #{from}"
+            + "<if test='teacherId != null'> AND (e.course_id IS NULL"
+            + " OR e.course_id IN (SELECT co.id FROM course co WHERE co.teacher_id = #{teacherId}))</if></script>")
+    int countExamsFrom(@Param("from") String from, @Param("teacherId") Integer teacherId);
 
     /** 最近的全校通知（课程里发的公告带 course_id，不上大屏） */
     @Select("SELECT id, title, time FROM notice WHERE course_id IS NULL ORDER BY time DESC, id DESC LIMIT #{limit}")

@@ -350,7 +350,7 @@
               </div>
               <div class="exam__info">
                 <b>{{ e.name }}</b>
-                <span class="num muted">{{ examDate(e.examTime) }}</span>
+                <span class="num muted">{{ examDate(e.examTime) }}<template v-if="e.courseName"> · {{ e.courseName }}</template></span>
               </div>
             </div>
             <p v-if="!(exams.soon || []).length" class="empty">{{ $t('pages.dashboard.exams.empty', { days: exams.windowDays ?? 0 }) }}</p>

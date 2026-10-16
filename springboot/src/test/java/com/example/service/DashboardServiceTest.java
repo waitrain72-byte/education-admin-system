@@ -38,6 +38,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -101,7 +105,7 @@ class DashboardServiceTest {
     }
 
     @Test
-    @DisplayName("教师：所有统计都带上本人 id，学期内的考勤按开学日期到第 18 周末为止；管理员才有的数据不给")
+    @DisplayName("教师：所有统计（含考试）都带上本人 id，学期内的考勤按开学日期到第 18 周末为止；管理员才有的数据不给")
     void teacherScope() {
         when(configService.semester()).thenReturn(semester());
         when(courseMapper.selectAll(any())).thenReturn(Collections.singletonList(course(5, "数据结构", "星期二", SEG2, "已开课")));
@@ -113,6 +117,8 @@ class DashboardServiceTest {
         verify(dashboardMapper).countUngraded(7);
         verify(dashboardMapper).countDueSubmissions("2026-10-13 10:38", 7);
         verify(dashboardMapper).countStudentsOfTeacher(7);
+        verify(dashboardMapper).examsFrom(anyString(), anyInt(), eq(7));
+        verify(dashboardMapper).countExamsFrom(anyString(), eq(7));
         verify(workbenchMapper).countStudentsByTeacher(7);
         verify(workbenchMapper, never()).countStudentsAll();
         verify(dashboardMapper, never()).countStudent();
@@ -131,6 +137,7 @@ class DashboardServiceTest {
         Map<String, Object> data = service.screen();
 
         verify(dashboardMapper).countUngraded(null);
+        verify(dashboardMapper).examsFrom(anyString(), anyInt(), isNull());
         verify(dashboardMapper).attendanceByWeek("2026-08-31", "2027-01-04", null);
         verify(workbenchMapper).countStudentsAll();
         assertFalse(data.containsKey("teacher"));

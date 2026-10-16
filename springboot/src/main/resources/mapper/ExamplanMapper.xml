@@ -4,29 +4,61 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mapper.ExamplanMapper">
 
+    <!-- 带上所属课程名：课程已删除或全校考试时为 NULL -->
     <sql id="Base_Column_List">
-        id,name,content,time,exam_time
+        e.id,e.name,e.content,e.time,e.exam_time,e.course_id,c.name as course_name
+    </sql>
+
+    <sql id="From_With_Course">
+        from examplan e left join course c on c.id = e.course_id
+    </sql>
+
+    <!-- 可见范围：全校考试人人可见，课程考试只给选了这门课的学生 / 教这门课的老师 -->
+    <sql id="Visible_Scope">
+        <if test="scopeStudentId != null">
+            and (e.course_id is null or e.course_id in
+                (select ch.course_id from choice ch where ch.student_id = #{scopeStudentId}))
+        </if>
+        <if test="scopeTeacherId != null">
+            and (e.course_id is null or e.course_id in
+                (select co.id from course co where co.teacher_id = #{scopeTeacherId}))
+        </if>
     </sql>
 
     <select id="selectAll" resultType="com.example.entity.Examplan">
         select
         <include refid="Base_Column_List" />
-        from examplan
+        <include refid="From_With_Course" />
         <where>
-            <if test="id != null"> and id= #{id}</if>
-            <if test="name != null"> and name like concat('%', #{name}, '%')</if>
-            <if test="content != null"> and content= #{content}</if>
-            <if test="time != null"> and time= #{time}</if>
-            <if test="examTime != null"> and exam_time= #{examTime}</if>
+            <if test="id != null"> and e.id= #{id}</if>
+            <if test="name != null"> and e.name like concat('%', #{name}, '%')</if>
+            <if test="content != null"> and e.content= #{content}</if>
+            <if test="time != null"> and e.time= #{time}</if>
+            <if test="examTime != null"> and e.exam_time= #{examTime}</if>
+            <if test="courseId != null"> and e.course_id= #{courseId}</if>
+            <include refid="Visible_Scope" />
         </where>
-        order by id desc
+        order by e.id desc
+    </select>
+
+    <select id="selectBetween" resultType="com.example.entity.Examplan">
+        select
+        <include refid="Base_Column_List" />
+        <include refid="From_With_Course" />
+        <where>
+            e.exam_time &gt;= #{from}
+            <if test="to != null"> and e.exam_time &lt; #{to}</if>
+            <include refid="Visible_Scope" />
+        </where>
+        order by e.exam_time, e.id
+        <if test="limit != null"> limit #{limit}</if>
     </select>
 
     <select id="selectById" resultType="com.example.entity.Examplan">
         select
         <include refid="Base_Column_List" />
-        from examplan
-        where id = #{id}
+        <include refid="From_With_Course" />
+        where e.id = #{id}
     </select>
 
     <delete id="deleteById">
@@ -40,6 +72,11 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </delete>
 
+    <delete id="deleteByCourseId">
+        delete from examplan
+        where course_id = #{courseId}
+    </delete>
+
     <insert id="insert" parameterType="com.example.entity.Examplan" useGeneratedKeys="true">
         insert into examplan
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -48,6 +85,7 @@
                 <if test="content != null">content,</if>
                 <if test="time != null">time,</if>
                 <if test="examTime != null">exam_time,</if>
+                <if test="courseId != null">course_id,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
                 <if test="id != null">#{id},</if>
@@ -55,6 +93,7 @@
                 <if test="content != null">#{content},</if>
                 <if test="time != null">#{time},</if>
                 <if test="examTime != null">#{examTime},</if>
+                <if test="courseId != null">#{courseId},</if>
         </trim>
     </insert>
 
@@ -73,8 +112,10 @@
             <if test="examTime != null">
                 exam_time = #{examTime},
             </if>
+            <!-- 所属课程每次都写：表单里清空课程（改成全校考试）时要能写回 NULL -->
+            course_id = #{courseId},
         </set>
-        where id = #{id} 
+        where id = #{id}
     </update>
 
 </mapper>

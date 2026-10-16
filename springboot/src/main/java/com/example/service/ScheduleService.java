@@ -205,26 +205,29 @@ public class ScheduleService {
         return list;
     }
 
-    /** [from, to] 里的考试与作业截止 */
+    /** [from, to] 里的考试与作业截止；考试只列全校考试和自己选的 / 教的课的考试（管理员全部） */
     private List<Map<String, Object>> events(Account me, LocalDate from, LocalDate to) {
         List<Map<String, Object>> events = new ArrayList<>();
         String fromText = from.toString();
-        String toText = to.toString();
-        for (Examplan e : examplanMapper.selectAll(new Examplan())) {
+        Integer studentId = RoleEnum.STUDENT.name().equals(me.getRole()) ? me.getId() : null;
+        Integer teacherId = RoleEnum.TEACHER.name().equals(me.getRole()) ? me.getId() : null;
+        // 考试时间是 yyyy-MM-dd HH:mm，按字符串比较：>= from 当天 0 点，< to 的下一天
+        for (Examplan e : examplanMapper.selectBetween(fromText, to.plusDays(1).toString(), studentId, teacherId, null)) {
             String time = e.getExamTime();
             if (StrUtil.isBlank(time) || time.length() < 10) {
                 continue;
             }
-            String day = time.substring(0, 10);
-            if (day.compareTo(fromText) >= 0 && day.compareTo(toText) <= 0) {
-                Map<String, Object> event = new LinkedHashMap<>();
-                event.put("type", "exam");
-                event.put("id", e.getId());
-                event.put("date", day);
-                event.put("time", time.length() >= 16 ? time.substring(11, 16) : "");
-                event.put("title", e.getName());
-                events.add(event);
+            Map<String, Object> event = new LinkedHashMap<>();
+            event.put("type", "exam");
+            event.put("id", e.getId());
+            event.put("date", time.substring(0, 10));
+            event.put("time", time.length() >= 16 ? time.substring(11, 16) : "");
+            event.put("title", e.getName());
+            if (e.getCourseId() != null) {
+                event.put("courseId", e.getCourseId());
+                event.put("courseName", e.getCourseName());
             }
+            events.add(event);
         }
 
         List<Integer> courseIds = new ArrayList<>();

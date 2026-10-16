@@ -158,6 +158,7 @@ erDiagram
         varchar content "内容"
         varchar time "发布时间(新增时生成，不可改)"
         varchar exam_time "考试时间(yyyy-MM-dd HH:mm，倒计时依据)"
+        int course_id FK "所属课程(空=全校考试)"
     }
     ROOMPLAN {
         int id PK "主键"
@@ -193,6 +194,7 @@ erDiagram
     STUDENT ||--o{ COMMENT : "发起评教(按姓名)"
     ADMIN ||--o{ NOTICE : "发布(按账号名)"
     ROOMPLAN ||--o{ COURSE : "排课占用(编号+星期+大节)"
+    COURSE |o--o{ EXAMPLAN : "课程考试(可空=全校)"
 ```
 
 ## 二、课程空间 ER 图（改版新增 5 张表）
@@ -370,8 +372,9 @@ erDiagram
    查询性能靠二级索引兜底（见下方「索引设计」）。
 5. **三账号表结构相近但分表存储**：`admin` / `teacher` / `student` 字段高度相似，分表是因为三角色的
    业务字段差异（学生有班级归属与学分，教师有职称）与数据隔离需求；登录页不选身份，所以账号名在三张表之间全局唯一。
-6. **公告类实体与弱关联**：`examplan`（考试安排）无外键关联，有两个时间字段——`time` 为发布时间
+6. **公告类实体与弱关联**：`examplan`（考试安排）有两个时间字段——`time` 为发布时间
    （新增时由后端生成、不可修改），`exam_time` 为考试时间（`yyyy-MM-dd HH:mm`，Web 与小程序据此显示考试倒计时）；
+   `course_id` 为空是全校考试（人人可见），不为空只给这门课的任课教师和选课学生看（逻辑外键，删除没人选的课时一并删除其考试）；
    `notice` 的 `course_id` 为空是全校通知、不为空是课程公告；`user` 存发布人**账号名**，与 `admin` 表按账号名弱关联。
 7. **教室按「编号 + 时段」逻辑占用**：`course.room` 存教室编号（对应 `roomplan.code`，唯一）。
    `roomplan.type = 固定占用`（办公室、器材存放等）不参与排课；课程保存时校验同一

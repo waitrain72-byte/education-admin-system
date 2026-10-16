@@ -259,9 +259,10 @@ CREATE TABLE `examplan` (
   `content` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '内容',
   `time` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '发布时间',
   `exam_time` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '考试时间（yyyy-MM-dd HH:mm）',
+  `course_id` int(11) DEFAULT NULL COMMENT '所属课程（空 = 全校考试，非空 = 只给这门课的师生看）',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='考试安排表';
-INSERT INTO `examplan` (`id`,`name`,`content`,`time`,`exam_time`) VALUES (3,'2026 年秋季期中考试安排','期中考试安排在第 9 周进行，各科考场与时间以教务通知为准。','2026-08-26 10:00:00','2026-11-02 09:00'),(4,'全国计算机等级考试','9 月全国计算机等级考试，准考证请提前打印。','2026-08-28 09:00:00','2026-09-26 08:30'),(5,'数据结构 期中测验','第 8 周周三下午，地点 7710，闭卷，可带一张 A4 手写提纲。','2026-10-05 16:20:00','2026-10-21 14:00'),(6,'大学英语四级考试','全国大学英语四级考试，请按准考证上的考场与时间参加。','2026-10-05 16:25:00','2026-12-12 09:00');
+INSERT INTO `examplan` (`id`,`name`,`content`,`time`,`exam_time`,`course_id`) VALUES (3,'2026 年秋季期中考试安排','期中考试安排在第 9 周进行，各科考场与时间以教务通知为准。','2026-08-26 10:00:00','2026-11-02 09:00',NULL),(4,'全国计算机等级考试','9 月全国计算机等级考试，准考证请提前打印。','2026-08-28 09:00:00','2026-09-26 08:30',NULL),(5,'数据结构 期中测验','第 8 周周三下午，地点 7710，闭卷，可带一张 A4 手写提纲。','2026-10-05 16:20:00','2026-10-21 14:00',7),(6,'大学英语四级考试','全国大学英语四级考试，请按准考证上的考场与时间参加。','2026-10-05 16:25:00','2026-12-12 09:00',NULL);
 -- examplan: 4 rows
 -- >>> end-of-statement <<<
 

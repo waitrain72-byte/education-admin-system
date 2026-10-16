@@ -206,7 +206,7 @@ public class DashboardService {
         data.put("warnings", warningSection(teacherId, students));
         data.put("today", todaySection(courses, enrolled, (String) semester.get("weekday"), now, teacherId != null));
         data.put("week", weekSection(courses, enrolled));
-        data.put("exams", examSection(now));
+        data.put("exams", examSection(now, teacherId));
         data.put("notices", dashboardMapper.latestSchoolNotices(NOTICE_LIMIT));
 
         Map<String, Object> todos = new LinkedHashMap<>();
@@ -650,12 +650,12 @@ public class DashboardService {
 
     // ==================== 考试 ====================
 
-    /** 近 {@link #EXAM_WINDOW_DAYS} 天内的考试最多 {@link #EXAM_LIMIT} 场；之后还有几场、最近的一场是什么 */
-    private Map<String, Object> examSection(LocalDateTime now) {
+    /** 近 {@link #EXAM_WINDOW_DAYS} 天内的考试最多 {@link #EXAM_LIMIT} 场；之后还有几场、最近的一场是什么（教师只算全校考试和自己教的课） */
+    private Map<String, Object> examSection(LocalDateTime now, Integer teacherId) {
         String from = now.format(MINUTE_FORMAT);
         String until = now.plusDays(EXAM_WINDOW_DAYS).format(MINUTE_FORMAT);
         LocalDate today = now.toLocalDate();
-        List<Map<String, Object>> upcoming = dashboardMapper.examsFrom(from, EXAM_LIMIT + 1);
+        List<Map<String, Object>> upcoming = dashboardMapper.examsFrom(from, EXAM_LIMIT + 1, teacherId);
         List<Map<String, Object>> soon = new ArrayList<>();
         Map<String, Object> next = null;
         for (Map<String, Object> exam : upcoming) {
@@ -672,7 +672,7 @@ public class DashboardService {
         section.put("windowDays", EXAM_WINDOW_DAYS);
         section.put("limit", EXAM_LIMIT);
         section.put("soon", soon);
-        section.put("remaining", Math.max(0, dashboardMapper.countExamsFrom(from) - soon.size()));
+        section.put("remaining", Math.max(0, dashboardMapper.countExamsFrom(from, teacherId) - soon.size()));
         section.put("next", next);
         return section;
     }

@@ -128,6 +128,9 @@ public class SchemaMigration implements ApplicationRunner {
         // 考试安排：考试时间（Web / 小程序据此显示考试倒计时）
         addColumnIfMissing("examplan", "exam_time",
                 "varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '考试时间（yyyy-MM-dd HH:mm）' AFTER `time`");
+        // 考试安排的所属课程：老数据都是全校考试（空），照旧人人可见
+        addColumnIfMissing("examplan", "course_id",
+                "int(11) DEFAULT NULL COMMENT '所属课程（空 = 全校考试，非空 = 只给这门课的师生看）' AFTER `exam_time`");
 
         // 系统参数：学期名称、开学日期、教学周数（首页「第几周」、日程按它推算）
         if (createTableIfMissing("sys_config", DDL_SYS_CONFIG)) {

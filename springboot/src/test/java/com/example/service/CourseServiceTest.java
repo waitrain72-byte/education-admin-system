@@ -5,6 +5,7 @@ import com.example.entity.Course;
 import com.example.exception.CustomException;
 import com.example.mapper.ChoiceMapper;
 import com.example.mapper.CourseMapper;
+import com.example.mapper.ExamplanMapper;
 import com.example.support.CurrentUser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,8 @@ class CourseServiceTest {
     private CourseMapper courseMapper;
     @Mock
     private ChoiceMapper choiceMapper;
+    @Mock
+    private ExamplanMapper examplanMapper;
 
     @InjectMocks
     private CourseService service;
@@ -46,7 +49,7 @@ class CourseServiceTest {
     }
 
     @Test
-    @DisplayName("已经有学生选的课不能删；没人选的可以")
+    @DisplayName("已经有学生选的课不能删；没人选的可以，它的考试安排一起删掉")
     void courseWithStudentsCannotBeDeleted() {
         CurrentUser.as("ADMIN", 1, "管理员");
         when(choiceMapper.countByCourseId(7)).thenReturn(15);
@@ -57,7 +60,9 @@ class CourseServiceTest {
         service.deleteById(13);
 
         verify(courseMapper, never()).deleteById(7);
+        verify(examplanMapper, never()).deleteByCourseId(7);
         verify(courseMapper).deleteById(13);
+        verify(examplanMapper).deleteByCourseId(13);
     }
 
     @Test

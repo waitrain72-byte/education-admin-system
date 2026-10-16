@@ -8,13 +8,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 登录安全防护：
  * - 记录登录成功/失败日志（sys_login_log）
- * - 同一账号连续失败达到上限后锁定一段时间（内存实现，单实例部署适用）
+ * - 同一账号 15 分钟内连续失败 5 次，锁定 10 分钟（内存实现，单实例部署适用）
  */
 @Service
 public class LoginProtectService {
@@ -23,17 +24,27 @@ public class LoginProtectService {
     private static final Logger LOG = LoggerFactory.getLogger(LoginProtectService.class);
 
     /** 连续失败锁定阈值 */
-    private static final int MAX_ATTEMPTS = 5;
+    static final int MAX_ATTEMPTS = 5;
     /** 锁定时长（毫秒） */
-    private static final long LOCK_MILLIS = 10 * 60 * 1000L;
+    static final long LOCK_MILLIS = 10 * 60 * 1000L;
+    /**
+     * 失败计数的有效期（毫秒）：从这一轮第一次失败算起，超过这段时间还没凑够阈值就重新计数。
+     * 否则偶尔输错一次的人，几周里零零星星错满 5 次也会被锁。
+     */
+    static final long FAIL_WINDOW_MILLIS = 15 * 60 * 1000L;
+    /** 计数表超过这么多个账号时，顺手清掉已经过期的记录，防止随便乱填的用户名把内存越撑越大 */
+    static final int PURGE_THRESHOLD = 10_000;
 
     private final Map<String, FailInfo> failMap = new ConcurrentHashMap<>();
 
     @Resource
     private LoginLogMapper loginLogMapper;
+    @Resource
+    private Clock clock;
 
     private static class FailInfo {
         int count;
+        long firstFailAt;
         long lockedUntil;
     }
 
@@ -43,9 +54,10 @@ public class LoginProtectService {
     public void checkLocked(String username) {
         FailInfo info = failMap.get(username);
         if (info == null) return;
-        long now = System.currentTimeMillis();
+        long now = clock.millis();
         if (info.lockedUntil > now) {
-            long minutes = (info.lockedUntil - now) / 60000 + 1;
+            // 剩余时间向上取整到分钟：刚锁上时是「约 10 分钟」，只剩几秒时是「约 1 分钟」
+            long minutes = (info.lockedUntil - now + 59_999) / 60_000;
             throw new CustomException("4008", "账号已锁定，请约 " + minutes + " 分钟后再试");
         }
         // 锁定已过期，重置计数
@@ -64,15 +76,31 @@ public class LoginProtectService {
      * 计数与锁定时间的更新在 compute 的映射函数内完成，保证并发下的原子性。
      */
     public void recordFailure(String username, String ip, String reason) {
+        long now = clock.millis();
+        if (failMap.size() > PURGE_THRESHOLD) {
+            failMap.values().removeIf(info -> isStale(info, now));
+        }
         failMap.compute(username, (k, info) -> {
-            FailInfo current = info == null ? new FailInfo() : info;
+            // 上一轮已过期（没凑够次数、或锁定已结束）：从这一次重新计数
+            FailInfo current = info == null || isStale(info, now) ? new FailInfo() : info;
+            if (current.count == 0) {
+                current.firstFailAt = now;
+            }
             current.count++;
             if (current.count >= MAX_ATTEMPTS) {
-                current.lockedUntil = System.currentTimeMillis() + LOCK_MILLIS;
+                current.lockedUntil = now + LOCK_MILLIS;
             }
             return current;
         });
         saveLog(username, ip, "失败", reason);
+    }
+
+    /** 这条记录已经没有约束力：锁定结束了，或者没锁定、离第一次失败已超过计数有效期 */
+    private static boolean isStale(FailInfo info, long now) {
+        if (info.lockedUntil > 0) {
+            return info.lockedUntil <= now;
+        }
+        return now - info.firstFailAt > FAIL_WINDOW_MILLIS;
     }
 
     /**
